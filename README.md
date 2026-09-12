@@ -8,11 +8,11 @@ Sistema web para la digitalización del agendamiento, gestión de agendas por pr
 
 ## Integrantes y Roles
 
-| Nombre | Código | Rol en el Proyecto |
-|---|---|---|
-| **Rangel Martínez Yenderson Josué** | 1127045112 | **Líder Técnico & Backend Developer** - Arquitectura, API Spring Boot, modelo de datos y lógica de agenda |
-| **Becerra Bonilla Diego Andrés** | 1127046551 | **Frontend Developer & UI/UX** - Interfaz Next.js, experiencia de paciente (3 pasos) y prototipos RAD |
-| **Leal Espinel Jesús David** | 1094047490 | **DevOps, QA & Gestión de Configuración** - Despliegue (Vercel/Render/Neon), pruebas funcionales y documentación |
+| Nombre                              | Código     | Rol en el Proyecto                                                                                               |
+| ----------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Rangel Martínez Yenderson Josué** | 1127045112 | **Frontend & Backend Developer** - Arquitectura, API Spring Boot, modelo de datos y lógica de agenda             |
+| **Becerra Bonilla Diego Andrés**    | 1127046551 | **Líder Técnico & UI/UX** - Interfaz Next.js, experiencia de paciente (3 pasos) y prototipos RAD                 |
+| **Leal Espinel Jesús David**        | 1094047490 | **DevOps, QA & Gestión de Configuración** - Despliegue (Vercel/Render/Neon), pruebas funcionales y documentación |
 
 **Docente:** Fanny Casadiego Chiquillo  
 **Programa:** Ingeniería de Sistemas - Facultad de Ingenierías y Arquitectura  
