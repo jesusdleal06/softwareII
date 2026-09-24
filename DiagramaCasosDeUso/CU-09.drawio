@@ -1,0 +1,70 @@
+<mxfile host="Electron">
+  <diagram name="Página-1" id="VFQs3lAAED-hnqvWJ8kL">
+    <mxGraphModel dx="756" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <UserObject label="" plantUmlData="{&#xa;  &quot;data&quot;: &quot;@startuml CU-09\nleft to right direction\nskinparam packageStyle rectangle\n\nactor \&quot;Auxiliar\\nadministrativa\&quot; as A\n\nrectangle \&quot;Sistema de agendamiento Villadent\&quot; {\n  usecase \&quot;CU-09\\nConfigurar duración según\\ntipo de procedimiento\&quot; as CU09\n  usecase \&quot;Seleccionar tipo de\\nprocedimiento\&quot; as SEL\n  usecase \&quot;Revisar duración\\ndel procedimiento\&quot; as REV\n  usecase \&quot;Validar tiempo y\\ncruces de horario\&quot; as VAL\n}\n\nA --&gt; CU09\nCU09 ..&gt; SEL : &lt;&lt;include&gt;&gt;\nCU09 ..&gt; REV : &lt;&lt;include&gt;&gt;\nCU09 ..&gt; VAL : &lt;&lt;include&gt;&gt;\n@enduml&quot;,&#xa;  &quot;config&quot;: null&#xa;}" id="hT2evUM_TfEvIUCzRmHp-1">
+          <mxCell connectable="0" parent="1" style="group;transparentBounds=1;editIcon=1;lockedGroup=0;groupPadding=10;" vertex="1">
+            <mxGeometry as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="CU-09: Configurar duracion según tipo de procedimiento" plantUmlId="rect_0" plantUmlBaseStyle="swimlane;collapsible=0;startSize=26;fillColor=none;strokeColor=#181818;fontColor=#000000;fontSize=13;fontStyle=1;whiteSpace=wrap;" plantUmlBaseValue="Sistema de agendamiento Villadent" id="hT2evUM_TfEvIUCzRmHp-2">
+          <mxCell parent="hT2evUM_TfEvIUCzRmHp-1" style="swimlane;collapsible=0;startSize=26;fillColor=none;strokeColor=#181818;fontColor=#000000;fontSize=13;fontStyle=1;whiteSpace=wrap;" vertex="1">
+            <mxGeometry height="302" width="563.5" x="216.5" y="30" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="CU-09&lt;br&gt;Configurar duración según&lt;br&gt;tipo de procedimiento" plantUmlId="uc_1" plantUmlBaseStyle="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" plantUmlBaseValue="CU-09&lt;br&gt;Configurar duración según&lt;br&gt;tipo de procedimiento" id="hT2evUM_TfEvIUCzRmHp-3">
+          <mxCell parent="hT2evUM_TfEvIUCzRmHp-2" style="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" vertex="1">
+            <mxGeometry height="52" width="244" x="20" y="126" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Seleccionar tipo de&lt;br&gt;procedimiento" plantUmlId="uc_2" plantUmlBaseStyle="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" plantUmlBaseValue="Seleccionar tipo de&lt;br&gt;procedimiento" id="hT2evUM_TfEvIUCzRmHp-4">
+          <mxCell parent="hT2evUM_TfEvIUCzRmHp-2" style="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" vertex="1">
+            <mxGeometry height="52" width="196" x="312" y="46" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Revisar duración&lt;br&gt;del procedimiento" plantUmlId="uc_3" plantUmlBaseStyle="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" plantUmlBaseValue="Revisar duración&lt;br&gt;del procedimiento" id="hT2evUM_TfEvIUCzRmHp-5">
+          <mxCell parent="hT2evUM_TfEvIUCzRmHp-2" style="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" vertex="1">
+            <mxGeometry height="52" width="181" x="363.5" y="138" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Validar tiempo y&lt;br&gt;cruces de horario" plantUmlId="uc_4" plantUmlBaseStyle="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" plantUmlBaseValue="Validar tiempo y&lt;br&gt;cruces de horario" id="hT2evUM_TfEvIUCzRmHp-6">
+          <mxCell parent="hT2evUM_TfEvIUCzRmHp-2" style="ellipse;html=1;fillColor=#F1F1F1;strokeColor=#181818;whiteSpace=wrap;fontColor=#000000;fontSize=14;" vertex="1">
+            <mxGeometry height="52" width="174" x="323" y="230" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="«include»" plantUmlId="rel_8" plantUmlBaseStyle="endArrow=open;dashed=1;dashPattern=5 5;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="«include»" id="hT2evUM_TfEvIUCzRmHp-10">
+          <mxCell edge="1" parent="hT2evUM_TfEvIUCzRmHp-2" source="hT2evUM_TfEvIUCzRmHp-3" style="endArrow=open;dashed=1;dashPattern=5 5;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="hT2evUM_TfEvIUCzRmHp-4">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="«include»" plantUmlId="rel_9" plantUmlBaseStyle="endArrow=open;dashed=1;dashPattern=5 5;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="«include»" id="hT2evUM_TfEvIUCzRmHp-11">
+          <mxCell edge="1" parent="hT2evUM_TfEvIUCzRmHp-2" source="hT2evUM_TfEvIUCzRmHp-3" style="endArrow=open;dashed=1;dashPattern=5 5;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="hT2evUM_TfEvIUCzRmHp-5">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="«include»" plantUmlId="rel_10" plantUmlBaseStyle="endArrow=open;dashed=1;dashPattern=5 5;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="«include»" id="hT2evUM_TfEvIUCzRmHp-12">
+          <mxCell edge="1" parent="hT2evUM_TfEvIUCzRmHp-2" source="hT2evUM_TfEvIUCzRmHp-3" style="endArrow=open;dashed=1;dashPattern=5 5;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="hT2evUM_TfEvIUCzRmHp-6">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="actor_5" plantUmlBaseStyle="shape=umlActor;html=1;fillColor=#F1F1F1;strokeColor=#181818;fontColor=#000000;fontSize=14;" plantUmlBaseValue="" id="hT2evUM_TfEvIUCzRmHp-7">
+          <mxCell parent="hT2evUM_TfEvIUCzRmHp-1" style="shape=umlActor;html=1;fillColor=#F1F1F1;strokeColor=#181818;fontColor=#000000;fontSize=14;" vertex="1">
+            <mxGeometry height="60" width="40" x="96.5" y="155" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="Auxiliar&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" plantUmlId="actorlbl_6" plantUmlBaseStyle="text;html=1;align=center;verticalAlign=top;fontColor=#000000;fontSize=14;" plantUmlBaseValue="Auxiliar&#xa;administrativa" id="hT2evUM_TfEvIUCzRmHp-8">
+          <mxCell parent="hT2evUM_TfEvIUCzRmHp-1" style="text;html=1;align=center;verticalAlign=top;fontColor=#000000;fontSize=14;" vertex="1">
+            <mxGeometry height="17" width="173" x="30" y="217" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" plantUmlId="rel_7" plantUmlBaseStyle="endArrow=block;endFill=1;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" plantUmlBaseValue="" id="hT2evUM_TfEvIUCzRmHp-9">
+          <mxCell edge="1" parent="hT2evUM_TfEvIUCzRmHp-1" source="hT2evUM_TfEvIUCzRmHp-7" style="endArrow=none;endFill=0;strokeColor=#181818;fontColor=#000000;fontSize=11;edgeStyle=none;rounded=0;html=1;curved=0;endSize=6;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" target="hT2evUM_TfEvIUCzRmHp-3">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </UserObject>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
