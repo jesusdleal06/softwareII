@@ -11,7 +11,7 @@ Sistema web para la digitalización del agendamiento, gestión de agendas por pr
 | Nombre                              | Código     | Rol en el Proyecto                                                                                               |
 | ----------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Rangel Martínez Yenderson Josué** | 1127045112 | **Frontend & Backend Developer** - Arquitectura, API Spring Boot, modelo de datos y lógica de agenda             |
-| **Becerra Bonilla Diego Andrés**    | 1127046551 | **Líder Técnico & UI/UX** - Interfaz Next.js, experiencia de paciente (3 pasos) y prototipos RAD                 |
+| **Becerra Bonilla Diego Andrés**    | 1127046551 | **Líder Técnico & UI/UX** - Interfaz Angular, experiencia de paciente (3 pasos) y prototipos RAD                 |
 | **Leal Espinel Jesús David**        | 1094047490 | **DevOps, QA & Gestión de Configuración** - Despliegue (Vercel/Render/Neon), pruebas funcionales y documentación |
 
 **Docente:** Fanny Casadiego Chiquillo  
@@ -32,7 +32,7 @@ Sistema web para la digitalización del agendamiento, gestión de agendas por pr
 
 Metodología: **Desarrollo Rápido de Aplicaciones (RAD)** con prototipos iterativos validados con el personal de Villadent.
 
-**Stack (RNF05):** `Next.js` (Vercel) + `Spring Boot` (Render) + `PostgreSQL` (Neon)
+**Stack (RNF05):** `Angular` (Vercel) + `Spring Boot` (Render) + `PostgreSQL` (Neon)
 
 ---
 
@@ -50,7 +50,7 @@ Metodología: **Desarrollo Rápido de Aplicaciones (RAD)** con prototipos iterat
 proyecto/
 ├── Desarrollo/
 │   ├── backend/      # API Spring Boot
-│   ├── frontend/     # App Next.js
+│   ├── frontend/     # App Angular
 │   └── scripts/      # Automatización y utilidades
 ├── Actividades/      # Entregas por actividad del curso
 ├── Documentacion/    # Requisitos, arquitectura y manuales
