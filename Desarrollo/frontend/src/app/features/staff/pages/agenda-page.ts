@@ -96,9 +96,12 @@ export class AgendaPage {
     return id ? DENTISTS.filter((d) => d.id === id) : DENTISTS;
   });
 
-  protected readonly dayAppointments = computed(() =>
-    this.store.appointments().filter((a) => a.date === this.date()),
-  );
+  protected readonly dayAppointments = computed(() => {
+    const dentistId = this.dentistId();
+    return this.store
+      .appointments()
+      .filter((a) => a.date === this.date() && (!dentistId || a.dentistId === dentistId));
+  });
 
   protected readonly countText = computed(() => {
     const n = this.dayAppointments().length;

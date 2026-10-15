@@ -49,13 +49,12 @@ interface Block {
   host: { class: 'flex flex-col gap-3' },
   template: `
     @if (useTabs()) {
-      <div role="tablist" aria-label="Odontólogo a mostrar" class="flex gap-2 overflow-x-auto pb-1">
+      <div role="group" aria-label="Odontólogo a mostrar" class="flex gap-2 overflow-x-auto pb-1">
         @for (d of dentists(); track d.id) {
           @let active = d.id === mobileDentistId();
           <button
             type="button"
-            role="tab"
-            [attr.aria-selected]="active"
+            [attr.aria-pressed]="active"
             (click)="mobileDentistId.set(d.id)"
             [class]="
               cn(
@@ -117,7 +116,6 @@ interface Block {
           <div
             class="relative min-w-0 border-l"
             [style.height.px]="height"
-            role="list"
             [attr.aria-label]="'Agenda de ' + column.dentist.name"
           >
             @for (h of hours; track h) {
@@ -147,7 +145,6 @@ interface Block {
             @for (b of column.blocks; track b.appointment.id) {
               <button
                 type="button"
-                role="listitem"
                 (click)="selected.emit(b.appointment)"
                 [attr.aria-label]="b.label"
                 [class]="b.className"

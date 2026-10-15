@@ -50,10 +50,32 @@ describe('DayAgenda', () => {
     return el.querySelector(`button[aria-label^="${name},"]`) as HTMLButtonElement;
   }
 
+  function columns(): NodeListOf<HTMLElement> {
+    return el.querySelectorAll('[aria-label^="Agenda de "]');
+  }
+
+  const originalMatchMedia = window.matchMedia;
+
+  function stubNarrow(matches: boolean): void {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: () => ({ matches, addEventListener(): void {}, removeEventListener(): void {} }),
+    });
+  }
+
+  afterEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    });
+  });
+
   it('renders one column per dentist with the hour axis', () => {
     render();
-    const columns = Array.from(el.querySelectorAll('[role="list"]'));
-    expect(columns.map((c) => c.getAttribute('aria-label'))).toEqual([
+    const cols = columns();
+    expect(Array.from(cols).map((c) => c.getAttribute('aria-label'))).toEqual([
       'Agenda de Dra. Laura Villamizar',
       'Agenda de Dr. Andrés Peña',
       'Agenda de Dra. Camila Ortiz',
@@ -61,10 +83,10 @@ describe('DayAgenda', () => {
     expect((el.querySelector('.grid') as HTMLElement).style.gridTemplateColumns).toBe(
       '5rem repeat(3, minmax(0, 1fr))',
     );
-    expect((columns[0] as HTMLElement).style.height).toBe('1472px');
+    expect((cols[0] as HTMLElement).style.height).toBe('1472px');
     expect(text(el)).toContain('8:00 AM');
     expect(text(el)).toContain('6:00 PM');
-    expect(text(columns[0])).toContain('Descanso');
+    expect(text(cols[0])).toContain('Descanso');
   });
 
   it('positions and sizes each block by start time and duration', () => {
@@ -84,10 +106,10 @@ describe('DayAgenda', () => {
 
   it('places each appointment in its dentist column', () => {
     render();
-    const columns = el.querySelectorAll('[role="list"]');
-    expect(columns[0].querySelectorAll('[role="listitem"]')).toHaveLength(2);
-    expect(columns[1].querySelectorAll('[role="listitem"]')).toHaveLength(0);
-    expect(columns[2].querySelectorAll('[role="listitem"]')).toHaveLength(1);
+    const cols = columns();
+    expect(cols[0].querySelectorAll('button')).toHaveLength(2);
+    expect(cols[1].querySelectorAll('button')).toHaveLength(0);
+    expect(cols[2].querySelectorAll('button')).toHaveLength(1);
   });
 
   it('keeps cancelled appointments visible, struck through', () => {
@@ -103,6 +125,51 @@ describe('DayAgenda', () => {
     render();
     block('Rosa Jaimes').click();
     expect(selected.map((a) => a.id)).toEqual(['a2']);
+  });
+
+  it('keeps appointment blocks as plain buttons without listitem roles', () => {
+    render();
+    expect(el.querySelector('[role="listitem"]')).toBeNull();
+    expect(el.querySelector('button[role]')).toBeNull();
+    expect(block('Rosa Jaimes').tagName).toBe('BUTTON');
+  });
+
+  it('switches the visible dentist with toggle buttons reachable by keyboard', () => {
+    stubNarrow(true);
+    render();
+    const group = el.querySelector('[aria-label="Odontólogo a mostrar"]') as HTMLElement;
+    expect(group.getAttribute('role')).toBe('group');
+    expect(group.querySelector('[role="tab"]')).toBeNull();
+    const buttons = Array.from(group.querySelectorAll('button'));
+    expect(buttons).toHaveLength(3);
+    // Every option stays in the natural tab order (no roving tabindex).
+    for (const button of buttons) {
+      expect(button.getAttribute('tabindex')).toBeNull();
+    }
+    expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+    // Keyboard activation on a native button fires click: the pressed state follows.
+    buttons[1].click();
+    fixture.detectChanges();
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('true');
+    const cols = columns();
+    expect(cols).toHaveLength(1);
+    expect(cols[0].getAttribute('aria-label')).toBe('Agenda de Dr. Andrés Peña');
+  });
+
+  it('falls back to the first dentist when the visible one leaves the list', () => {
+    stubNarrow(true);
+    render();
+    const buttons = Array.from(
+      el.querySelectorAll<HTMLButtonElement>('[aria-label="Odontólogo a mostrar"] button'),
+    );
+    buttons[2].click();
+    fixture.detectChanges();
+    expect(columns()).toHaveLength(1);
+    fixture.componentRef.setInput('dentists', [DENTISTS[0], DENTISTS[1]]);
+    fixture.detectChanges();
+    const cols = columns();
+    expect(cols).toHaveLength(1);
+    expect(cols[0].getAttribute('aria-label')).toBe('Agenda de Dra. Laura Villamizar');
   });
 
   it('draws the current-time line only on today within working hours', () => {

@@ -56,7 +56,7 @@ describe('staff pages', () => {
     const el = await open('/panel/agenda', ASSISTANT_SESSION);
     expect(text(el)).toContain('Agenda del día');
     expect(text(el)).toContain('4 citas registradas.');
-    expect(el.querySelectorAll('[role="list"]')).toHaveLength(3);
+    expect(el.querySelectorAll('[aria-label^="Agenda de "]')).toHaveLength(3);
     expect(text(el.querySelector('[aria-label="Leyenda de estados"]') as HTMLElement)).toBe(
       'Pendiente Confirmada Reprogramada Atendida No asistió Cancelada',
     );
@@ -65,8 +65,28 @@ describe('staff pages', () => {
     filter.value = 'd2';
     filter.dispatchEvent(new Event('change'));
     harness.detectChanges();
-    expect(el.querySelectorAll('[role="list"]')).toHaveLength(1);
-    expect(el.querySelector('[role="list"]')?.getAttribute('aria-label')).toBe('Agenda de Dr. Andrés Peña');
+    expect(el.querySelectorAll('[aria-label^="Agenda de "]')).toHaveLength(1);
+    expect(el.querySelector('[aria-label^="Agenda de "]')?.getAttribute('aria-label')).toBe(
+      'Agenda de Dr. Andrés Peña',
+    );
+  });
+
+  it('filters the day appointments by dentist', async () => {
+    const el = await open('/panel/agenda', ASSISTANT_SESSION);
+    expect(text(el)).toContain('4 citas registradas.');
+    const filter = el.querySelector('#filtro-dentista') as HTMLSelectElement;
+    filter.value = 'd2';
+    filter.dispatchEvent(new Event('change'));
+    harness.detectChanges();
+    expect(text(el)).toContain('1 cita registrada.');
+    expect(text(el)).toContain('Sebastián Gómez');
+    expect(text(el)).not.toContain('Rosa Elvira Jaimes');
+    expect(text(el)).not.toContain('Gloria Inés Mantilla');
+    filter.value = '';
+    filter.dispatchEvent(new Event('change'));
+    harness.detectChanges();
+    expect(text(el)).toContain('4 citas registradas.');
+    expect(text(el)).toContain('Rosa Elvira Jaimes');
   });
 
   it('opens the appointment detail and the manual booking panel', async () => {

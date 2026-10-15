@@ -31,10 +31,10 @@ describe('MyAgendaPage', () => {
 
   it('shows only the logged-in dentist appointments, sorted by time', () => {
     expect(text(el)).toContain('Vista de solo lectura. Para cambios, comunícate con la auxiliar administrativa.');
-    const columns = el.querySelectorAll('[role="list"]');
+    const columns = el.querySelectorAll('[aria-label^="Agenda de "]');
     expect(columns).toHaveLength(1);
     expect(columns[0].getAttribute('aria-label')).toBe('Agenda de Dra. Laura Villamizar');
-    expect(columns[0].querySelectorAll('[role="listitem"]')).toHaveLength(2);
+    expect(columns[0].querySelectorAll('button')).toHaveLength(2);
     const list = patientList();
     expect(list).toHaveLength(2);
     expect(list[0]).toContain('8:30 AM · Gloria Inés Mantilla');
