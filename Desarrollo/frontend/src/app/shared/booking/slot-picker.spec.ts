@@ -101,4 +101,55 @@ describe('SlotPicker', () => {
     select.dispatchEvent(new Event('change'));
     expect(emitted).toEqual([{ dentistId: 'd3', procedureId: '', date: '', time: '' }]);
   });
+
+  it('applies the nav button styles through a real class binding', () => {
+    const el = render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
+    const next = el.querySelector<HTMLButtonElement>('[aria-label="Semana siguiente"]') as HTMLButtonElement;
+    expect(next.className).toContain('rounded-xl');
+    expect(next.className).toContain('size-12');
+    expect(next.className).not.toContain('${');
+  });
+
+  it('applies the empty hint styles through a real class binding', () => {
+    const el = render({ dentistId: '', procedureId: '', date: '', time: '' });
+    const hint = Array.from(el.querySelectorAll('p')).find((p) =>
+      text(p).includes('para ver los horarios disponibles'),
+    ) as HTMLElement;
+    expect(hint.className).toContain('border-dashed');
+    expect(hint.className).not.toContain('${');
+  });
+
+  it('supports radiogroups with roving tabindex and arrow keys', () => {
+    const el = render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '10:00' });
+    expect(el.querySelectorAll('[role="radiogroup"]').length).toBeGreaterThan(0);
+    const morning = el.querySelector('[aria-label="Horarios de la mañana"]') as HTMLElement;
+    const buttons = Array.from(morning.querySelectorAll<HTMLButtonElement>('button'));
+    expect(buttons.length).toBeGreaterThan(1);
+    const selected = getByText<HTMLButtonElement>(morning, 'button', '10:00 AM');
+    expect(selected.getAttribute('role')).toBe('radio');
+    expect(selected.getAttribute('aria-checked')).toBe('true');
+    expect(selected.tabIndex).toBe(0);
+    expect(buttons.filter((b) => b !== selected).every((b) => b.tabIndex === -1)).toBe(true);
+    const next = buttons[buttons.indexOf(selected) + 1];
+    selected.focus();
+    selected.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(next);
+    expect(emitted.length).toBe(1);
+    expect(emitted[0].time).not.toBe('10:00');
+  });
+
+  it('keeps the first enabled day as the tab stop when nothing is checked', () => {
+    const el = render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
+    const days = Array.from(el.querySelectorAll<HTMLButtonElement>('[aria-label="Día"] button'));
+    const tabbable = days.filter((d) => d.tabIndex === 0 && !d.disabled);
+    expect(tabbable).toHaveLength(1);
+    expect(text(tabbable[0])).toContain('Hoy');
+  });
+
+  it('labels picker sections with h2 headings', () => {
+    const el = render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
+    expect(el.querySelector('h3')).toBeNull();
+    expect(el.querySelectorAll('h2')).toHaveLength(4);
+  });
 });

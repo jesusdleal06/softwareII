@@ -45,9 +45,9 @@ const EMPTY_HINT =
   template: `
     <!-- Dentist -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-dentista">
-      <h3 id="sp-dentista" class="text-lg font-bold">
+      <h2 id="sp-dentista" class="text-lg font-bold">
         {{ fixedDentist() || compact() ? 'Odontólogo' : '1. ¿Con quién deseas tu cita?' }}
-      </h3>
+      </h2>
       @if (fixedDentist() && dentist(); as d) {
         <div class="flex items-center gap-3 rounded-2xl border bg-muted/50 px-4 py-3">
           <span
@@ -72,13 +72,14 @@ const EMPTY_HINT =
           (valueChange)="patch({ dentistId: $event })"
         />
       } @else {
-        <div role="radiogroup" aria-label="Odontólogo" class="grid gap-3 sm:grid-cols-3">
+        <div role="radiogroup" aria-label="Odontólogo" class="grid gap-3 sm:grid-cols-3" (keydown)="onGroupKeydown($event)">
           @for (d of dentists; track d.id) {
             @let active = value().dentistId === d.id;
             <button
               type="button"
               role="radio"
               [attr.aria-checked]="active"
+              [tabindex]="radioTabindex(value().dentistId, d.id, dentists[0].id)"
               (click)="patch({ dentistId: d.id })"
               [class]="
                 cn(
@@ -113,9 +114,9 @@ const EMPTY_HINT =
 
     <!-- Procedure -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-proc">
-      <h3 id="sp-proc" class="text-lg font-bold">
+      <h2 id="sp-proc" class="text-lg font-bold">
         {{ fixedProcedure() || compact() ? 'Procedimiento' : '2. ¿Qué procedimiento necesitas?' }}
-      </h3>
+      </h2>
       @if (fixedProcedure() && procedure(); as p) {
         <div class="flex items-center justify-between rounded-2xl border bg-muted/50 px-4 py-3">
           <span class="font-semibold">{{ p.name }}</span>
@@ -134,13 +135,14 @@ const EMPTY_HINT =
           (valueChange)="patch({ procedureId: $event })"
         />
       } @else {
-        <div role="radiogroup" aria-label="Procedimiento" class="grid gap-3 sm:grid-cols-2">
+        <div role="radiogroup" aria-label="Procedimiento" class="grid gap-3 sm:grid-cols-2" (keydown)="onGroupKeydown($event)">
           @for (p of procedures; track p.id) {
             @let active = value().procedureId === p.id;
             <button
               type="button"
               role="radio"
               [attr.aria-checked]="active"
+              [tabindex]="radioTabindex(value().procedureId, p.id, procedures[0].id)"
               (click)="patch({ procedureId: p.id })"
               [class]="
                 cn(
@@ -163,32 +165,33 @@ const EMPTY_HINT =
     <!-- Day -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-fecha">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h3 id="sp-fecha" class="text-lg font-bold">
+        <h2 id="sp-fecha" class="text-lg font-bold">
           {{ fixedProcedure() || compact() ? 'Día' : '3. Elige el día' }}
-        </h3>
+        </h2>
         <div class="flex items-center gap-2">
           <button
             type="button"
             (click)="shiftWeek(-7)"
             [disabled]="isCurrentWeek()"
             aria-label="Semana anterior"
-            class="${NAV_BUTTON} disabled:opacity-40"
+            [class]="cn(navButton, 'disabled:opacity-40')"
           >
             <svg lucideChevronLeft class="size-6"></svg>
           </button>
           <span class="min-w-44 text-center text-base font-medium text-muted-foreground">{{ weekRange() }}</span>
-          <button type="button" (click)="shiftWeek(7)" aria-label="Semana siguiente" class="${NAV_BUTTON}">
+          <button type="button" (click)="shiftWeek(7)" aria-label="Semana siguiente" [class]="navButton">
             <svg lucideChevronRight class="size-6"></svg>
           </button>
         </div>
       </div>
-      <div role="radiogroup" aria-label="Día" class="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div role="radiogroup" aria-label="Día" class="grid grid-cols-3 gap-2 sm:grid-cols-6" (keydown)="onGroupKeydown($event)">
         @for (day of days(); track day.key) {
           @let active = value().date === day.key;
           <button
             type="button"
             role="radio"
             [attr.aria-checked]="active"
+            [tabindex]="radioTabindex(value().date, day.key, firstEnabledDay())"
             [disabled]="day.past"
             (click)="patch({ date: day.key })"
             [class]="
@@ -214,15 +217,15 @@ const EMPTY_HINT =
 
     <!-- Hours -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-hora" aria-live="polite">
-      <h3 id="sp-hora" class="text-lg font-bold">
+      <h2 id="sp-hora" class="text-lg font-bold">
         {{ fixedProcedure() || compact() ? 'Hora disponible' : '4. Elige la hora' }}
-      </h3>
+      </h2>
       @if (!value().dentistId || !value().procedureId || !value().date) {
-        <p class="${EMPTY_HINT}">
+        <p [class]="emptyHint">
           Selecciona el odontólogo, el procedimiento y el día para ver los horarios disponibles.
         </p>
       } @else if (slots().length === 0) {
-        <p class="${EMPTY_HINT}">No hay horarios disponibles este día. Prueba con otro día.</p>
+        <p [class]="emptyHint">No hay horarios disponibles este día. Prueba con otro día.</p>
       } @else {
         <div class="flex flex-col gap-4">
           @for (group of slotGroups(); track group.title) {
@@ -232,6 +235,7 @@ const EMPTY_HINT =
                 role="radiogroup"
                 [attr.aria-label]="'Horarios de la ' + group.title.toLowerCase()"
                 class="grid grid-cols-3 gap-2 sm:grid-cols-4"
+                (keydown)="onGroupKeydown($event)"
               >
                 @for (slot of group.slots; track slot) {
                   @let active = value().time === slot;
@@ -239,6 +243,7 @@ const EMPTY_HINT =
                     type="button"
                     role="radio"
                     [attr.aria-checked]="active"
+                    [tabindex]="radioTabindex(value().time, slot, group.slots[0])"
                     (click)="selectTime(slot)"
                     [class]="
                       cn(
@@ -282,6 +287,8 @@ export class SlotPicker implements OnInit {
 
   protected readonly cn = cn;
   protected readonly cardFocus = CARD_FOCUS;
+  protected readonly navButton = NAV_BUTTON;
+  protected readonly emptyHint = EMPTY_HINT;
   protected readonly formatTime = formatTime;
   protected readonly dentists = DENTISTS;
   protected readonly procedures = PROCEDURES;
@@ -364,5 +371,37 @@ export class SlotPicker implements OnInit {
 
   protected selectTime(time: string): void {
     this.valueChange.emit({ ...this.value(), time });
+  }
+
+  /** First selectable day key (past days are disabled and skipped by keyboard). */
+  protected readonly firstEnabledDay = computed(() => this.days().find((d) => !d.past)?.key ?? '');
+
+  /**
+   * Roving tabindex for radiogroups: the checked option — or the first
+   * enabled one when nothing is checked — is the single tab stop.
+   */
+  protected radioTabindex(activeId: string, id: string, firstEnabledId: string): number {
+    if (id === activeId) return 0;
+    if (activeId) return -1;
+    return id === firstEnabledId ? 0 : -1;
+  }
+
+  /** Arrow-key navigation with automatic selection (WAI-APG radio group pattern). */
+  protected onGroupKeydown(event: KeyboardEvent): void {
+    if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const group = event.currentTarget as HTMLElement | null;
+    const buttons = group ? Array.from(group.querySelectorAll<HTMLButtonElement>('button:not([disabled])')) : [];
+    if (buttons.length === 0) return;
+    event.preventDefault();
+    let index = buttons.findIndex((b) => b === document.activeElement);
+    if (event.key === 'Home') index = 0;
+    else if (event.key === 'End') index = buttons.length - 1;
+    else if (index === -1) index = 0;
+    else {
+      const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
+      index = (index + delta + buttons.length) % buttons.length;
+    }
+    buttons[index].focus();
+    buttons[index].click();
   }
 }

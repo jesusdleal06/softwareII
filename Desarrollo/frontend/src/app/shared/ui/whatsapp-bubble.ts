@@ -10,7 +10,7 @@ import { Appointment } from '../../core/models';
   imports: [LucideCheckCheck],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex flex-col gap-3 rounded-2xl bg-[oklch(0.95_0.02_150)] p-4',
+    class: 'flex flex-col gap-3 rounded-2xl bg-success/10 p-4 dark:bg-success/25',
     'aria-label': 'Vista previa del mensaje de WhatsApp',
   },
   template: `
