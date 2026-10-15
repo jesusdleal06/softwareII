@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, Directive, input, output } from '@angular/core';
 import { LucideCircleAlert } from '@lucide/angular';
-import { cn } from './class-names';
+import { cn, mergeClasses } from './class-names';
 
 const CONTROL_BASE =
   'w-full min-h-14 rounded-xl border bg-background px-4 text-lg text-foreground placeholder:text-muted-foreground/70 outline-none transition-colors focus-visible:ring-4 focus-visible:ring-ring/30 focus-visible:border-primary';
@@ -16,6 +16,8 @@ abstract class FieldBase {
   readonly hint = input<string>();
   readonly error = input<string>();
   readonly labelHidden = input(false);
+  /** Extra classes for the control (prototype `className`); they override conflicting defaults. */
+  readonly inputClass = input<string>();
 
   protected readonly describedBy = computed(() => {
     if (this.error()) return `${this.fieldId()}-error`;
@@ -77,7 +79,7 @@ export class TextField extends FieldBase {
   readonly valueChange = output<string>();
 
   protected readonly controlClass = computed(() =>
-    cn(CONTROL_BASE, this.error() ? 'border-destructive' : 'border-input'),
+    mergeClasses(cn(CONTROL_BASE, this.error() ? 'border-destructive' : 'border-input'), this.inputClass()),
   );
 
   protected onInput(event: Event): void {
@@ -129,10 +131,13 @@ export class SelectField extends FieldBase {
 
   protected readonly arrow = SELECT_ARROW;
   protected readonly controlClass = computed(() =>
-    cn(
-      CONTROL_BASE,
-      'appearance-none bg-[length:1.25rem] bg-[position:right_1rem_center] bg-no-repeat pr-12',
-      this.error() ? 'border-destructive' : 'border-input',
+    mergeClasses(
+      cn(
+        CONTROL_BASE,
+        'appearance-none bg-[length:1.25rem] bg-[position:right_1rem_center] bg-no-repeat pr-12',
+        this.error() ? 'border-destructive' : 'border-input',
+      ),
+      this.inputClass(),
     ),
   );
 

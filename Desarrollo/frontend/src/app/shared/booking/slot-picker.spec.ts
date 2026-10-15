@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { buildInitialAppointments } from '../../../core/data/mock-data';
-import { getByText, text } from '../../../shared/testing/dom';
+import { buildInitialAppointments } from '../../core/data/mock-data';
+import { getByText, text } from '../testing/dom';
 import { SlotPicker, SlotSelection } from './slot-picker';
 
 // Wednesday 2026-10-14 09:10. On Thursday 15 Dra. Villamizar (d1) is busy 09:00–09:45.

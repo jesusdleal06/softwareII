@@ -1,3 +1,4 @@
+export * from './alert-message';
 export * from './appointment-summary';
 export * from './big-button';
 export * from './class-names';

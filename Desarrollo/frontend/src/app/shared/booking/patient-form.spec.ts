@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PatientData, validatePatient } from '../../../core/domain';
-import { text, typeInto } from '../../../shared/testing/dom';
+import { PatientData, validatePatient } from '../../core/domain';
+import { text, typeInto } from '../testing/dom';
 import { PatientForm } from './patient-form';
 
 describe('PatientForm', () => {

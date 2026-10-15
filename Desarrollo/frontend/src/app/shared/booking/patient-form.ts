@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { PatientData, PatientErrors } from '../../../core/domain';
-import { TextField } from '../../../shared/ui/field';
+import { PatientData, PatientErrors } from '../../core/domain';
+import { TextField } from '../ui/field';
 
 /** Keeps digits and spaces only, as the prototype phone input does. */
 export function sanitizePhoneInput(value: string): string {

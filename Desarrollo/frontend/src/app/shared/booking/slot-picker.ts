@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, OnInit, output, signal } from '@angular/core';
 import { LucideCheck, LucideChevronLeft, LucideChevronRight, LucideClock } from '@lucide/angular';
-import { DENTISTS, PROCEDURES } from '../../../core/data/mock-data';
+import { DENTISTS, PROCEDURES } from '../../core/data/mock-data';
 import {
   addDays,
   availableSlots,
@@ -15,10 +15,10 @@ import {
   shortDayName,
   toDateKey,
   workWeek,
-} from '../../../core/domain';
-import { Appointment } from '../../../core/models';
-import { cn } from '../../../shared/ui/class-names';
-import { SelectField, SelectOption } from '../../../shared/ui/field';
+} from '../../core/domain';
+import { Appointment } from '../../core/models';
+import { cn } from '../ui/class-names';
+import { SelectField, SelectOption } from '../ui/field';
 
 export interface SlotSelection {
   dentistId: string;

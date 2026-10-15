@@ -15,7 +15,9 @@ const WIDTHS = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl' } as c
 
 /** Smoothly scrolls the open modal's body to the top. */
 export function scrollModalToTop(): void {
-  document.querySelector('dialog[open] [data-modal-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' });
+  const body = document.querySelector('dialog[open] [data-modal-scroll]');
+  // jsdom (unit tests) does not implement Element.scrollTo.
+  if (body && typeof body.scrollTo === 'function') body.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /**

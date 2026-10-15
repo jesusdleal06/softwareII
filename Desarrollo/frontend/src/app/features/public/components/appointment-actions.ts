@@ -14,9 +14,9 @@ import { AppointmentSummary } from '../../../shared/ui/appointment-summary';
 import { BigButton } from '../../../shared/ui/big-button';
 import { Modal } from '../../../shared/ui/modal';
 import { WhatsappBubble } from '../../../shared/ui/whatsapp-bubble';
-import { AlertMessage } from './alert-message';
+import { AlertMessage } from '../../../shared/ui/alert-message';
 import { ResultPanel } from './result-panel';
-import { SlotPicker, SlotSelection } from './slot-picker';
+import { SlotPicker, SlotSelection } from '../../../shared/booking/slot-picker';
 
 type View = 'summary' | 'reschedule' | 'confirmed' | 'cancelled' | 'rescheduled';
 

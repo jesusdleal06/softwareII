@@ -9,9 +9,9 @@ import { AppointmentSummary } from '../../../shared/ui/appointment-summary';
 import { BigButton } from '../../../shared/ui/big-button';
 import { Modal } from '../../../shared/ui/modal';
 import { Stepper } from '../../../shared/ui/stepper';
-import { AlertMessage } from './alert-message';
-import { PatientForm } from './patient-form';
-import { SlotPicker, SlotSelection } from './slot-picker';
+import { AlertMessage } from '../../../shared/ui/alert-message';
+import { PatientForm } from '../../../shared/booking/patient-form';
+import { SlotPicker, SlotSelection } from '../../../shared/booking/slot-picker';
 
 const STEPS = ['Elige tu horario', 'Tus datos', 'Confirma tu cita'] as const;
 const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otro.';
