@@ -1,5 +1,5 @@
 import { ViewportScroller } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideArrowRight, LucideCalendarX2, LucideCircleCheck, LucideMessageCircle } from '@lucide/angular';
 import { formatPhone, normalizePhone, PatientData, PatientErrors, reminderInfo, validatePatient } from '../../../core/domain';
@@ -51,13 +51,13 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
               <svg lucideCircleCheck class="size-12"></svg>
             </span>
             <div class="flex flex-col gap-2">
-              <h1 class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">¡Tu cita quedó agendada!</h1>
+              <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">¡Tu cita quedó agendada!</h1>
               <p class="text-lg text-muted-foreground text-pretty">
                 Guarda este código: <span class="font-mono font-bold text-foreground">{{ appointment.code }}</span>
               </p>
             </div>
             <dl appAppointmentSummary [appointment]="appointment" class="w-full text-left"></dl>
-            <div class="flex w-full items-start gap-3 rounded-2xl bg-[oklch(0.95_0.02_150)] p-5 text-left">
+            <div class="flex w-full items-start gap-3 rounded-2xl bg-success/10 p-5 text-left dark:bg-success/25">
               <svg lucideMessageCircle class="mt-0.5 size-6 shrink-0 text-whatsapp" aria-hidden="true"></svg>
               <p class="text-base leading-relaxed text-pretty">
                 Te enviaremos un recordatorio por WhatsApp al <strong>{{ formatPhone(appointment.patientPhone) }}</strong>
@@ -84,7 +84,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
               >
                 <svg lucideCalendarX2 class="size-12"></svg>
               </span>
-              <h1 class="text-3xl font-bold tracking-tight text-balance">Ya tienes una cita programada</h1>
+              <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance">Ya tienes una cita programada</h1>
               <p class="max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty">
                 Con el celular <strong class="text-foreground">{{ formatPhone(patient().phone) }}</strong> encontramos una
                 cita activa. Para cuidar el tiempo de todos, cada paciente puede tener una sola cita pendiente a la vez.
@@ -105,7 +105,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                 Cancelar esa cita y agendar la nueva
               </button>
               <button type="button" appBigButton variant="ghost" size="md" [full]="true" (click)="view.set(2)">
-                <svg lucideArrowLeft></svg> Volver
+                <svg lucideArrowLeft aria-hidden="true"></svg> Volver
               </button>
             </div>
             <app-modal
@@ -134,7 +134,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
 
           <header class="flex flex-col gap-1">
             <p class="text-sm font-semibold uppercase tracking-wide text-primary">Paso {{ current }} de 3</p>
-            <h1 class="text-3xl font-bold tracking-tight text-balance">{{ steps[current - 1] }}</h1>
+            <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance">{{ steps[current - 1] }}</h1>
             @switch (current) {
               @case (1) {
                 <p class="text-lg text-muted-foreground">Cada odontólogo tiene su propia agenda.</p>
@@ -160,24 +160,29 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                 [now]="now"
                 (valueChange)="onSelectionChange($event)"
               />
+              <p id="booking-continue-hint" class="text-sm text-muted-foreground">
+                Para continuar, elige odontólogo, procedimiento, día y hora.
+              </p>
               <button
                 type="button"
                 appBigButton
                 size="xl"
                 [full]="true"
-                [disabled]="!selectionComplete()"
+                class="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                [attr.aria-disabled]="!selectionComplete() || null"
+                aria-describedby="booking-continue-hint"
                 (click)="goToStep2()"
               >
-                Continuar <svg lucideArrowRight></svg>
+                Continuar <svg lucideArrowRight aria-hidden="true"></svg>
               </button>
             }
             @case (2) {
               <form class="flex flex-col gap-8" novalidate (submit)="$event.preventDefault(); goToStep3()">
                 <app-patient-form [data]="patient()" [errors]="errors()" (dataChange)="patient.set($event)" />
                 <div class="flex flex-col gap-3 sm:flex-row-reverse">
-                  <button type="submit" appBigButton size="xl" class="flex-1">Continuar <svg lucideArrowRight></svg></button>
+                  <button type="submit" appBigButton size="xl" class="flex-1">Continuar <svg lucideArrowRight aria-hidden="true"></svg></button>
                   <button type="button" appBigButton variant="outline" size="xl" class="sm:w-auto" (click)="view.set(1)">
-                    <svg lucideArrowLeft></svg> Atrás
+                    <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
                   </button>
                 </div>
               </form>
@@ -185,7 +190,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
             @case (3) {
               <div class="flex flex-col gap-8">
                 <dl appAppointmentSummary [appointment]="draft()"></dl>
-                <p class="flex items-start gap-3 rounded-2xl bg-[oklch(0.95_0.02_150)] p-4 text-base leading-relaxed text-pretty">
+                <p class="flex items-start gap-3 rounded-2xl bg-success/10 p-4 text-base leading-relaxed text-pretty dark:bg-success/25">
                   <svg lucideMessageCircle class="mt-0.5 size-6 shrink-0 text-whatsapp" aria-hidden="true"></svg>
                   <span>
                     Recibirás un recordatorio por WhatsApp <strong>{{ reminderText(selection()) }}</strong>.
@@ -194,7 +199,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                 <div class="flex flex-col gap-3 sm:flex-row-reverse">
                   <button type="button" appBigButton size="xl" class="flex-1" (click)="confirm()">Confirmar cita</button>
                   <button type="button" appBigButton variant="outline" size="xl" class="sm:w-auto" (click)="view.set(2)">
-                    <svg lucideArrowLeft></svg> Atrás
+                    <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
                   </button>
                 </div>
                 <p class="text-center text-sm text-muted-foreground">
@@ -212,6 +217,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
 export class BookingFlow {
   protected readonly store = inject(AppStore);
   private readonly scroller = inject(ViewportScroller);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   protected readonly steps = STEPS;
   protected readonly formatPhone = formatPhone;
@@ -308,5 +314,12 @@ export class BookingFlow {
 
   private scrollToTop(): void {
     this.scroller.scrollToPosition([0, 0]);
+    // Defer so the new view renders before moving screen-reader and keyboard focus.
+    queueMicrotask(() => {
+      const heading = this.host.nativeElement.querySelector('h1');
+      if (!heading) return;
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    });
   }
 }

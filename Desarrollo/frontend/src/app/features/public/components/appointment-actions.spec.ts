@@ -107,6 +107,44 @@ describe('AppointmentActions', () => {
     expect(text(el)).toContain('Reprogramar cita VD-1049');
   });
 
+  it('announces view changes in a status region and moves focus to the heading', async () => {
+    render('VD-1049');
+    press('Confirmar asistencia');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(el.querySelector('[role="status"]')?.textContent).toContain('confirmada');
+    expect(document.activeElement?.tagName).toBe('H1');
+  });
+
+  it('hides decorative icons from assistive technology', () => {
+    render('VD-1049');
+    const svgs = Array.from(el.querySelectorAll('svg'));
+    expect(svgs.length).toBeGreaterThan(0);
+    for (const svg of svgs) {
+      expect(svg.getAttribute('aria-hidden') === 'true' || svg.closest('[aria-hidden="true"]') !== null).toBe(true);
+    }
+  });
+
+  it('announces reschedule conflicts in a live region', () => {
+    render('VD-1049', 'reprogramar');
+    getByText<HTMLButtonElement>(el, '[aria-label="Día"] button', '15').click();
+    fixture.detectChanges();
+    getByText<HTMLButtonElement>(el, '[aria-label="Horarios de la mañana"] button', '10:00 AM').click();
+    fixture.detectChanges();
+
+    const taken = store.createAppointment({
+      dentistId: 'd1',
+      procedureId: 'p1',
+      date: '2026-10-15',
+      time: '10:00',
+      patientName: 'Otro Paciente',
+      patientPhone: '3001110000',
+      origin: 'Manual',
+    });
+    expect(taken.ok).toBe(true);
+
+    press('Confirmar nuevo horario');
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Este horario acaba de ser ocupado');
+  });
   it('does not offer changes for an appointment that is no longer active', () => {
     render('VD-1045'); // Luz Marina Pérez, Cancelada
     expect(text(el)).toContain('Esta cita ya no admite cambios (estado: Cancelada).');

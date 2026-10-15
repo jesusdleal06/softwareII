@@ -51,11 +51,42 @@ describe('BookingFlow', () => {
     fixture.detectChanges();
   }
 
-  it('starts on step 1 with the continue button disabled', () => {
+  it('starts on step 1 with the continue button focusable and explained', () => {
     expect(text(el)).toContain('Paso 1 de 3');
     expect(text(el)).toContain('Cada odontólogo tiene su propia agenda.');
-    expect(getByText<HTMLButtonElement>(el, 'button', 'Continuar').disabled).toBe(true);
+    const button = getByText<HTMLButtonElement>(el, 'button', 'Continuar');
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    const describedBy = button.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    expect(el.querySelector(`#${describedBy}`)?.textContent).toContain('odontólogo');
     expect(el.querySelector('li[aria-current="step"]')?.textContent).toContain('Elige tu horario');
+  });
+
+  it('announces the requirement in a live region when continuing with an incomplete selection', () => {
+    getByText<HTMLButtonElement>(el, 'button', 'Continuar').click();
+    fixture.detectChanges();
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'Selecciona el odontólogo, el procedimiento, el día y la hora para continuar.',
+    );
+  });
+
+  it('moves focus to the step heading on step change', async () => {
+    pickSlot();
+    clickButton(el, 'Continuar');
+    fixture.detectChanges();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.activeElement?.tagName).toBe('H1');
+    expect(document.activeElement?.textContent).toContain('Tus datos');
+  });
+
+  it('hides decorative icons from assistive technology and avoids hard-coded colors', () => {
+    const svgs = Array.from(el.querySelectorAll('svg'));
+    expect(svgs.length).toBeGreaterThan(0);
+    for (const svg of svgs) {
+      expect(svg.getAttribute('aria-hidden') === 'true' || svg.closest('[aria-hidden="true"]') !== null).toBe(true);
+    }
+    expect(el.innerHTML).not.toContain('oklch');
   });
 
   it('books an appointment through the three steps', () => {

@@ -1,5 +1,5 @@
 import { ViewportScroller } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, linkedSignal, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   LucideArrowLeft,
@@ -43,6 +43,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
+    <p role="status" class="sr-only">{{ viewAnnouncement() }}</p>
     @if (appointment(); as cita) {
       @switch (view()) {
         @case ('confirmed') {
@@ -57,14 +58,14 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
               '. Si algo cambia, puedes reprogramar o cancelar desde este mismo enlace.'
             "
           >
-            <svg icon lucideCircleCheck class="size-12"></svg>
+            <svg icon lucideCircleCheck class="size-12" aria-hidden="true"></svg>
             <dl appAppointmentSummary [appointment]="cita" [showPatient]="false"></dl>
             <a appBigButton variant="outline" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
           </app-result-panel>
         }
         @case ('cancelled') {
           <app-result-panel tone="muted" heading="Tu cita fue cancelada" text="Gracias por avisarnos con tiempo.">
-            <svg icon lucideCircleX class="size-12"></svg>
+            <svg icon lucideCircleX class="size-12" aria-hidden="true"></svg>
             @if (releasedSlot(); as slot) {
               <p class="rounded-2xl border bg-muted/50 px-5 py-4 text-base leading-relaxed text-pretty">
                 El horario del <strong>{{ formatDate(slot.date) }}</strong> a las
@@ -81,7 +82,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
             heading="¡Tu cita fue reprogramada!"
             [text]="'Te enviaremos un nuevo recordatorio por WhatsApp ' + reminderText(cita) + '.'"
           >
-            <svg icon lucideCalendarClock class="size-12"></svg>
+            <svg icon lucideCalendarClock class="size-12" aria-hidden="true"></svg>
             <dl appAppointmentSummary [appointment]="cita" [showPatient]="false"></dl>
             <a appBigButton variant="outline" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
           </app-result-panel>
@@ -120,7 +121,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                 Confirmar nuevo horario
               </button>
               <button type="button" appBigButton variant="outline" size="xl" class="sm:w-auto" (click)="view.set('summary')">
-                <svg lucideArrowLeft></svg> Volver
+                <svg lucideArrowLeft aria-hidden="true"></svg> Volver
               </button>
             </div>
           </div>
@@ -149,11 +150,11 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                   [disabled]="cita.status === 'Confirmada'"
                   (click)="confirmAttendance()"
                 >
-                  <svg lucideCircleCheck></svg>
+                  <svg lucideCircleCheck aria-hidden="true"></svg>
                   {{ cita.status === 'Confirmada' ? 'Asistencia confirmada' : 'Confirmar asistencia' }}
                 </button>
                 <button type="button" appBigButton variant="outline" size="xl" [full]="true" (click)="view.set('reschedule')">
-                  <svg lucideCalendarClock></svg> Reprogramar
+                  <svg lucideCalendarClock aria-hidden="true"></svg> Reprogramar
                 </button>
                 <button
                   type="button"
@@ -164,7 +165,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                   class="text-destructive!"
                   (click)="confirmCancel.set(true)"
                 >
-                  <svg lucideCircleX></svg> Cancelar cita
+                  <svg lucideCircleX aria-hidden="true"></svg> Cancelar cita
                 </button>
               </div>
             } @else {
@@ -209,7 +210,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
     } @else {
       <div class="flex flex-col items-center gap-6 text-center">
         <span class="flex size-20 items-center justify-center rounded-full bg-muted text-muted-foreground" aria-hidden="true">
-          <svg lucideSearchX class="size-12"></svg>
+          <svg lucideSearchX class="size-12" aria-hidden="true"></svg>
         </span>
         <h1 class="text-3xl font-bold tracking-tight">No encontramos esta cita</h1>
         <p class="max-w-md text-lg text-muted-foreground text-pretty">
@@ -224,6 +225,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
 export class AppointmentActions implements OnInit {
   protected readonly store = inject(AppStore);
   private readonly scroller = inject(ViewportScroller);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   /** Public appointment code from the URL. */
   readonly code = input.required<string>();
@@ -243,6 +245,21 @@ export class AppointmentActions implements OnInit {
   protected readonly firstName = computed(() => this.appointment()?.patientName.split(' ')[0] ?? '');
 
   protected readonly view = signal<View>('summary');
+  /** Screen-reader announcement for the current view (voiced via the role=status region). */
+  protected readonly viewAnnouncement = computed(() => {
+    switch (this.view()) {
+      case 'reschedule':
+        return 'Elige tu nuevo horario.';
+      case 'confirmed':
+        return 'Asistencia confirmada. Te esperamos.';
+      case 'cancelled':
+        return 'Tu cita fue cancelada.';
+      case 'rescheduled':
+        return 'Tu cita fue reprogramada.';
+      default:
+        return 'Detalles de tu cita.';
+    }
+  });
   protected readonly confirmCancel = signal(false);
   protected readonly notice = signal<string | null>(null);
   protected readonly releasedSlot = signal<{ date: string; time: string } | null>(null);
@@ -304,5 +321,12 @@ export class AppointmentActions implements OnInit {
 
   private scrollToTop(): void {
     this.scroller.scrollToPosition([0, 0]);
+    // Defer so the new view renders before moving screen-reader and keyboard focus.
+    queueMicrotask(() => {
+      const heading = this.host.nativeElement.querySelector('h1');
+      if (!heading) return;
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    });
   }
 }
