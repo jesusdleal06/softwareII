@@ -1,59 +1,99 @@
-# VilladentFrontend
+# Villadent AgendaPro - Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.2.
+Aplicación web en **Angular** para el agendamiento de citas del Centro Odontológico Villadent.
 
-## Development server
+> **Fase actual:** prototipo funcional. Los datos son simulados en memoria (`src/app/core/data/mock-data.ts`) y no hay backend todavía. Al recargar la página se pierden las citas creadas; solo la sesión del personal se conserva por pestaña (`sessionStorage`).
 
-To start a local development server, run:
+**Stack:** Angular 22.2 (componentes standalone, signals) · Tailwind CSS v4 · `@lucide/angular` · Vitest 5 + jsdom
 
-```bash
-ng serve
+---
+
+## Requisitos
+
+- Node.js 26 (versión usada en el desarrollo: v26.11.1)
+- npm 12 (declarado en `packageManager`: `npm@12.2.0`)
+
+## Comandos
+
+Ejecutar desde `Desarrollo/frontend/`:
+
+| Comando            | Descripción                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `npm install`      | Instala las dependencias                                    |
+| `npm start`        | Servidor de desarrollo en `http://localhost:4200/`          |
+| `npm run build`    | Compilación de producción en `dist/villadent-frontend/`     |
+| `npm run test:ci`  | Ejecuta todas las pruebas unitarias una sola vez (sin watch) |
+
+---
+
+## Datos de demostración
+
+**Usuarios del personal** (ingreso en `/ingreso`):
+
+| Correo               | Contraseña      | Nombre                | Rol                     |
+| -------------------- | --------------- | --------------------- | ----------------------- |
+| `ana@villadent.co`   | `villadent2024` | Ana María Rueda       | Auxiliar administrativa |
+| `laura@villadent.co` | `villadent2024` | Dra. Laura Villamizar | Odontóloga              |
+
+**Cita de ejemplo:** `/cita/VD-1049` (constante `DEMO_CODE`), la página a la que llega el paciente desde el recordatorio de WhatsApp.
+
+**Teléfono del paciente:** celular colombiano de 10 dígitos que empieza por `3` (por ejemplo `3001234567`). El paciente debe escribir nombre y apellido.
+
+Las citas de ejemplo se generan relativas a la semana actual (a partir del lunes), por lo que siempre hay datos visibles en la agenda.
+
+---
+
+## Rutas
+
+| Ruta               | Pantalla                                   | Acceso                                  |
+| ------------------ | ------------------------------------------ | --------------------------------------- |
+| `/`                | Inicio                                     | Público                                 |
+| `/agendar`         | Agendamiento en 3 pasos                    | Público                                 |
+| `/cita/:codigo`    | Consultar, confirmar, reprogramar o cancelar una cita | Público                      |
+| `/ingreso`         | Ingreso del personal                       | Público                                 |
+| `/acceso-denegado` | Acceso denegado                            | Público                                 |
+| `/panel`           | Redirige a la pantalla inicial del rol     | Personal autenticado                    |
+| `/panel/agenda`    | Agenda diaria de todos los odontólogos     | Auxiliar administrativa                 |
+| `/panel/mi-agenda` | Agenda propia                              | Odontóloga                              |
+| `/panel/reportes`  | Reportes de citas                          | Auxiliar administrativa                 |
+
+- Sin sesión, cualquier ruta de `/panel` redirige a `/ingreso`.
+- Con un rol no permitido, redirige a `/acceso-denegado?ruta=<ruta>`.
+- Los guards están en `src/app/core/guards/staff-access.ts`; los roles por pantalla, en `src/app/features/staff/staff-sections.ts`.
+
+---
+
+## Estructura
+
+```
+src/app/
+├── core/
+│   ├── models/     # Tipos del dominio (cita, odontólogo, procedimiento, usuario, clínica)
+│   ├── data/       # Datos simulados (mock) y estilos por estado de cita
+│   ├── domain/     # Reglas de negocio como funciones puras (disponibilidad, teléfono, recordatorios, reportes)
+│   ├── services/   # AppStore (estado con signals) y tokens inyectables (CLOCK, SESSION_STORAGE)
+│   └── guards/     # Guards de autenticación y rol
+├── shared/
+│   ├── ui/         # Componentes de presentación reutilizables (botones, badges, stepper, modal, campos)
+│   ├── booking/    # Selector de horario y formulario del paciente (usados por paciente y personal)
+│   └── browser/    # Utilidades del navegador (media queries)
+└── features/
+    ├── public/     # Inicio, agendamiento y página de la cita
+    └── staff/      # Ingreso, panel del personal, agenda, mi agenda y reportes
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+**Convención contenedor / presentación:** las páginas (`pages/`) inyectan servicios y manejan el estado; los componentes de presentación solo reciben datos con `input()` y emiten eventos con `output()`.
 
-## Code scaffolding
+---
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Pruebas
 
-```bash
-ng generate component component-name
-```
+- Cada archivo de prueba (`*.spec.ts`) está junto al código que prueba.
+- Las reglas de `core/domain` se prueban como funciones puras; los componentes, con `TestBed` sobre jsdom.
+- La fecha actual se inyecta con el token `CLOCK` (`core/services/tokens.ts`), que las pruebas reemplazan por una fecha fija para obtener resultados deterministas.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
+## Siguiente paso
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Reemplazar el `AppStore` simulado por llamadas HTTP (`HttpClient`) a la API **Spring Boot** (`Desarrollo/backend`). Las reglas de negocio definitivas (disponibilidad, una cita activa por teléfono, concurrencia) vivirán en el backend; el frontend solo las presentará.
