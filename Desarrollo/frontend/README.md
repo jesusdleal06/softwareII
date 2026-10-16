@@ -11,7 +11,7 @@ Aplicaci처n web en **Angular** para el agendamiento de citas del Centro Odontol�
 ## Requisitos
 
 - Node.js 26 (versi처n usada en el desarrollo: v26.11.1)
-- npm 12 (declarado en `packageManager`: `npm@12.2.0`)
+- pnpm 11 (declarado en `packageManager`: `pnpm@11.28.5`)
 
 ## Comandos
 
@@ -19,10 +19,10 @@ Ejecutar desde `Desarrollo/frontend/`:
 
 | Comando            | Descripci처n                                                 |
 | ------------------ | ----------------------------------------------------------- |
-| `npm install`      | Instala las dependencias                                    |
-| `npm start`        | Servidor de desarrollo en `http://localhost:4200/`          |
-| `npm run build`    | Compilaci처n de producci처n en `dist/villadent-frontend/`     |
-| `npm run test:ci`  | Ejecuta todas las pruebas unitarias una sola vez (sin watch) |
+| `pnpm install`     | Instala las dependencias                                    |
+| `pnpm start`       | Servidor de desarrollo en `http://localhost:4200/`          |
+| `pnpm run build`   | Compilaci처n de producci처n en `dist/villadent-frontend/`     |
+| `pnpm run test:ci` | Ejecuta todas las pruebas unitarias una sola vez (sin watch) |
 
 ---
 
