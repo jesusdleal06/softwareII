@@ -1,0 +1,11 @@
+# Dev-only compose for the Villadent Angular frontend.
+# The anonymous /app/node_modules volume shadows host modules installed with npm.
+services:
+  frontend:
+    build: .
+    ports:
+      - "4200:4200"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.angular
