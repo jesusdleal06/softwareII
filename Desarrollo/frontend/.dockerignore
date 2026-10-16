@@ -1,0 +1,8 @@
+# Keep the Docker build context small and fast.
+node_modules
+dist
+.angular
+.git
+coverage
+*.log
+.pnpm-store
