@@ -38,12 +38,33 @@ describe('LoginForm', () => {
     return alert ? text(alert) : '';
   }
 
+  function demoUsers(): { set(value: boolean): void } {
+    return (fixture.componentInstance as unknown as { showDemoUsers: { set(value: boolean): void } })
+      .showDemoUsers;
+  }
+
   it('renders the prototype form and the test users', () => {
     expect(text(el)).toContain('Ingreso del personal');
     expect(text(el)).toContain('Acceso exclusivo para el equipo de Villadent.');
     expect(el.querySelector('#login-email')?.getAttribute('placeholder')).toBe('nombre@villadent.co');
     expect(text(el)).toContain('ana@villadent.co');
     expect(text(el)).toContain('Odontóloga · contraseña: villadent2024');
+  });
+
+  it('hides the demo credentials outside dev mode', () => {
+    demoUsers().set(false);
+    fixture.detectChanges();
+    expect(el.querySelector('details')).toBeNull();
+    expect(text(el)).not.toContain('Usuarios de prueba');
+    expect(text(el)).not.toContain('villadent2024');
+  });
+
+  it('still logs in when the demo credentials are hidden', () => {
+    demoUsers().set(false);
+    fixture.detectChanges();
+    submit('ana@villadent.co', 'villadent2024');
+    expect(TestBed.inject(AppStore).session()?.name).toBe('Ana María Rueda');
+    expect(navigate).toHaveBeenCalledWith('/panel/agenda');
   });
 
   it('asks for both fields when empty', () => {

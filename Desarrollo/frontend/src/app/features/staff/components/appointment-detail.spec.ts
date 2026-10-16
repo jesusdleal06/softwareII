@@ -72,6 +72,15 @@ describe('AppointmentDetail', () => {
     expect(getByText<HTMLButtonElement>(el, 'button', 'Asistencia ya confirmada').disabled).toBe(true);
   });
 
+  it('shows the success message with high-contrast text', () => {
+    render();
+    click('Confirmar');
+    const status = el.querySelector('p[role="status"]') as HTMLElement;
+    expect(status.classList).toContain('text-emerald-800');
+    expect(status.classList).toContain('dark:text-emerald-200');
+    expect(status.classList).not.toContain('text-success');
+  });
+
   it('marks the appointment as attended', () => {
     render();
     click('Marcar como atendida');

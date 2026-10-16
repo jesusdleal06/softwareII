@@ -26,7 +26,7 @@ import { ReminderBadge } from '../../../shared/ui/status-badge';
     @if (message(); as text) {
       <p
         role="status"
-        class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-success"
+        class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-emerald-800 dark:text-emerald-200"
       >
         <svg lucideCircleCheck class="mt-0.5 size-5 shrink-0" aria-hidden="true"></svg>
         {{ text }}

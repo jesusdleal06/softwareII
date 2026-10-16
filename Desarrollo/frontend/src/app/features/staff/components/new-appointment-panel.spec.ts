@@ -64,6 +64,11 @@ describe('NewAppointmentPanel', () => {
     return Array.from(el.querySelectorAll('form > [role="alert"]')).map((a) => text(a));
   }
 
+  function demoTools(): { set(value: boolean): void } {
+    return (fixture.componentInstance as unknown as { showDemoTools: { set(value: boolean): void } })
+      .showDemoTools;
+  }
+
   it('shows the staff labels and the initial day', () => {
     expect(text(el)).toContain('Nueva cita manual');
     expect(text(el)).toContain('Para solicitudes recibidas por llamada o WhatsApp. Aplica las mismas reglas que la web.');
@@ -120,6 +125,26 @@ describe('NewAppointmentPanel', () => {
     save();
     expect(alerts()).toEqual([CONFLICT]);
     expect(store.appointments()).toHaveLength(before);
+  });
+
+  it('hides the demo conflict checkbox outside dev mode', () => {
+    demoTools().set(false);
+    fixture.detectChanges();
+    expect(el.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(text(el)).not.toContain('simular que otro usuario tomó el horario');
+  });
+
+  it('still creates the appointment when the demo tools are hidden', () => {
+    demoTools().set(false);
+    fixture.detectChanges();
+    const before = store.appointments().length;
+    pickSlot();
+    fillPatient('Ana Pérez', '300 999 8877');
+    save();
+    expect(store.appointments()).toHaveLength(before + 1);
+    const status = el.querySelector('[role="status"]') as HTMLElement;
+    expect(status.classList).toContain('text-emerald-800');
+    expect(status.classList).not.toContain('text-success');
   });
 
   it('blocks a second active appointment for the same phone', () => {

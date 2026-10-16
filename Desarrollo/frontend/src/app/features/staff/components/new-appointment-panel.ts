@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, isDevMode, OnInit, output, signal } from '@angular/core';
 import { LucideCircleCheck, LucideTriangleAlert } from '@lucide/angular';
 import {
   formatDate,
@@ -50,7 +50,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
         <div class="flex flex-col gap-6">
           <p
             role="status"
-            class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-success"
+            class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-emerald-800 dark:text-emerald-200"
           >
             <svg lucideCircleCheck class="mt-0.5 size-5 shrink-0" aria-hidden="true"></svg>
             Cita {{ cita.code }} registrada. El recordatorio por WhatsApp quedó programado.
@@ -99,19 +99,21 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
             />
           </section>
 
-          <label
-            class="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-dashed bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
-          >
-            <input
-              type="checkbox"
-              class="size-5 accent-primary"
-              [checked]="simulateConflict()"
-              (change)="onSimulateChange($event)"
-            />
-            <span>
-              <strong class="text-foreground">Solo demo:</strong> simular que otro usuario tomó el horario al guardar.
-            </span>
-          </label>
+          @if (showDemoTools()) {
+            <label
+              class="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-dashed bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+            >
+              <input
+                type="checkbox"
+                class="size-5 accent-primary"
+                [checked]="simulateConflict()"
+                (change)="onSimulateChange($event)"
+              />
+              <span>
+                <strong class="text-foreground">Solo demo:</strong> simular que otro usuario tomó el horario al guardar.
+              </span>
+            </label>
+          }
 
           <div class="flex flex-col gap-3">
             <button type="submit" appBigButton size="lg" [full]="true">Guardar cita</button>
@@ -146,6 +148,8 @@ export class NewAppointmentPanel implements OnInit {
   protected readonly activeAppointment = signal<Appointment | null>(null);
   protected readonly created = signal<Appointment | null>(null);
   protected readonly simulateConflict = signal(false);
+  /** Demo helper, rendered only in dev builds so it never ships in the production DOM. */
+  protected readonly showDemoTools = signal(isDevMode());
 
   ngOnInit(): void {
     this.reset();

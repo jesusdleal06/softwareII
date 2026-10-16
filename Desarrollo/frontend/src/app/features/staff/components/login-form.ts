@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, isDevMode, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideEye, LucideEyeOff, LucideLockKeyhole, LucideTriangleAlert } from '@lucide/angular';
 import { USERS } from '../../../core/data/mock-data';
@@ -73,19 +73,21 @@ import { TextField } from '../../../shared/ui/field';
       </button>
     </form>
 
-    <details class="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
-      <summary class="cursor-pointer font-semibold text-foreground">Usuarios de prueba del prototipo</summary>
-      <ul class="mt-3 flex flex-col gap-2">
-        @for (u of users; track u.email) {
-          <li class="flex flex-col">
-            <span class="font-mono text-foreground">{{ u.email }}</span>
-            <span>
-              {{ u.role }} · contraseña: <span class="font-mono">{{ u.password }}</span>
-            </span>
-          </li>
-        }
-      </ul>
-    </details>
+    @if (showDemoUsers()) {
+      <details class="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
+        <summary class="cursor-pointer font-semibold text-foreground">Usuarios de prueba del prototipo</summary>
+        <ul class="mt-3 flex flex-col gap-2">
+          @for (u of users; track u.email) {
+            <li class="flex flex-col">
+              <span class="font-mono text-foreground">{{ u.email }}</span>
+              <span>
+                {{ u.role }} · contraseña: <span class="font-mono">{{ u.password }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      </details>
+    }
   `,
 })
 export class LoginForm {
@@ -93,6 +95,8 @@ export class LoginForm {
   private readonly router = inject(Router);
 
   protected readonly users = USERS;
+  /** Demo credentials, rendered only in dev builds so they never ship in the production DOM. */
+  protected readonly showDemoUsers = signal(isDevMode());
   protected readonly email = signal('');
   protected readonly password = signal('');
   protected readonly showPassword = signal(false);
