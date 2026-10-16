@@ -39,7 +39,7 @@ export function scrollModalToTop(): void {
       (click)="onBackdropClick($event)"
     >
       @if (open()) {
-        <div [class]="wrapperClass()">
+        <div #backdrop [class]="wrapperClass()">
           <div [class]="panelClass()" role="document">
             <header class="flex items-start justify-between gap-4 border-b px-6 py-5">
               <div class="flex flex-col gap-1">
@@ -76,6 +76,7 @@ export class Modal {
   readonly closed = output<void>();
 
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly backdrop = viewChild<ElementRef<HTMLDivElement>>('backdrop');
 
   protected readonly dialogClass = computed(() =>
     cn(
@@ -134,6 +135,12 @@ export class Modal {
   }
 
   protected onBackdropClick(event: MouseEvent): void {
-    if (event.target === this.dialog().nativeElement) this.closed.emit();
+    // The wrapper covers the whole dialog, so clicks on the backdrop land on it
+    // and `target === dialog` never fires; compare against the wrapper instead.
+    // Clicks inside the panel bubble up with a deeper target and stay open.
+    const target = event.target as Node | null;
+    if (target === this.dialog().nativeElement || target === this.backdrop()?.nativeElement) {
+      this.closed.emit();
+    }
   }
 }

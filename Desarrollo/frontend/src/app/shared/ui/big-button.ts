@@ -1,5 +1,5 @@
 import { computed, Directive, input } from '@angular/core';
-import { cn } from './class-names';
+import { cn, mergeClasses } from './class-names';
 
 export type BigButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
 export type BigButtonSize = 'md' | 'lg' | 'xl';
@@ -24,7 +24,8 @@ const BASE =
 
 /**
  * Large touch-friendly button styles for `<button>` and `<a>` (prototype `BigButton`/`BigLink`).
- * Extra classes go in the element's own `class` attribute; set `type` explicitly on buttons.
+ * Extra classes go in the element's own `class` attribute and are merged after the
+ * internal ones (conflicting utilities lose, as in the prototype); set `type` explicitly on buttons.
  */
 @Directive({
   selector: 'button[appBigButton], a[appBigButton]',
@@ -34,8 +35,10 @@ export class BigButton {
   readonly variant = input<BigButtonVariant>('primary');
   readonly size = input<BigButtonSize>('md');
   readonly full = input(false);
+  /** Consumer classes from the element's own `class` attribute; merged, never overwritten. */
+  readonly extraClass = input('', { alias: 'class' });
 
   protected readonly classes = computed(() =>
-    cn(BASE, VARIANTS[this.variant()], SIZES[this.size()], this.full() && 'w-full'),
+    mergeClasses(cn(BASE, VARIANTS[this.variant()], SIZES[this.size()], this.full() && 'w-full'), this.extraClass()),
   );
 }
