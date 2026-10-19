@@ -1,25 +1,29 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Logo } from './logo';
+import { ThemeToggle } from './theme-toggle';
 
 @Component({
   selector: 'header[appPublicHeader]',
-  imports: [Logo, RouterLink, RouterLinkActive],
+  imports: [Logo, RouterLink, RouterLinkActive, ThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'border-b bg-background' },
   template: `
     <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
       <app-logo />
-      <!-- Hidden on /ingreso: the login page already states it in its h1 (one label per screen). -->
-      <a
-        routerLink="/ingreso"
-        routerLinkActive
-        #staffLink="routerLinkActive"
-        [class.hidden]="staffLink.isActive"
-        class="flex min-h-12 items-center rounded-xl px-3 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        Ingreso del personal
-      </a>
+      <div class="flex items-center gap-1">
+        <app-theme-toggle />
+        <!-- Hidden on /ingreso: the login page already states it in its h1 (one label per screen). -->
+        <a
+          routerLink="/ingreso"
+          routerLinkActive
+          #staffLink="routerLinkActive"
+          [class.hidden]="staffLink.isActive"
+          class="flex min-h-12 items-center rounded-xl px-3 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Ingreso del personal
+        </a>
+      </div>
     </div>
   `,
 })

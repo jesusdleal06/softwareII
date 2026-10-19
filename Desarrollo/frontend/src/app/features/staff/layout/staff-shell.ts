@@ -4,6 +4,7 @@ import { LucideChartColumn, LucideCalendarDays, LucideClipboardList, LucideLogOu
 import { AppStore } from '../../../core/services/app-store.service';
 import { cn } from '../../../shared/ui/class-names';
 import { Logo } from '../../../shared/ui/logo';
+import { ThemeToggle } from '../../../shared/ui/theme-toggle';
 import { STAFF_SECTIONS } from '../staff-sections';
 
 const DESKTOP_LINK =
@@ -21,6 +22,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
     RouterLink,
     RouterLinkActive,
     Logo,
+    ThemeToggle,
     LucideCalendarDays,
     LucideClipboardList,
     LucideChartColumn,
@@ -65,6 +67,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
             </nav>
           </div>
           <div class="flex items-center gap-3">
+            <app-theme-toggle />
             <div class="hidden flex-col items-end leading-tight sm:flex">
               <span class="text-base font-semibold">{{ user.name }}</span>
               <span class="text-sm text-muted-foreground">{{ user.role }}</span>

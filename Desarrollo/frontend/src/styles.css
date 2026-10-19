@@ -183,6 +183,26 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+  /*
+   * Browsers paint `<button>` and `<summary>` with the arrow cursor, so every
+   * control read as inert next to the links, which do get the hand. Declared here
+   * instead of per component because the defect was global. `a` is left out on
+   * purpose: an anchor without `href` is not clickable and must not pretend to be.
+   * Contract: `core/data/interaction-affordance.spec.ts`.
+   */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  label[for],
+  select:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled) {
+    cursor: pointer;
+  }
+  :disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
 }
 
 /* Honour the user's motion preference: no animation, no transition, no smooth scroll. */

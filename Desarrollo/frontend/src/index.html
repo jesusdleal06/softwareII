@@ -7,22 +7,18 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0f171c" media="(prefers-color-scheme: dark)">
+  <!-- One meta, not one per system preference: the applied theme decides the browser chrome, and the toggle keeps it in step. -->
+  <meta name="theme-color" content="#ffffff">
   <script>
-    // Applies the dark theme before first paint so there is no flash of the wrong theme.
+    // Applies the stored theme before first paint so there is no flash of the wrong theme.
     // The class is the single source of truth: `dark:` utilities resolve from it.
+    // Light is the default and the system preference is deliberately ignored, so a dark OS
+    // never flips the app for a visitor who has not chosen a theme (S2, S15).
     (function () {
       try {
-        var stored = window.localStorage.getItem('villadent-theme');
-        var preference = window.matchMedia('(prefers-color-scheme: dark)');
-        var apply = function (dark) {
-          document.documentElement.classList.toggle('dark', dark);
-        };
-        apply(stored === 'dark' || stored === 'light' ? stored === 'dark' : preference.matches);
-        preference.addEventListener('change', function (event) {
-          if (!window.localStorage.getItem('villadent-theme')) apply(event.matches);
-        });
+        if (window.localStorage.getItem('villadent-theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
       } catch (error) {
         // Storage blocked (private mode): the light default in styles.css stands.
       }
