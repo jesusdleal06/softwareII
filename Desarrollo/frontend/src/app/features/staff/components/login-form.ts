@@ -25,7 +25,7 @@ import { TextField } from '../../../shared/ui/field';
       <p class="text-base text-muted-foreground text-pretty">Acceso exclusivo para el equipo de Villadent.</p>
     </header>
 
-    <form class="flex flex-col gap-6" novalidate (submit)="submit($event)">
+    <form class="flex flex-col gap-6" novalidate [attr.aria-busy]="loading() ? 'true' : null" (submit)="submit($event)">
       @if (error(); as message) {
         <p
           role="alert"
@@ -41,6 +41,7 @@ import { TextField } from '../../../shared/ui/field';
         type="email"
         autocomplete="username"
         placeholder="nombre@villadent.co"
+        [required]="true"
         [value]="email()"
         (valueChange)="email.set($event)"
       />
@@ -51,6 +52,7 @@ import { TextField } from '../../../shared/ui/field';
           [type]="showPassword() ? 'text' : 'password'"
           autocomplete="current-password"
           inputClass="pr-14"
+          [required]="true"
           [value]="password()"
           (valueChange)="password.set($event)"
         />
@@ -59,7 +61,7 @@ import { TextField } from '../../../shared/ui/field';
           (click)="showPassword.set(!showPassword())"
           [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           [attr.aria-pressed]="showPassword()"
-          class="absolute right-1 top-9 flex size-12 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+          class="absolute right-1 top-9 flex size-12 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           @if (showPassword()) {
             <svg lucideEyeOff class="size-5"></svg>

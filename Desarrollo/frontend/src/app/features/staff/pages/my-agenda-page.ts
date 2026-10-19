@@ -13,7 +13,7 @@ import { DayAgenda } from '../components/day-agenda';
   selector: 'app-my-agenda-page',
   imports: [DateNav, DayAgenda, AppointmentDetail, StatusBadge, LucideEye],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-4' },
+  host: { class: 'flex flex-col gap-6' },
   template: `
     <div class="flex flex-col gap-1">
       <h1 class="text-2xl font-bold tracking-tight">Mi agenda</h1>
@@ -52,7 +52,7 @@ import { DayAgenda } from '../components/day-agenda';
                 <button
                   type="button"
                   (click)="selectedId.set(c.id)"
-                  class="flex w-full min-h-14 items-start justify-between gap-3 py-3 text-left hover:bg-muted/60 rounded-lg px-2 -mx-2 outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+                  class="flex w-full min-h-14 items-start justify-between gap-3 py-3 text-left hover:bg-muted/60 rounded-lg px-2 -mx-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span class="flex flex-col">
                     <span class="font-semibold">{{ formatTime(c.time) }} · {{ c.patientName }}</span>

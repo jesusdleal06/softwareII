@@ -102,4 +102,18 @@ describe('LoginForm', () => {
     expect((el.querySelector('#login-password') as HTMLInputElement).type).toBe('text');
     expect(el.querySelector('[aria-label="Ocultar contraseña"]')?.getAttribute('aria-pressed')).toBe('true');
   });
+
+  it('marks both fields required', () => {
+    for (const id of ['#login-email', '#login-password']) {
+      expect((el.querySelector(id) as HTMLInputElement).required).toBe(true);
+      expect(el.querySelector(id)?.getAttribute('aria-required')).toBe('true');
+    }
+  });
+
+  it('announces the pending submit with aria-busy', () => {
+    const form = el.querySelector('form') as HTMLFormElement;
+    expect(form.getAttribute('aria-busy')).toBeNull();
+    submit('ana@villadent.co', 'villadent2024');
+    expect(form.getAttribute('aria-busy')).toBe('true');
+  });
 });

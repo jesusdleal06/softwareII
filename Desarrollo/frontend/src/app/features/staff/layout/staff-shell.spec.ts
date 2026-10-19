@@ -56,7 +56,23 @@ describe('StaffShell', () => {
     expect(navLabels(el)).toEqual(['Mi agenda']);
     expect(text(el.querySelector('header') as HTMLElement)).toContain('Dra. Laura Villamizar');
     expect(text(el.querySelector('header span.rounded-full') as HTMLElement)).toBe('LV');
-    expect(el.querySelectorAll('nav[aria-label="Secciones del panel"]')).toHaveLength(2);
+    expect(el.querySelectorAll('nav')).toHaveLength(2);
+  });
+
+  it('labels the desktop and mobile navigation differently', async () => {
+    const el = await open(ASSISTANT_SESSION, '/panel/agenda');
+    const labels = Array.from(el.querySelectorAll('nav')).map((nav) => nav.getAttribute('aria-label'));
+    expect(labels).toHaveLength(2);
+    expect(labels.every((label) => !!label)).toBe(true);
+    expect(new Set(labels).size).toBe(2);
+  });
+
+  it('offers a skip link into the main content', async () => {
+    const el = await open(ASSISTANT_SESSION, '/panel/agenda');
+    const skip = el.querySelector('a[href="#contenido"]') as HTMLAnchorElement;
+    expect(skip).not.toBeNull();
+    expect(text(skip)).toBe('Saltar al contenido');
+    expect(el.querySelector('main#contenido')).not.toBeNull();
   });
 
   it('logs out and goes to /ingreso', async () => {

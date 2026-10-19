@@ -34,11 +34,14 @@ describe('staff pages', () => {
     expect(text(el)).toContain('Ingreso del personal');
     expect(el.querySelector('header')).not.toBeNull();
     expect(el.querySelector('footer')).not.toBeNull();
+    // The container lines up with the public header's max width.
+    expect((el.querySelector('main > div') as HTMLElement).classList).toContain('max-w-5xl');
   });
 
   it('explains the denied route and links to the role screen', async () => {
     const el = await open('/acceso-denegado?ruta=%2Fpanel%2Freportes', DENTIST_SESSION);
     expect(text(el)).toContain('Acceso denegado');
+    expect((el.querySelector('main > div') as HTMLElement).classList).toContain('max-w-5xl');
     expect(text(el)).toContain(
       'Tu rol no tiene permiso para ver esta sección (/panel/reportes). Si crees que es un error, comunícate con la administración.',
     );
@@ -56,6 +59,7 @@ describe('staff pages', () => {
     const el = await open('/panel/agenda', ASSISTANT_SESSION);
     expect(text(el)).toContain('Agenda del día');
     expect(text(el)).toContain('4 citas registradas.');
+    expect((el.querySelector('app-agenda-page') as HTMLElement).classList).toContain('gap-6');
     expect(el.querySelectorAll('[aria-label^="Agenda de "]')).toHaveLength(3);
     expect(text(el.querySelector('[aria-label="Leyenda de estados"]') as HTMLElement)).toBe(
       'Pendiente Confirmada Reprogramada Atendida No asistió Cancelada',

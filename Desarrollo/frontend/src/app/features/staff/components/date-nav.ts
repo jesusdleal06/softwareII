@@ -4,7 +4,7 @@ import { addDays, formatDate, formatLongDate, fromDateKey, toDateKey } from '../
 import { cn } from '../../../shared/ui/class-names';
 
 const ICON_BUTTON =
-  'flex size-12 items-center justify-center rounded-xl border bg-card hover:bg-muted outline-none focus-visible:ring-4 focus-visible:ring-ring/40';
+  'flex size-12 items-center justify-center rounded-xl border bg-card hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /** Previous / today / next day navigation with the long date (presentational). */
 @Component({
@@ -39,7 +39,7 @@ export class DateNav {
   protected readonly shortDate = computed(() => formatDate(this.date()));
   protected readonly todayClass = computed(() =>
     cn(
-      'min-h-12 rounded-xl border px-4 text-base font-semibold outline-none focus-visible:ring-4 focus-visible:ring-ring/40',
+      'min-h-12 rounded-xl border px-4 text-base font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring',
       this.date() === this.today() ? 'border-primary bg-accent text-accent-foreground' : 'bg-card hover:bg-muted',
     ),
   );

@@ -1,11 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DENTISTS } from '../../../core/data/mock-data';
-import { Appointment } from '../../../core/models';
+import { DENTISTS, PROCEDURES } from '../../../core/data/mock-data';
+import { STATUS_STYLES } from '../../../core/data/status-styles';
+import { Appointment, Dentist, Procedure } from '../../../core/models';
 import { makeAppointment } from '../../../core/testing/appointment.fixture';
 import { text } from '../../../shared/testing/dom';
 import { DayAgenda } from './day-agenda';
 
 const DAY = '2026-10-14';
+
+/** A 15-minute procedure, the shortest slot: its block is the smallest touch target. */
+const SHORT_PROCEDURE: Procedure = { id: 'test-short', name: 'Revisión', durationMinutes: 15 };
+
+function withShortProcedure<T>(run: () => T): T {
+  (PROCEDURES as unknown as Procedure[]).push(SHORT_PROCEDURE);
+  try {
+    return run();
+  } finally {
+    (PROCEDURES as unknown as Procedure[]).pop();
+  }
+}
 
 const APPOINTMENTS: Appointment[] = [
   // 08:30 Limpieza (30 min) → top (30 × 2.4) + 16 + 2 = 90px, height 72 − 4 = 68px.
@@ -34,10 +47,13 @@ describe('DayAgenda', () => {
   let el: HTMLElement;
   let selected: Appointment[];
 
-  function render(now = new Date(2026, 9, 14, 9, 10)): void {
+  function render(
+    now = new Date(2026, 9, 14, 9, 10),
+    input: { dentists?: readonly Dentist[]; appointments?: readonly Appointment[] } = {},
+  ): void {
     fixture = TestBed.createComponent(DayAgenda);
-    fixture.componentRef.setInput('dentists', DENTISTS);
-    fixture.componentRef.setInput('appointments', APPOINTMENTS);
+    fixture.componentRef.setInput('dentists', input.dentists ?? DENTISTS);
+    fixture.componentRef.setInput('appointments', input.appointments ?? APPOINTMENTS);
     fixture.componentRef.setInput('dateKey', DAY);
     fixture.componentRef.setInput('now', now);
     selected = [];
@@ -97,11 +113,33 @@ describe('DayAgenda', () => {
     const afternoon = block('Rosa Jaimes');
     expect(afternoon.style.top).toBe('882px');
     expect(afternoon.style.height).toBe('140px');
-    expect(text(afternoon)).toContain('Exodoncia · 2:00 PM–3:00 PM');
+    expect(text(afternoon)).toContain('Exodoncia · 2:00 PM-3:00 PM');
     // Blocks of 100px or more also show the phone.
     expect(text(afternoon)).toContain('313 555 6677');
     expect(text(morning)).not.toContain('300 000 0000');
     expect(afternoon.getAttribute('aria-label')).toBe('Rosa Jaimes, Exodoncia, 2:00 PM, Pendiente');
+  });
+
+  it('separates the time range with a hyphen, never an en or em dash', () => {
+    render();
+    expect(text(block('Rosa Jaimes'))).toContain('Exodoncia · 2:00 PM-3:00 PM');
+    expect(text(el)).not.toContain('–');
+    expect(text(el)).not.toContain('—');
+  });
+
+  it('prints the status through the shared canon label, not the raw enum', () => {
+    render();
+    // Labels match the enum values today; this pins the canon as the single source.
+    expect(text(block('Luz Pérez'))).toContain(STATUS_STYLES['Cancelada'].label);
+    expect(block('Rosa Jaimes').getAttribute('aria-label')).toBe(
+      `Rosa Jaimes, Exodoncia, 2:00 PM, ${STATUS_STYLES['Pendiente'].label}`,
+    );
+  });
+
+  it('shows an empty state when the day has no appointments', () => {
+    render(undefined, { appointments: [] });
+    expect(columns()).toHaveLength(0);
+    expect(text(el)).toContain('No hay citas para este día');
   });
 
   it('places each appointment in its dentist column', () => {
@@ -132,6 +170,41 @@ describe('DayAgenda', () => {
     expect(el.querySelector('[role="listitem"]')).toBeNull();
     expect(el.querySelector('button[role]')).toBeNull();
     expect(block('Rosa Jaimes').tagName).toBe('BUTTON');
+  });
+
+  it('exposes each dentist column as a labelled group', () => {
+    render();
+    for (const column of Array.from(columns())) {
+      expect(column.getAttribute('role')).toBe('group');
+      expect(column.getAttribute('aria-label')).toBeTruthy();
+    }
+  });
+
+  it('does not stretch a single dentist column across the whole card', () => {
+    render(undefined, { dentists: [DENTISTS[0]] });
+    expect((el.querySelector('.grid') as HTMLElement).style.gridTemplateColumns).toBe('5rem minmax(0, 30rem)');
+  });
+
+  it('keeps a 15-minute block proportional while its touch area reaches 44px', () => {
+    withShortProcedure(() => {
+      const short = makeAppointment({
+        id: 's1',
+        dentistId: 'd1',
+        procedureId: SHORT_PROCEDURE.id,
+        time: '09:00',
+        patientName: 'Nicolás Ríos',
+      });
+      render(undefined, { appointments: [short] });
+      const compact = block('Nicolás Ríos');
+      // The visual block keeps its proportional height: 15 min × 2.4 − 4 = 32px.
+      expect(compact.style.height).toBe('32px');
+      // The interactive area grows 6px per side (after:-top-1.5/-bottom-1.5): 32 + 12 = 44px.
+      expect(compact.className).toContain('after:-top-1.5');
+      expect(compact.className).toContain('after:-bottom-1.5');
+      // The button must not clip its own hit area: clipping lives on the inner wrapper.
+      expect(compact.className).not.toContain('overflow-hidden');
+      expect(6 + 6 + 32).toBeGreaterThanOrEqual(44);
+    });
   });
 
   it('switches the visible dentist with toggle buttons reachable by keyboard', () => {
