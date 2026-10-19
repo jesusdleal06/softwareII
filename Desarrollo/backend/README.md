@@ -47,6 +47,22 @@ La conexión se configura en `src/main/resources/application.properties`, y los 
 DB_URL=jdbc:postgresql://host:5432/base DB_USER=usuario DB_PASSWORD=clave ./gradlew bootRun
 ```
 
+#### Recarga en caliente (opcional)
+
+`./gradlew bootRun` **no recompila** cuando guardas un archivo: Spring ejecuta clases ya compiladas. Para que un cambio en un `.java` reinicie la aplicación automáticamente, deja Gradle recompilando en bucle en una segunda terminal:
+
+```bash
+./gradlew -t classes
+```
+
+Cada guardado recompila, y `spring-boot-devtools` (ya incluido como dependencia de desarrollo) reinicia el contexto en un par de segundos. Sin esa segunda terminal hay que reiniciar `bootRun` a mano cada vez. En IntelliJ IDEA se consigue lo mismo activando la compilación automática del proyecto.
+
+Los logs de la aplicación salen en la terminal donde corre `bootRun`. Si prefieres un archivo, redirige la salida a `build/` (que está ignorado por git) y síguela con `tail`:
+
+```bash
+./gradlew bootRun --console=plain > build/app.log 2>&1
+```
+
 ### 3. Pruebas
 
 ```bash
