@@ -62,7 +62,7 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
             (click)="applyShortcut(s.value)"
             [class]="
               cn(
-                'min-h-12 rounded-xl border px-4 text-base font-semibold outline-none focus-visible:ring-4 focus-visible:ring-ring/40',
+                'min-h-12 rounded-xl border px-4 text-base font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 shortcut() === s.value ? 'border-primary bg-accent text-accent-foreground' : 'bg-card hover:bg-muted'
               )
             "

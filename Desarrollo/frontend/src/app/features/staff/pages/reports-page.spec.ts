@@ -56,6 +56,7 @@ describe('ReportsPage', () => {
 
   it('starts with this week (Monday to Saturday)', () => {
     const [from, to] = reportRange('semana', NOW);
+    expect(el.classList).toContain('gap-6');
     expect(text(el)).toContain('Periodo del 12/10/2026 al 17/10/2026');
     expect(getByText(el, 'button', 'Esta semana').getAttribute('aria-pressed')).toBe('true');
     expectMetrics({ from, to });
@@ -68,8 +69,9 @@ describe('ReportsPage', () => {
     expect(text(el)).toContain('Periodo del 14/10/2026 al 14/10/2026');
     expectMetrics({ from: '2026-10-14', to: '2026-10-14' });
     expect(bars()).toHaveLength(1);
+    // Canonical workflow order (status canon), not the old ad-hoc chart order.
     expect(bars()[0].getAttribute('aria-label')).toBe(
-      '14/10/2026: 4 citas. Confirmada: 2, Pendiente: 1, Reprogramada: 1',
+      '14/10/2026: 4 citas. Pendiente: 1, Confirmada: 2, Reprogramada: 1',
     );
     expect(bars()[0].style.height).toBe('100%');
   });
