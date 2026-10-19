@@ -44,7 +44,7 @@ describe('AppointmentActions', () => {
     render('VD-0000');
     expect(text(el)).toContain('No encontramos esta cita');
     expect(text(el)).toContain('El código VD-0000 no corresponde a ninguna cita.');
-    expect(getByText(el, 'a', 'Agendar una cita nueva').getAttribute('href')).toBe('/agendar');
+    expect(getByText(el, 'a', 'Agendar mi cita').getAttribute('href')).toBe('/agendar');
   });
 
   it('greets the patient and shows the summary and reminder preview', () => {
@@ -104,7 +104,8 @@ describe('AppointmentActions', () => {
 
   it('opens directly in reschedule mode with ?accion=reprogramar', () => {
     render('VD-1049', 'reprogramar');
-    expect(text(el)).toContain('Reprogramar cita VD-1049');
+    expect(text(el)).toContain('Elige tu nuevo horario');
+    expect(text(el)).toContain('VD-1049');
   });
 
   it('announces view changes in a status region and moves focus to the heading', async () => {
@@ -149,5 +150,25 @@ describe('AppointmentActions', () => {
     render('VD-1045'); // Luz Marina Pérez, Cancelada
     expect(text(el)).toContain('Esta cita ya no admite cambios (estado: Cancelada).');
     expect(el.querySelector('button')).toBeNull();
+  });
+
+  it('moves focus to the heading when entering and leaving reschedule', async () => {
+    render('VD-1049');
+
+    press('Reprogramar');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.activeElement?.tagName).toBe('H1');
+    expect(document.activeElement?.textContent).toContain('Elige tu nuevo horario');
+
+    press('Volver');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.activeElement?.tagName).toBe('H1');
+    expect(document.activeElement?.textContent).toContain('Hola, Rosa');
+  });
+
+  it('offers the unified booking label instead of "Agendar una cita nueva"', () => {
+    render('VD-1045'); // Cancelada: no changes offered, but a rebooking CTA is.
+    expect(getByText(el, 'a', 'Agendar mi cita').getAttribute('href')).toBe('/agendar');
+    expect(text(el)).not.toContain('Agendar una cita nueva');
   });
 });
