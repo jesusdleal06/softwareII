@@ -1,6 +1,10 @@
 HELP.md
 .gradle
 build/
+
+### Local environment ###
+# Local overrides of DB_URL / DB_USER / DB_PASSWORD; never commit these.
+.env
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

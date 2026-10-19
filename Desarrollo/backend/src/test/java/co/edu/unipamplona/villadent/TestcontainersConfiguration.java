@@ -12,7 +12,10 @@ class TestcontainersConfiguration {
 	@Bean
 	@ServiceConnection
 	PostgreSQLContainer postgresContainer() {
-		return new PostgreSQLContainer(DockerImageName.parse("postgres:latest"));
+		// Pinned to the same major as Desarrollo/backend/docker-compose.yml, so
+		// tests and the dev database cannot drift apart; `latest` would change
+		// the PostgreSQL version under the suite whenever Docker pulls again.
+		return new PostgreSQLContainer(DockerImageName.parse("postgres:17-alpine"));
 	}
 
 }
