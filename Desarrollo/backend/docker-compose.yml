@@ -1,6 +1,8 @@
-# Dev-only PostgreSQL for the Villadent backend.
-# Host port 5434 because 5432 and 5433 are already taken by other local
-# projects; inside the container it still listens on the default 5432.
+# Dev-only compose for the Villadent backend: the database and the API.
+# `docker compose up -d` starts both, mirroring the frontend compose.
+# PostgreSQL is published on host port 5434 because 5432 and 5433 are already
+# taken by other local projects; inside the compose network it still listens on
+# the default 5432.
 services:
   postgres:
     # Same major as the tests (see TestcontainersConfiguration): a moving
@@ -23,5 +25,36 @@ services:
       timeout: 3s
       retries: 10
 
+  app:
+    build: .
+    depends_on:
+      postgres:
+        # Flyway migrates at startup and needs a database that already answers
+        # queries, not merely a created container.
+        condition: service_healthy
+    environment:
+      # Inside the compose network the database is reached by service name on
+      # its internal port, so the host defaults in application.properties
+      # (localhost:5434) do not apply here.
+      DB_URL: jdbc:postgresql://postgres:5432/villadent
+      DB_USER: villadent
+      DB_PASSWORD: villadent
+    ports:
+      # Same port as `./gradlew bootRun` on the host: use one or the other.
+      - "8080:8080"
+    volumes:
+      - .:/app
+      # Anonymous volumes, seeded from the image, so these toolchain directories
+      # are owned by uid 1000 and the container never reuses the host's compiled
+      # classes. A container created before that ownership existed keeps
+      # root-owned volumes; recreate them once with
+      # `docker compose up -d --renew-anon-volumes`.
+      - /app/build
+      - /app/.gradle
+      # Named volume: the Gradle distribution and the dependency cache survive
+      # `docker compose down`, so only the first build pays the download.
+      - gradle-cache:/home/ubuntu/.gradle
+
 volumes:
   postgres-data:
+  gradle-cache:

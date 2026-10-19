@@ -10,19 +10,32 @@ API y lógica de negocio del sistema de agendamiento y recordatorios del Centro 
 
 ## Requisitos
 
-- **JDK 21** (Gradle viene por el wrapper, no hay que instalarlo)
-- **Docker** con Docker Compose (para la base de datos de desarrollo y para las pruebas)
+- **Docker** con Docker Compose: la única herramienta obligatoria, porque el contenedor trae el JDK 21 y Gradle.
+- **JDK 21** solo si prefieres compilar en tu propia máquina (ver «Alternativa», más abajo).
 
 ## Entorno de desarrollo
 
-### 1. Base de datos
+El compose levanta **la base de datos y la API**, igual que el del frontend: un solo comando.
 
 ```bash
 cd Desarrollo/backend
 docker compose up -d
 ```
 
-Levanta PostgreSQL en **`localhost:5434`**:
+- API en <http://localhost:8080> — responde `401` porque Spring Security exige autenticación y todavía no hay controladores públicos; el solo hecho de responder ya prueba que la API está en pie.
+- PostgreSQL en `localhost:5434`.
+
+La **primera vez tarda unos minutos**: dentro del contenedor se descargan las dependencias de Spring. Quedan guardadas en el volumen `gradle-cache`, así que los siguientes arranques son de segundos (medido: 16 s desde `docker compose up -d` hasta la aplicación lista). Para seguirlo mientras tanto:
+
+```bash
+docker compose logs -f app
+```
+
+### Recarga en caliente
+
+El contenedor deja `./gradlew -t classes` recompilando en segundo plano, y `spring-boot-devtools` reinicia el contexto cuando cambian las clases. Guardas un `.java` y la aplicación se reinicia sola, sin reiniciar contenedores: medido en este entorno, `Restarting due to 1 class path change` y arranque en **0.374 s**, más unos segundos de recompilación.
+
+### Base de datos
 
 | Dato               | Valor                            |
 | ------------------ | -------------------------------- |
@@ -33,37 +46,30 @@ Levanta PostgreSQL en **`localhost:5434`**:
 
 El puerto no es el 5432 por una razón concreta: **el 5432 y el 5433 de esta máquina ya los ocupan otros proyectos locales**, así que este entorno usa uno libre para no chocar con ellos.
 
-Detener la base: `docker compose down`. Borrar además los datos guardados: `docker compose down -v`.
+Dentro de la red de compose la aplicación se conecta a `postgres:5432`, no al puerto del host; por eso el compose define `DB_URL`. Es el mismo mecanismo que usaría un despliegue real.
 
-### 2. Aplicación
+Apagar: `docker compose down` (conserva datos y caché de Gradle). Borrar además ambos: `docker compose down -v`.
+
+### Alternativa: la aplicación en tu máquina
+
+Si prefieres no esperar la descarga inicial dentro del contenedor, levanta solo la base y compila con tu propio JDK:
 
 ```bash
+docker compose up -d postgres
 ./gradlew bootRun
 ```
 
-La conexión se configura en `src/main/resources/application.properties`, y los valores por defecto ya coinciden con el `docker-compose.yml`, así que no hay que tocar nada para el flujo local. Para apuntar a otra base (por ejemplo Neon) se sobreescriben con variables de entorno:
+Los valores por defecto de `application.properties` ya apuntan a `localhost:5434`, así que no hay que configurar nada. Para apuntar a otra base (por ejemplo Neon) se sobreescriben con variables de entorno:
 
 ```bash
 DB_URL=jdbc:postgresql://host:5432/base DB_USER=usuario DB_PASSWORD=clave ./gradlew bootRun
 ```
 
-#### Recarga en caliente (opcional)
+En este modo la recarga en caliente necesita la segunda terminal (`./gradlew -t classes`) o la compilación automática de IntelliJ, porque `bootRun` por sí solo no recompila al guardar.
 
-`./gradlew bootRun` **no recompila** cuando guardas un archivo: Spring ejecuta clases ya compiladas. Para que un cambio en un `.java` reinicie la aplicación automáticamente, deja Gradle recompilando en bucle en una segunda terminal:
+**No uses las dos formas a la vez**: ambas publican el puerto 8080.
 
-```bash
-./gradlew -t classes
-```
-
-Cada guardado recompila, y `spring-boot-devtools` (ya incluido como dependencia de desarrollo) reinicia el contexto en un par de segundos. Sin esa segunda terminal hay que reiniciar `bootRun` a mano cada vez. En IntelliJ IDEA se consigue lo mismo activando la compilación automática del proyecto.
-
-Los logs de la aplicación salen en la terminal donde corre `bootRun`. Si prefieres un archivo, redirige la salida a `build/` (que está ignorado por git) y síguela con `tail`:
-
-```bash
-./gradlew bootRun --console=plain > build/app.log 2>&1
-```
-
-### 3. Pruebas
+### Pruebas
 
 ```bash
 ./gradlew test
