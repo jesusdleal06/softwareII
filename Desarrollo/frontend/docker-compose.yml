@@ -7,5 +7,10 @@ services:
       - "4200:4200"
     volumes:
       - .:/app
+      # Anonymous volumes, seeded from the image, so their ownership is the one
+      # the Dockerfile creates them with (uid 1000). A container built before
+      # that change keeps root-owned volumes and ng serve cannot persist its
+      # cache; recreate them once with
+      # `docker compose up -d --renew-anon-volumes`.
       - /app/node_modules
       - /app/.angular
