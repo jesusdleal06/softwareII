@@ -51,7 +51,7 @@ export class Logo {
 
   protected linkClass(): string {
     return cn(
-      'inline-flex items-center gap-2 rounded-lg focus-visible:ring-3 focus-visible:ring-ring/50 outline-none',
+      'inline-flex items-center gap-2 rounded-lg focus-visible:ring-2 focus-visible:ring-ring outline-none',
       this.extraClass(),
     );
   }

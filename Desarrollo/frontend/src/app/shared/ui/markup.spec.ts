@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { STATUS_STYLES } from '../../core/data/status-styles';
 import { makeAppointment } from '../../core/testing/appointment.fixture';
 import { text } from '../testing/dom';
 import { AppointmentSummary } from './appointment-summary';
@@ -49,6 +52,20 @@ describe('shared ui markup', () => {
     expect(staff?.getAttribute('href')).toBe('/ingreso');
   });
 
+  it('hides the staff link once the visitor is already on /ingreso', async () => {
+    // The login page states "Ingreso del personal" in its h1; the header must not repeat it there.
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'ingreso', component: Host }])] });
+    const fixture = TestBed.createComponent(Host);
+    await TestBed.inject(Router).navigateByUrl('/ingreso');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const header = (fixture.nativeElement as HTMLElement).querySelector('header') as HTMLElement;
+    const staff = Array.from(header.querySelectorAll('a')).find((a) => text(a) === 'Ingreso del personal');
+    expect(staff, 'staff link still rendered on /ingreso').toBeDefined();
+    expect(staff?.classList.contains('hidden')).toBe(true);
+  });
+
   it('renders the compact logo without the brand text', () => {
     const logo = render().querySelector('#compact-logo') as HTMLElement;
     expect(logo.querySelector('a')?.getAttribute('href')).toBe('/panel');
@@ -90,5 +107,45 @@ describe('shared ui markup', () => {
   it('renders the public footer contact data', () => {
     const footer = render().querySelector('footer') as HTMLElement;
     expect(text(footer)).toContain('Calle 45 # 27-18, Bucaramanga');
+  });
+
+  it('gives the staff link a full-opacity 2px focus ring', () => {
+    const header = render().querySelector('header') as HTMLElement;
+    const staff = Array.from(header.querySelectorAll('a')).find((a) => text(a) === 'Ingreso del personal') as HTMLElement;
+    expect(staff.className).toContain('focus-visible:ring-2');
+    expect(staff.className).toContain('focus-visible:ring-ring');
+    expect(staff.className).not.toContain('ring-4');
+  });
+
+  it('keeps the footer copy to one middle dot per line and hyphens as separators', () => {
+    const footer = render().querySelector('footer') as HTMLElement;
+    const lines = Array.from(footer.querySelectorAll('p')).map((p) => text(p));
+    for (const line of lines) {
+      expect((line.match(/·/g) ?? []).length).toBeLessThanOrEqual(1);
+      expect(line).not.toMatch(/[–—]/);
+    }
+    expect(text(footer)).toContain('Calle 45 # 27-18, Bucaramanga');
+    expect(text(footer)).toContain('WhatsApp +57 300 123 4567');
+  });
+
+  it('gives the summary status badge a definition term', () => {
+    const dl = render().querySelector('dl') as HTMLElement;
+    const badge = dl.querySelector('span[appStatusBadge]') as HTMLElement;
+    expect(badge).not.toBeNull();
+    const definition = badge.closest('dd');
+    expect(definition).not.toBeNull();
+    const term = definition?.parentElement?.querySelector('dt');
+    expect(term).not.toBeNull();
+    expect(text(term as HTMLElement)).toBe('Estado');
+    expect((term as HTMLElement).className).toContain('sr-only');
+  });
+
+  it('renders status copy from the shared status map, never the raw enum value', () => {
+    const el = render();
+    const badge = el.querySelector('#badge') as HTMLElement;
+    expect(text(badge)).toBe(STATUS_STYLES['Cancelada'].label);
+    const source = readFileSync(join(resolve(process.cwd()), 'src/app/shared/ui/status-badge.ts'), 'utf8');
+    expect(source).toMatch(/STATUS_STYLES\[this\.status\(\)\]\.label/);
+    expect(source).not.toMatch(/\{\{\s*status\(\)\s*\}\}/);
   });
 });

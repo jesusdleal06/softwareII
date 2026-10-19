@@ -36,4 +36,19 @@ describe('Stepper', () => {
   it('labels the list as progress', () => {
     expect(render().querySelector('ol')?.getAttribute('aria-label')).toBe('Progreso');
   });
+
+  it('collapses to the active label on small screens without losing the step name', () => {
+    // Three step names do not fit a 320px row, so only the active one stays visible.
+    const items = Array.from(render().querySelectorAll('li'));
+    const visibleLabels = items.map((li) =>
+      Array.from(li.querySelectorAll('span')).filter((span) => span.textContent?.trim() === ''),
+    );
+    const collapsed = items.map((li) =>
+      Array.from(li.querySelectorAll('span > span')).some((span) => span.classList.contains('hidden')),
+    );
+    expect(collapsed).toEqual([true, false, true]);
+    expect(visibleLabels).toHaveLength(3);
+    // The accessible name keeps its step number even while the label text is hidden.
+    expect(text(items[2])).toContain('Paso 3:');
+  });
 });

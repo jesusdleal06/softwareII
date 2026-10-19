@@ -27,9 +27,9 @@ export interface SlotSelection {
   time: string;
 }
 
-const CARD_FOCUS = 'transition-colors outline-none focus-visible:ring-4 focus-visible:ring-ring/40';
+const CARD_FOCUS = 'transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const NAV_BUTTON =
-  'flex size-12 items-center justify-center rounded-xl border bg-card hover:bg-muted outline-none focus-visible:ring-4 focus-visible:ring-ring/40';
+  'flex size-12 items-center justify-center rounded-xl border bg-card hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const EMPTY_HINT =
   'rounded-2xl border border-dashed bg-muted/40 px-4 py-6 text-center text-base text-muted-foreground text-pretty';
 
@@ -168,7 +168,7 @@ const EMPTY_HINT =
         <h2 id="sp-fecha" class="text-lg font-bold">
           {{ fixedProcedure() || compact() ? 'Día' : '3. Elige el día' }}
         </h2>
-        <div class="flex items-center gap-2">
+        <div class="flex w-full items-center gap-2 sm:w-auto">
           <button
             type="button"
             (click)="shiftWeek(-7)"
@@ -178,7 +178,7 @@ const EMPTY_HINT =
           >
             <svg lucideChevronLeft class="size-6"></svg>
           </button>
-          <span class="min-w-44 text-center text-base font-medium text-muted-foreground">{{ weekRange() }}</span>
+          <span class="min-w-0 flex-1 text-center text-base font-medium tabular-nums text-muted-foreground sm:min-w-44 sm:flex-none">{{ weekRange() }}</span>
           <button type="button" (click)="shiftWeek(7)" aria-label="Semana siguiente" [class]="navButton">
             <svg lucideChevronRight class="size-6"></svg>
           </button>
@@ -330,7 +330,7 @@ export class SlotPicker implements OnInit {
 
   protected readonly weekRange = computed(() => {
     const [first, , , , , last] = this.week();
-    return `${first.getDate()} – ${last.getDate()} de ${monthName(last)} de ${last.getFullYear()}`;
+    return `${first.getDate()} - ${last.getDate()} de ${monthName(last)} de ${last.getFullYear()}`;
   });
 
   protected readonly slots = computed(() => {

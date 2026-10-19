@@ -35,6 +35,16 @@ describe('SlotPicker', () => {
     expect(hours(el)).toEqual([]);
   });
 
+  it('lets the week range shrink so the row fits a 320px viewport', () => {
+    // Two 48px buttons plus the range must fit inside 288px of content width.
+    const el = render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
+    const range = Array.from(el.querySelectorAll('span')).find((span) => span.className.includes('text-center'));
+    expect(range, 'week range label').toBeDefined();
+    expect(range?.classList.contains('min-w-0')).toBe(true);
+    expect(range?.classList.contains('min-w-44')).toBe(false);
+    expect(range?.classList.contains('sm:min-w-44')).toBe(true);
+  });
+
   it('renders only the free slots of the chosen dentist and procedure', () => {
     const el = render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
     const shown = hours(el);
@@ -72,14 +82,14 @@ describe('SlotPicker', () => {
     expect(days[2].disabled).toBe(false); // today
     expect(text(days[2])).toContain('Hoy');
     expect(el.querySelector<HTMLButtonElement>('[aria-label="Semana anterior"]')?.disabled).toBe(true);
-    expect(text(el)).toContain('12 – 17 de octubre de 2026');
+    expect(text(el)).toContain('12 - 17 de octubre de 2026');
   });
 
   it('navigates to the next week', () => {
     const el = render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
     el.querySelector<HTMLButtonElement>('[aria-label="Semana siguiente"]')?.click();
     fixture.detectChanges();
-    expect(text(el)).toContain('19 – 24 de octubre de 2026');
+    expect(text(el)).toContain('19 - 24 de octubre de 2026');
     expect(el.querySelector<HTMLButtonElement>('[aria-label="Semana anterior"]')?.disabled).toBe(false);
   });
 
@@ -151,5 +161,25 @@ describe('SlotPicker', () => {
     const el = render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
     expect(el.querySelector('h3')).toBeNull();
     expect(el.querySelectorAll('h2')).toHaveLength(4);
+  });
+
+  it('formats the week range with a hyphen separator', () => {
+    const el = render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
+    expect(text(el)).toContain('12 - 17 de octubre de 2026');
+    expect(text(el)).not.toMatch(/[–—]/);
+  });
+
+  it('shows focus with a full-opacity 2px ring on picker controls', () => {
+    const el = render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
+    const controls = [
+      el.querySelector('[aria-label="Semana siguiente"]') as HTMLElement,
+      el.querySelector('[aria-label="Día"] button') as HTMLElement,
+      getByText<HTMLButtonElement>(el, '[aria-label="Horarios de la mañana"] button', '8:00 AM'),
+    ];
+    for (const control of controls) {
+      expect(control.className).toContain('focus-visible:ring-2');
+      expect(control.className).toContain('focus-visible:ring-ring');
+      expect(control.className).not.toContain('ring-4');
+    }
   });
 });

@@ -60,4 +60,13 @@ describe('BigButton', () => {
     expect(button.className).toContain('min-h-10');
     expect(button.className).not.toContain('min-h-14');
   });
+
+  it('shows focus with a full-opacity 2px ring on buttons and links', () => {
+    const { buttons, link } = render();
+    for (const el of [...buttons, link]) {
+      expect(el.className).toContain('focus-visible:ring-2');
+      expect(el.className).toContain('focus-visible:ring-ring');
+      expect(el.className).not.toContain('ring-4');
+    }
+  });
 });

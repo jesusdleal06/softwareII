@@ -48,7 +48,7 @@ import { cn } from './class-names';
           "
         >
           <span class="sr-only">Paso {{ number }}: </span>
-          {{ step }}
+          <span [class]="active ? '' : 'hidden sm:inline'">{{ step }}</span>
         </span>
       </li>
     }

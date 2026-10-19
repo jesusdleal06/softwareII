@@ -3,10 +3,18 @@ import { LucideCircleAlert } from '@lucide/angular';
 import { cn, mergeClasses } from './class-names';
 
 const CONTROL_BASE =
-  'w-full min-h-14 rounded-xl border bg-background px-4 text-lg text-foreground placeholder:text-muted-foreground/70 outline-none transition-colors focus-visible:ring-4 focus-visible:ring-ring/30 focus-visible:border-primary';
+  'w-full min-h-14 rounded-xl border bg-background px-4 text-lg text-foreground placeholder:text-placeholder-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary';
 
-const SELECT_ARROW =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23455' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>\")";
+/**
+ * Chevron used as a select mask.
+ *
+ * A background image cannot inherit a design token, which is why the previous arrow
+ * hard-coded a grey and ignored every theme. The same SVG is drawn as a `mask-image`
+ * over `var(--color-muted-foreground)`, so only the shape's alpha matters and the
+ * `currentColor` stroke inside the mask is not a palette colour.
+ */
+const ARROW_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>`;
+const ARROW_URL = `url("${ARROW_SVG}")`;
 
 /** Label, hint and error shared by the form fields. */
 @Directive()
@@ -16,6 +24,8 @@ abstract class FieldBase {
   readonly hint = input<string>();
   readonly error = input<string>();
   readonly labelHidden = input(false);
+  /** When true the control exposes `required`/`aria-required`. */
+  readonly required = input(false);
   /** Extra classes for the control (prototype `className`); they override conflicting defaults. */
   readonly inputClass = input<string>();
 
@@ -56,6 +66,8 @@ const MESSAGES = `
       [id]="fieldId()"
       [type]="type()"
       [value]="value()"
+      [attr.required]="required() || null"
+      [attr.aria-required]="required() ? 'true' : null"
       [attr.placeholder]="placeholder() ?? null"
       [attr.autocomplete]="autocomplete() ?? null"
       [attr.inputmode]="inputMode() ?? null"
@@ -102,23 +114,42 @@ export interface SelectOption {
   imports: [LucideCircleAlert],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col gap-2' },
+  styles: [
+    `
+      .select-arrow {
+        background-color: var(--color-muted-foreground);
+        -webkit-mask-image: ${ARROW_URL};
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        -webkit-mask-size: contain;
+        mask-image: ${ARROW_URL};
+        mask-repeat: no-repeat;
+        mask-position: center;
+        mask-size: contain;
+      }
+    `,
+  ],
   template: `
     <label [for]="fieldId()" [class]="labelClass()">{{ label() }}</label>
-    <select
-      [id]="fieldId()"
-      [attr.aria-invalid]="!!error()"
-      [attr.aria-describedby]="describedBy()"
-      [class]="controlClass()"
-      [style.background-image]="arrow"
-      (change)="onChange($event)"
-    >
-      @if (placeholder()) {
-        <option value="" [selected]="value() === ''">{{ placeholder() }}</option>
-      }
-      @for (option of options(); track option.value) {
-        <option [value]="option.value" [selected]="option.value === value()">{{ option.label }}</option>
-      }
-    </select>
+    <div class="relative">
+      <select
+        [id]="fieldId()"
+        [attr.required]="required() || null"
+        [attr.aria-required]="required() ? 'true' : null"
+        [attr.aria-invalid]="!!error()"
+        [attr.aria-describedby]="describedBy()"
+        [class]="controlClass()"
+        (change)="onChange($event)"
+      >
+        @if (placeholder()) {
+          <option value="" [selected]="value() === ''">{{ placeholder() }}</option>
+        }
+        @for (option of options(); track option.value) {
+          <option [value]="option.value" [selected]="option.value === value()">{{ option.label }}</option>
+        }
+      </select>
+      <span class="select-arrow pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2" aria-hidden="true"></span>
+    </div>
     ${MESSAGES}
   `,
 })
@@ -129,12 +160,11 @@ export class SelectField extends FieldBase {
   readonly placeholder = input<string>();
   readonly valueChange = output<string>();
 
-  protected readonly arrow = SELECT_ARROW;
   protected readonly controlClass = computed(() =>
     mergeClasses(
       cn(
         CONTROL_BASE,
-        'appearance-none bg-[length:1.25rem] bg-[position:right_1rem_center] bg-no-repeat pr-12',
+        'appearance-none pr-12',
         this.error() ? 'border-destructive' : 'border-input',
       ),
       this.inputClass(),
