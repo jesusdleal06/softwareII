@@ -38,8 +38,8 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
         >Saltar al contenido</a
       >
       <header class="sticky top-0 z-20 border-b bg-background">
-        <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-2 sm:px-6">
-          <div class="flex items-center gap-6">
+        <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-6">
+          <div class="flex min-w-0 items-center gap-6">
             <app-logo [href]="sections()[0]?.href ?? '/'" />
             <nav aria-label="Secciones del panel" class="hidden items-center gap-1 md:flex">
               @for (s of sections(); track s.href) {
@@ -66,7 +66,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
               }
             </nav>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex shrink-0 items-center gap-2 sm:gap-3">
             <app-theme-toggle />
             <div class="hidden flex-col items-end leading-tight sm:flex">
               <span class="text-base font-semibold">{{ user.name }}</span>
@@ -81,7 +81,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
             <button
               type="button"
               (click)="logout()"
-              class="flex min-h-12 items-center gap-2 rounded-xl border bg-card px-4 text-base font-semibold hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              class="flex min-h-12 items-center gap-2 rounded-xl border bg-card px-3 text-base font-semibold hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
             >
               <svg lucideLogOut class="size-5" aria-hidden="true"></svg>
               <span class="hidden sm:inline">Cerrar sesión</span>

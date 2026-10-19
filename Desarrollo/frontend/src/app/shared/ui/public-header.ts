@@ -9,9 +9,9 @@ import { ThemeToggle } from './theme-toggle';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'border-b bg-background' },
   template: `
-    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-      <app-logo />
-      <div class="flex items-center gap-1">
+    <div class="mx-auto flex max-w-5xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6">
+      <app-logo class="shrink-0" />
+      <div class="flex min-w-0 items-center gap-1">
         <app-theme-toggle />
         <!-- Hidden on /ingreso: the login page already states it in its h1 (one label per screen). -->
         <a
@@ -19,7 +19,7 @@ import { ThemeToggle } from './theme-toggle';
           routerLinkActive
           #staffLink="routerLinkActive"
           [class.hidden]="staffLink.isActive"
-          class="flex min-h-12 items-center rounded-xl px-3 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="flex min-h-12 min-w-0 items-center rounded-xl px-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
         >
           Ingreso del personal
         </a>

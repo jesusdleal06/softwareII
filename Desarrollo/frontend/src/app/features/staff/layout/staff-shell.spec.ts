@@ -75,6 +75,21 @@ describe('StaffShell', () => {
     expect(el.querySelector('main#contenido')).not.toBeNull();
   });
 
+  it('keeps the header shrinkable on narrow phones: the brand yields, the controls never do', async () => {
+    const el = await open(ASSISTANT_SESSION, '/panel/agenda');
+    const row = el.querySelector('header > div') as HTMLElement;
+    const [brand, actions] = Array.from(row.children) as HTMLElement[];
+
+    // jsdom has no layout, so this pins the structural contract that prevents a
+    // horizontal page scroll at 360px: the brand block may shrink and truncate,
+    // while the action block (theme, initials, logout) keeps its size. Removing
+    // `min-w-0` or `shrink-0` brings the overflow back.
+    expect(brand.className).toContain('min-w-0');
+    expect(actions.className).toContain('shrink-0');
+    const wordmark = Array.from(brand.querySelectorAll('span.truncate')).map((span) => text(span));
+    expect(wordmark).toEqual(['Villadent', 'AgendaPro']);
+  });
+
   it('logs out and goes to /ingreso', async () => {
     const el = await open(ASSISTANT_SESSION, '/panel/agenda');
     clickButton(el, 'Cerrar sesión');
