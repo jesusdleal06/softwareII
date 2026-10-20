@@ -25,6 +25,19 @@ class Host {
   }
 }
 
+@Component({
+  imports: [Modal],
+  template: `
+    <app-modal [open]="true" title="Primero" description="Descripción uno">
+      <p>Uno</p>
+    </app-modal>
+    <app-modal [open]="true" title="Segundo" description="Descripción dos">
+      <p>Dos</p>
+    </app-modal>
+  `,
+})
+class TwoModals {}
+
 describe('Modal', () => {
   it('closes when the backdrop (wrapper) is clicked', () => {
     const fixture = TestBed.createComponent(Host);
@@ -66,5 +79,44 @@ describe('Modal', () => {
     expect(document.body.style.overflow).toBe('hidden');
     fixture.destroy();
     expect(document.body.style.overflow).not.toBe('hidden');
+  });
+
+  it('gives the close button a full-opacity 2px focus ring', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const close = fixture.nativeElement.querySelector('button[aria-label="Cerrar"]') as HTMLButtonElement;
+    expect(close.className).toContain('focus-visible:ring-2');
+    expect(close.className).toContain('focus-visible:ring-ring');
+    expect(close.className).not.toContain('ring-4');
+  });
+
+  it('announces its content through the dialog labels, without inventing a live region', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLElement;
+    const titleId = dialog.getAttribute('aria-labelledby') as string;
+    expect(dialog.querySelector(`#${titleId}`)?.textContent?.trim()).toBe('Cancelar cita');
+    const descId = dialog.getAttribute('aria-describedby') as string;
+    expect(dialog.querySelector(`#${descId}`)?.textContent?.trim()).toBe('Esta acción no se puede deshacer.');
+    expect(dialog.getAttribute('aria-live')).toBeNull();
+  });
+
+  it('gives every modal instance its own title and description ids', () => {
+    const fixture = TestBed.createComponent(TwoModals);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const dialogs = Array.from(root.querySelectorAll('dialog')) as HTMLElement[];
+    expect(dialogs).toHaveLength(2);
+    const titleIds = dialogs.map((d) => d.getAttribute('aria-labelledby'));
+    const descIds = dialogs.map((d) => d.getAttribute('aria-describedby'));
+    expect(titleIds.every((id) => !!id)).toBe(true);
+    expect(new Set(titleIds).size).toBe(2);
+    expect(new Set(descIds).size).toBe(2);
+    dialogs.forEach((dialog, index) => {
+      expect(root.querySelector(`#${titleIds[index]}`)?.textContent?.trim()).toBe(index === 0 ? 'Primero' : 'Segundo');
+      expect(root.querySelector(`#${descIds[index]}`)?.textContent?.trim()).toBe(
+        index === 0 ? 'Descripción uno' : 'Descripción dos',
+      );
+    });
   });
 });

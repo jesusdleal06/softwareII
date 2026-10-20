@@ -9,10 +9,13 @@ import { cn } from './class-names';
   selector: 'span[appStatusBadge]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class]': 'classes()' },
-  template: `{{ status() }}`,
+  template: `{{ label() }}`,
 })
 export class StatusBadge {
   readonly status = input.required<AppointmentStatus>();
+
+  /** Visible copy comes from the shared status map, never from the enum value directly. */
+  protected readonly label = computed(() => STATUS_STYLES[this.status()].label);
 
   protected readonly classes = computed(() =>
     cn(

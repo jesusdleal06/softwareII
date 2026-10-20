@@ -31,6 +31,7 @@ describe('MyAgendaPage', () => {
 
   it('shows only the logged-in dentist appointments, sorted by time', () => {
     expect(text(el)).toContain('Vista de solo lectura. Para cambios, comunícate con la auxiliar administrativa.');
+    expect(el.classList).toContain('gap-6');
     const columns = el.querySelectorAll('[aria-label^="Agenda de "]');
     expect(columns).toHaveLength(1);
     expect(columns[0].getAttribute('aria-label')).toBe('Agenda de Dra. Laura Villamizar');

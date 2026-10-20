@@ -14,22 +14,24 @@ import { PublicFooter, PublicHeader } from '../../../shared/ui/public-header';
   template: `
     <header appPublicHeader></header>
     <main class="flex flex-1 items-center">
-      <div class="mx-auto flex w-full max-w-md flex-col items-center gap-6 px-4 py-12 text-center sm:px-6">
-        <span
-          class="flex size-20 items-center justify-center rounded-full bg-destructive/10 text-destructive"
-          aria-hidden="true"
-        >
-          <svg lucideShieldAlert class="size-12"></svg>
-        </span>
-        <h1 class="text-3xl font-bold tracking-tight">Acceso denegado</h1>
-        <p class="text-lg leading-relaxed text-muted-foreground text-pretty">
-          Tu rol no tiene permiso para ver esta sección@if (ruta()) {
-            (<span class="font-mono text-foreground">{{ ruta() }}</span>)}. Si crees que es un error, comunícate con la
-          administración.
-        </p>
-        <div class="flex w-full flex-col gap-3">
-          <a appBigButton size="lg" [full]="true" [routerLink]="destination()">{{ actionLabel() }}</a>
-          <a appBigButton variant="outline" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
+      <div class="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
+        <div class="mx-auto flex w-full max-w-md flex-col items-center gap-6 text-center">
+          <span
+            class="flex size-20 items-center justify-center rounded-full bg-destructive/10 text-destructive"
+            aria-hidden="true"
+          >
+            <svg lucideShieldAlert class="size-12"></svg>
+          </span>
+          <h1 class="text-3xl font-bold tracking-tight">Acceso denegado</h1>
+          <p class="text-lg leading-relaxed text-muted-foreground text-pretty">
+            Tu rol no tiene permiso para ver esta sección@if (ruta()) {
+              (<span class="font-mono text-foreground">{{ ruta() }}</span>)}. Si crees que es un error, comunícate con
+            la administración.
+          </p>
+          <div class="flex w-full flex-col gap-3">
+            <a appBigButton size="lg" [full]="true" [routerLink]="destination()">{{ actionLabel() }}</a>
+            <a appBigButton variant="outline" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
+          </div>
         </div>
       </div>
     </main>

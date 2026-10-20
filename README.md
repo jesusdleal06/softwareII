@@ -63,4 +63,4 @@ proyecto/
 - `develop` - Rama de integración
 - `feature/<nombre>` - Desarrollo de cada historia/RF, nace de `develop` y vuelve vía Pull Request
 
-> Ver `App/`, `Actividades/` y `Documentacion/` para detalles específicos de cada módulo.
+> Ver `Desarrollo/`, `Actividades/` y `Documentacion/` para detalles específicos de cada módulo.

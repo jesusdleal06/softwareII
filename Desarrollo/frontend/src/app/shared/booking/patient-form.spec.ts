@@ -24,6 +24,15 @@ describe('PatientForm', () => {
     expect(el.querySelector('#pac-telefono')?.getAttribute('aria-describedby')).toBe('pac-telefono-hint');
   });
 
+  it('marks both required fields for assistive tech', () => {
+    const el = render({ name: '', phone: '' }, false);
+    for (const id of ['#pac-nombre', '#pac-telefono']) {
+      const field = el.querySelector(id) as HTMLInputElement;
+      expect(field.hasAttribute('required')).toBe(true);
+      expect(field.getAttribute('aria-required')).toBe('true');
+    }
+  });
+
   it('shows the validation messages from validatePatient', () => {
     const el = render({ name: 'Ana', phone: '300 12' }, true);
     const alerts = Array.from(el.querySelectorAll('[role="alert"]')).map((a) => text(a));

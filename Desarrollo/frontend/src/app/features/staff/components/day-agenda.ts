@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
+import { LucideCalendarX } from '@lucide/angular';
 import { SHIFTS } from '../../../core/data/mock-data';
 import { STATUS_STYLES } from '../../../core/data/status-styles';
 import {
@@ -22,6 +23,15 @@ const PX_PER_MINUTE = 2.4;
 const MARGIN = 16;
 const HEIGHT = (DAY_END - DAY_START) * PX_PER_MINUTE + MARGIN * 2;
 
+/**
+ * The block keeps its proportional height, but spends 6px on each side on an invisible
+ * pseudo-element so even a 15-minute slot (32px) reaches the 44px touch target without
+ * overlapping its neighbours visually.
+ */
+const BLOCK_BASE =
+  "absolute inset-x-1.5 rounded-lg border-l-4 text-left leading-tight shadow-sm outline-none transition-shadow after:absolute after:inset-x-0 after:-top-1.5 after:-bottom-1.5 after:content-[''] hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring";
+const BLOCK_CONTENT = 'absolute inset-0 flex flex-col gap-0.5 overflow-hidden px-2.5 sm:px-3';
+
 function top(minutes: number): number {
   return (minutes - DAY_START) * PX_PER_MINUTE + MARGIN;
 }
@@ -30,6 +40,7 @@ interface Block {
   appointment: Appointment;
   label: string;
   procedureName: string;
+  statusLabel: string;
   range: string;
   phone: string;
   top: number;
@@ -37,6 +48,7 @@ interface Block {
   compact: boolean;
   tall: boolean;
   className: string;
+  contentClass: string;
 }
 
 /**
@@ -46,6 +58,7 @@ interface Block {
 @Component({
   selector: 'app-day-agenda',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideCalendarX],
   host: { class: 'flex flex-col gap-3' },
   template: `
     @if (useTabs()) {
@@ -81,11 +94,23 @@ interface Block {
     }
 
     <div class="overflow-x-auto rounded-2xl border bg-card">
-      <div class="grid" [style.grid-template-columns]="gridColumns()">
+      @if (appointments().length === 0) {
+        <div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
+          <span
+            class="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
+            aria-hidden="true"
+          >
+            <svg lucideCalendarX class="size-6"></svg>
+          </span>
+          <p class="text-lg font-semibold">No hay citas para este día</p>
+          <p class="text-sm text-muted-foreground">Cambia de fecha o registra una cita nueva.</p>
+        </div>
+      } @else {
+        <div class="grid" [style.grid-template-columns]="gridColumns()">
         <!-- Headers -->
-        <div class="sticky top-0 z-10 border-b bg-card" aria-hidden="true"></div>
+        <div class="border-b bg-card" aria-hidden="true"></div>
         @for (d of visibleDentists(); track d.id) {
-          <div class="sticky top-0 z-10 flex min-w-0 items-center gap-3 border-b border-l bg-card px-3 py-3 sm:px-4">
+          <div class="flex min-w-0 items-center gap-3 border-b border-l bg-card px-3 py-3 sm:px-4">
             <span
               class="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
               aria-hidden="true"
@@ -115,6 +140,7 @@ interface Block {
         @for (column of columns(); track column.dentist.id) {
           <div
             class="relative min-w-0 border-l"
+            role="group"
             [style.height.px]="height"
             [attr.aria-label]="'Agenda de ' + column.dentist.name"
           >
@@ -151,29 +177,30 @@ interface Block {
                 [style.top.px]="b.top + 2"
                 [style.height.px]="b.height - 4"
               >
-                @if (b.compact) {
-                  <span class="flex items-center gap-2">
-                    <span class="truncate text-sm font-bold">{{ b.appointment.patientName }}</span>
-                    <span class="truncate text-xs">{{ b.procedureName }} · {{ b.range }}</span>
-                    <span class="ml-auto shrink-0 text-xs font-semibold opacity-80">{{ b.appointment.status }}</span>
-                  </span>
-                } @else {
-                  <span class="flex items-center justify-between gap-2">
-                    <span class="truncate text-sm font-bold">{{ b.appointment.patientName }}</span>
-                    <span class="hidden shrink-0 text-xs font-semibold opacity-80 sm:inline">{{
-                      b.appointment.status
-                    }}</span>
-                  </span>
-                  <span class="truncate text-sm">{{ b.procedureName }} · {{ b.range }}</span>
-                  @if (b.tall) {
-                    <span class="truncate text-xs opacity-80">{{ b.phone }}</span>
+                <span [class]="b.contentClass">
+                  @if (b.compact) {
+                    <span class="flex items-center gap-2">
+                      <span class="truncate text-sm font-bold">{{ b.appointment.patientName }}</span>
+                      <span class="truncate text-xs">{{ b.procedureName }} · {{ b.range }}</span>
+                      <span class="ml-auto shrink-0 text-xs font-semibold opacity-80">{{ b.statusLabel }}</span>
+                    </span>
+                  } @else {
+                    <span class="flex items-center justify-between gap-2">
+                      <span class="truncate text-sm font-bold">{{ b.appointment.patientName }}</span>
+                      <span class="hidden shrink-0 text-xs font-semibold opacity-80 sm:inline">{{ b.statusLabel }}</span>
+                    </span>
+                    <span class="truncate text-sm">{{ b.procedureName }} · {{ b.range }}</span>
+                    @if (b.tall) {
+                      <span class="truncate text-xs opacity-80">{{ b.phone }}</span>
+                    }
                   }
-                }
+                </span>
               </button>
             }
           </div>
         }
-      </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -212,9 +239,11 @@ export class DayAgenda {
     this.useTabs() ? this.dentists().filter((d) => d.id === this.mobileDentistId()) : this.dentists(),
   );
 
-  protected readonly gridColumns = computed(
-    () => `5rem repeat(${this.visibleDentists().length}, minmax(0, 1fr))`,
-  );
+  protected readonly gridColumns = computed(() => {
+    const count = this.visibleDentists().length;
+    // A lone column hugs its content instead of stretching across the whole card.
+    return count <= 1 ? '5rem minmax(0, 30rem)' : `5rem repeat(${count}, minmax(0, 1fr))`;
+  });
 
   /** Minutes of the current time when the day on display is today and within hours. */
   protected readonly nowMinutes = computed(() => {
@@ -237,24 +266,23 @@ function toBlock(appointment: Appointment): Block {
   const start = toMinutes(appointment.time);
   const end = endOf(appointment);
   const procedureName = procedureById(appointment.procedureId)?.name ?? '';
+  // Labels come from the shared canon, never from the raw enum.
+  const statusLabel = STATUS_STYLES[appointment.status].label;
   const height = (end - start) * PX_PER_MINUTE;
   // 15-minute appointments: a single line.
   const compact = height < 60;
   return {
     appointment,
-    label: `${appointment.patientName}, ${procedureName}, ${formatTime(appointment.time)}, ${appointment.status}`,
+    label: `${appointment.patientName}, ${procedureName}, ${formatTime(appointment.time)}, ${statusLabel}`,
     procedureName,
-    range: `${formatTime(appointment.time)}–${formatTimeFromMinutes(end)}`,
+    statusLabel,
+    range: `${formatTime(appointment.time)}-${formatTimeFromMinutes(end)}`,
     phone: formatPhone(appointment.patientPhone),
     top: top(start),
     height,
     compact,
     tall: height >= 100,
-    className: cn(
-      'absolute inset-x-1.5 flex flex-col gap-0.5 overflow-hidden rounded-lg border-l-4 px-2.5 text-left leading-tight shadow-sm outline-none transition-shadow sm:px-3',
-      compact ? 'justify-center py-0' : 'py-1.5',
-      STATUS_STYLES[appointment.status].block,
-      'hover:shadow-md focus-visible:ring-4 focus-visible:ring-ring/40',
-    ),
+    className: cn(BLOCK_BASE, STATUS_STYLES[appointment.status].block),
+    contentClass: cn(BLOCK_CONTENT, compact ? 'items-stretch justify-center py-0' : 'justify-start py-1.5'),
   };
 }

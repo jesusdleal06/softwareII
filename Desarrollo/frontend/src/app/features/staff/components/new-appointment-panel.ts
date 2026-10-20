@@ -50,7 +50,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
         <div class="flex flex-col gap-6">
           <p
             role="status"
-            class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-emerald-800 dark:text-emerald-200"
+            class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-success"
           >
             <svg lucideCircleCheck class="mt-0.5 size-5 shrink-0" aria-hidden="true"></svg>
             Cita {{ cita.code }} registrada. El recordatorio por WhatsApp quedó programado.

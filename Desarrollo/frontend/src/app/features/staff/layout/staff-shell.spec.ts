@@ -56,7 +56,38 @@ describe('StaffShell', () => {
     expect(navLabels(el)).toEqual(['Mi agenda']);
     expect(text(el.querySelector('header') as HTMLElement)).toContain('Dra. Laura Villamizar');
     expect(text(el.querySelector('header span.rounded-full') as HTMLElement)).toBe('LV');
-    expect(el.querySelectorAll('nav[aria-label="Secciones del panel"]')).toHaveLength(2);
+    expect(el.querySelectorAll('nav')).toHaveLength(2);
+  });
+
+  it('labels the desktop and mobile navigation differently', async () => {
+    const el = await open(ASSISTANT_SESSION, '/panel/agenda');
+    const labels = Array.from(el.querySelectorAll('nav')).map((nav) => nav.getAttribute('aria-label'));
+    expect(labels).toHaveLength(2);
+    expect(labels.every((label) => !!label)).toBe(true);
+    expect(new Set(labels).size).toBe(2);
+  });
+
+  it('offers a skip link into the main content', async () => {
+    const el = await open(ASSISTANT_SESSION, '/panel/agenda');
+    const skip = el.querySelector('a[href="#contenido"]') as HTMLAnchorElement;
+    expect(skip).not.toBeNull();
+    expect(text(skip)).toBe('Saltar al contenido');
+    expect(el.querySelector('main#contenido')).not.toBeNull();
+  });
+
+  it('keeps the header shrinkable on narrow phones: the brand yields, the controls never do', async () => {
+    const el = await open(ASSISTANT_SESSION, '/panel/agenda');
+    const row = el.querySelector('header > div') as HTMLElement;
+    const [brand, actions] = Array.from(row.children) as HTMLElement[];
+
+    // jsdom has no layout, so this pins the structural contract that prevents a
+    // horizontal page scroll at 360px: the brand block may shrink and truncate,
+    // while the action block (theme, initials, logout) keeps its size. Removing
+    // `min-w-0` or `shrink-0` brings the overflow back.
+    expect(brand.className).toContain('min-w-0');
+    expect(actions.className).toContain('shrink-0');
+    const wordmark = Array.from(brand.querySelectorAll('span.truncate')).map((span) => text(span));
+    expect(wordmark).toEqual(['Villadent', 'AgendaPro']);
   });
 
   it('logs out and goes to /ingreso', async () => {

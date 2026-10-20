@@ -25,6 +25,9 @@ export class ToothIcon {}
   selector: 'app-logo',
   imports: [RouterLink, ToothIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // `min-w-0` lets the host shrink below its content width; without it the
+  // wordmark's `truncate` never takes effect and a narrow header overflows.
+  host: { class: 'min-w-0' },
   template: `
     <a
       [routerLink]="href()"
@@ -35,9 +38,9 @@ export class ToothIcon {}
         <svg appToothIcon class="size-6"></svg>
       </span>
       @if (!compact()) {
-        <span class="flex flex-col leading-tight">
-          <span class="text-xl font-bold tracking-tight text-foreground">Villadent</span>
-          <span class="text-xs font-medium text-muted-foreground">AgendaPro</span>
+        <span class="flex min-w-0 flex-col leading-tight">
+          <span class="min-w-0 truncate text-xl font-bold tracking-tight text-foreground">Villadent</span>
+          <span class="min-w-0 truncate text-xs font-medium text-muted-foreground">AgendaPro</span>
         </span>
       }
     </a>
@@ -51,7 +54,7 @@ export class Logo {
 
   protected linkClass(): string {
     return cn(
-      'inline-flex items-center gap-2 rounded-lg focus-visible:ring-3 focus-visible:ring-ring/50 outline-none',
+      'flex min-w-0 items-center gap-2 rounded-lg focus-visible:ring-2 focus-visible:ring-ring outline-none',
       this.extraClass(),
     );
   }

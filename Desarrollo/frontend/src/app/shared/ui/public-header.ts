@@ -1,21 +1,29 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Logo } from './logo';
+import { ThemeToggle } from './theme-toggle';
 
 @Component({
   selector: 'header[appPublicHeader]',
-  imports: [Logo, RouterLink],
+  imports: [Logo, RouterLink, RouterLinkActive, ThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'border-b bg-background' },
   template: `
-    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-      <app-logo />
-      <a
-        routerLink="/ingreso"
-        class="flex min-h-12 items-center rounded-xl px-3 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
-      >
-        Ingreso del personal
-      </a>
+    <div class="mx-auto flex max-w-5xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6">
+      <app-logo class="shrink-0" />
+      <div class="flex min-w-0 items-center gap-1">
+        <app-theme-toggle />
+        <!-- Hidden on /ingreso: the login page already states it in its h1 (one label per screen). -->
+        <a
+          routerLink="/ingreso"
+          routerLinkActive
+          #staffLink="routerLinkActive"
+          [class.hidden]="staffLink.isActive"
+          class="flex min-h-12 min-w-0 items-center rounded-xl px-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
+        >
+          Ingreso del personal
+        </a>
+      </div>
     </div>
   `,
 })
@@ -28,8 +36,9 @@ export class PublicHeader {}
   template: `
     <div class="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-6 text-sm text-muted-foreground sm:px-6">
       <p class="font-semibold text-foreground">Centro Odontológico Villadent</p>
-      <p>Calle 45 # 27-18, Bucaramanga · (607) 645 12 34 · WhatsApp +57 300 123 4567</p>
-      <p>Lunes a sábado: 8:00 AM – 12:00 PM y 2:00 PM – 6:00 PM</p>
+      <p>Calle 45 # 27-18, Bucaramanga</p>
+      <p>(607) 645 12 34 · WhatsApp +57 300 123 4567</p>
+      <p>Lunes a sábado: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</p>
     </div>
   `,
 })

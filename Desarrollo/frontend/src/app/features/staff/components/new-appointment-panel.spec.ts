@@ -143,8 +143,8 @@ describe('NewAppointmentPanel', () => {
     save();
     expect(store.appointments()).toHaveLength(before + 1);
     const status = el.querySelector('[role="status"]') as HTMLElement;
-    expect(status.classList).toContain('text-emerald-800');
-    expect(status.classList).not.toContain('text-success');
+    expect(status.classList).toContain('text-success');
+    expect(status.classList).not.toContain('text-emerald-800');
   });
 
   it('blocks a second active appointment for the same phone', () => {

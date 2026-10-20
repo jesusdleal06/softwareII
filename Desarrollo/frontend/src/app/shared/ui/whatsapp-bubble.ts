@@ -10,7 +10,7 @@ import { Appointment } from '../../core/models';
   imports: [LucideCheckCheck],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex flex-col gap-3 rounded-2xl bg-success/10 p-4 dark:bg-success/25',
+    class: 'flex flex-col gap-3 rounded-2xl bg-success/10 p-4 dark:bg-success/20',
     'aria-label': 'Vista previa del mensaje de WhatsApp',
   },
   template: `
@@ -38,7 +38,7 @@ import { Appointment } from '../../core/models';
       <p class="mt-2">
         Por favor confirma tu asistencia o reprograma aquí:
         <br />
-        <span class="break-all text-primary underline">villadent.co/cita/{{ appointment().code }}</span>
+        <span class="break-all">villadent.co/cita/{{ appointment().code }}</span>
       </p>
       <p class="mt-2 text-muted-foreground">Si no puedes asistir, cancela con anticipación para liberar el turno. Gracias.</p>
       <span class="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">

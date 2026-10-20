@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { LucidePlus } from '@lucide/angular';
 import { DENTISTS } from '../../../core/data/mock-data';
-import { STATUS_STYLES } from '../../../core/data/status-styles';
+import { STATUS_ORDER, STATUS_STYLES } from '../../../core/data/status-styles';
 import { toDateKey } from '../../../core/domain';
-import { AppointmentStatus } from '../../../core/models';
 import { AppStore } from '../../../core/services/app-store.service';
 import { BigButton } from '../../../shared/ui/big-button';
 import { cn } from '../../../shared/ui/class-names';
@@ -13,21 +12,12 @@ import { DateNav } from '../components/date-nav';
 import { DayAgenda } from '../components/day-agenda';
 import { NewAppointmentPanel } from '../components/new-appointment-panel';
 
-const LEGEND: readonly AppointmentStatus[] = [
-  'Pendiente',
-  'Confirmada',
-  'Reprogramada',
-  'Atendida',
-  'No asistió',
-  'Cancelada',
-];
-
 /** Full day agenda for the administrative assistant (prototype `AgendaView`, container). */
 @Component({
   selector: 'app-agenda-page',
   imports: [BigButton, SelectField, DateNav, DayAgenda, AppointmentDetail, NewAppointmentPanel, LucidePlus],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-4' },
+  host: { class: 'flex flex-col gap-6' },
   template: `
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div class="flex flex-col gap-1">
@@ -58,7 +48,7 @@ const LEGEND: readonly AppointmentStatus[] = [
       @for (item of legend; track item.status) {
         <li class="flex items-center gap-2">
           <span [class]="item.swatch" aria-hidden="true"></span>
-          {{ item.status }}
+          {{ item.label }}
         </li>
       }
     </ul>
@@ -81,8 +71,9 @@ export class AgendaPage {
   protected readonly now = this.store.now();
   protected readonly today = toDateKey(this.now);
   protected readonly dentistOptions: SelectOption[] = DENTISTS.map((d) => ({ value: d.id, label: d.name }));
-  protected readonly legend = LEGEND.map((status) => ({
+  protected readonly legend = STATUS_ORDER.map((status) => ({
     status,
+    label: STATUS_STYLES[status].label,
     swatch: cn('h-4 w-6 rounded-sm border-l-4', STATUS_STYLES[status].block.replace('line-through', '')),
   }));
 

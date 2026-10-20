@@ -1,21 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DailyBreakdown, formatDate, fromDateKey, shortDayName } from '../../../core/domain';
-import { AppointmentStatus } from '../../../core/models';
+import { REPORT_SERIES } from '../../../core/data/status-styles';
 import { cn } from '../../../shared/ui/class-names';
-
-/** Chart series in stacking order (bottom to top) with their bar colors. */
-export const REPORT_SERIES: readonly { status: AppointmentStatus; color: string }[] = [
-  { status: 'Atendida', color: 'bg-success' },
-  { status: 'Confirmada', color: 'bg-primary' },
-  { status: 'Pendiente', color: 'bg-warning' },
-  { status: 'Reprogramada', color: 'bg-accent-foreground/60' },
-  { status: 'No asistió', color: 'bg-muted-foreground' },
-  { status: 'Cancelada', color: 'bg-destructive' },
-];
 
 /**
  * Stacked bars of appointments per day and status, drawn with plain flex markup
  * like the prototype (no chart library). Presentational.
+ *
+ * Each series carries a pattern on top of its colour so the segments stay readable
+ * without colour vision (WCAG 1.4.1), and the legend pairs every series with its
+ * total for the visible range.
  */
 @Component({
   selector: 'section[appReportChart]',
@@ -28,10 +22,16 @@ export const REPORT_SERIES: readonly { status: AppointmentStatus; color: string 
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h2 id="grafico" class="text-lg font-bold">Citas por día según estado</h2>
       <ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="Leyenda">
-        @for (s of series; track s.status) {
+        @for (item of legend(); track item.status) {
           <li class="flex items-center gap-2">
-            <span [class]="cn('size-3 rounded-sm', s.color)" aria-hidden="true"></span>
-            {{ s.status }}
+            <span
+              class="size-3 rounded-sm"
+              [class]="cn(item.color)"
+              [style.background-image]="item.pattern"
+              aria-hidden="true"
+            ></span>
+            <span>{{ item.label }}</span>
+            <span class="font-semibold tabular-nums">{{ item.total }}</span>
           </li>
         }
       </ul>
@@ -52,7 +52,11 @@ export const REPORT_SERIES: readonly { status: AppointmentStatus; color: string 
               [attr.aria-label]="bar.label"
             >
               @for (segment of bar.segments; track segment.status) {
-                <span [class]="cn('w-full', segment.color)" [style.flex]="segment.count"></span>
+                <span
+                  [class]="cn('w-full', segment.color)"
+                  [style.background-image]="segment.pattern"
+                  [style.flex]="segment.count"
+                ></span>
               }
             </div>
           </li>
@@ -73,8 +77,18 @@ export class ReportChart {
   readonly days = input.required<readonly DailyBreakdown[]>();
 
   protected readonly cn = cn;
-  protected readonly series = REPORT_SERIES;
   protected readonly minWidth = computed(() => `${this.days().length * 3}rem`);
+
+  protected readonly legend = computed(() => {
+    const days = this.days();
+    return REPORT_SERIES.map((series) => ({
+      status: series.status,
+      label: series.label,
+      color: series.color,
+      pattern: series.pattern,
+      total: days.reduce((sum, day) => sum + day.counts[series.status], 0),
+    }));
+  });
 
   protected readonly bars = computed(() => {
     const days = this.days();
@@ -86,8 +100,13 @@ export class ReportChart {
         date: d.date,
         total: d.total,
         heightPercent: (d.total / max) * 100,
-        label: `${formatDate(d.date)}: ${d.total} citas. ${present.map((s) => `${s.status}: ${d.counts[s.status]}`).join(', ')}`,
-        segments: present.map((s) => ({ status: s.status, color: s.color, count: d.counts[s.status] })),
+        label: `${formatDate(d.date)}: ${d.total} citas. ${present.map((s) => `${s.label}: ${d.counts[s.status]}`).join(', ')}`,
+        segments: present.map((s) => ({
+          status: s.status,
+          color: s.color,
+          pattern: s.pattern,
+          count: d.counts[s.status],
+        })),
         dayName: shortDayName(date),
         dayOfMonth: date.getDate(),
       };

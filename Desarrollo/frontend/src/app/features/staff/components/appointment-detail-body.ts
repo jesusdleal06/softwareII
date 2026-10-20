@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { LucideCalendarClock, LucideCircleCheck, LucideCircleX, LucideUserCheck, LucideUserX } from '@lucide/angular';
+import { STATUS_STYLES } from '../../../core/data/status-styles';
 import { formatDate, formatTime, isActiveStatus, reminderInfo } from '../../../core/domain';
 import { Appointment } from '../../../core/models';
 import { AppointmentSummary } from '../../../shared/ui/appointment-summary';
@@ -26,7 +27,7 @@ import { ReminderBadge } from '../../../shared/ui/status-badge';
     @if (message(); as text) {
       <p
         role="status"
-        class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-emerald-800 dark:text-emerald-200"
+        class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-success"
       >
         <svg lucideCircleCheck class="mt-0.5 size-5 shrink-0" aria-hidden="true"></svg>
         {{ text }}
@@ -81,7 +82,7 @@ import { ReminderBadge } from '../../../shared/ui/status-badge';
 
     @if (!readOnly() && !active()) {
       <p class="rounded-2xl border bg-muted/40 px-5 py-4 text-base text-muted-foreground text-pretty">
-        Esta cita está en estado <strong class="text-foreground">{{ cita.status }}</strong> y no admite más acciones.
+        Esta cita está en estado <strong class="text-foreground">{{ statusLabel() }}</strong> y no admite más acciones.
       </p>
     }
   `,
@@ -98,6 +99,9 @@ export class AppointmentDetailBody {
   readonly cancel = output<void>();
 
   protected readonly active = computed(() => isActiveStatus(this.appointment().status));
+
+  /** Canonical copy for the status, never the raw enum. */
+  protected readonly statusLabel = computed(() => STATUS_STYLES[this.appointment().status].label);
 
   protected readonly reminderDetail = computed(() => {
     const a = this.appointment();

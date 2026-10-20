@@ -20,7 +20,7 @@ const SIZES: Record<BigButtonSize, string> = {
 };
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded-xl border font-semibold transition-colors outline-none select-none focus-visible:ring-4 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0 [&_svg]:size-5';
+  'inline-flex items-center justify-center gap-2 rounded-xl border font-semibold transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0 [&_svg]:size-5';
 
 /**
  * Large touch-friendly button styles for `<button>` and `<a>` (prototype `BigButton`/`BigLink`).

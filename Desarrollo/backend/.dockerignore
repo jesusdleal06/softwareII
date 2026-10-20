@@ -1,0 +1,7 @@
+# Host build output must never reach the image: it is large, machine-specific
+# and stale. The compose file shadows it with a container-owned volume anyway.
+build/
+.gradle/
+
+# Local overrides of DB_URL / DB_USER / DB_PASSWORD (already git-ignored).
+.env

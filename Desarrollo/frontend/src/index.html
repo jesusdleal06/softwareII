@@ -6,8 +6,24 @@
   <meta name="description" content="Agenda tu cita odontológica en el Centro Odontológico Villadent y recibe recordatorios por WhatsApp.">
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
+  <!-- One meta, not one per system preference: the applied theme decides the browser chrome, and the toggle keeps it in step. -->
   <meta name="theme-color" content="#ffffff">
+  <script>
+    // Applies the stored theme before first paint so there is no flash of the wrong theme.
+    // The class is the single source of truth: `dark:` utilities resolve from it.
+    // Light is the default and the system preference is deliberately ignored, so a dark OS
+    // never flips the app for a visitor who has not chosen a theme (S2, S15).
+    (function () {
+      try {
+        if (window.localStorage.getItem('villadent-theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (error) {
+        // Storage blocked (private mode): the light default in styles.css stands.
+      }
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

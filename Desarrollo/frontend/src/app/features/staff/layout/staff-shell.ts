@@ -4,10 +4,11 @@ import { LucideChartColumn, LucideCalendarDays, LucideClipboardList, LucideLogOu
 import { AppStore } from '../../../core/services/app-store.service';
 import { cn } from '../../../shared/ui/class-names';
 import { Logo } from '../../../shared/ui/logo';
+import { ThemeToggle } from '../../../shared/ui/theme-toggle';
 import { STAFF_SECTIONS } from '../staff-sections';
 
 const DESKTOP_LINK =
-  'flex min-h-12 items-center gap-2 rounded-xl px-4 text-base font-semibold outline-none focus-visible:ring-4 focus-visible:ring-ring/40';
+  'flex min-h-12 items-center gap-2 rounded-xl px-4 text-base font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const DESKTOP_ACTIVE = 'bg-accent text-accent-foreground';
 const DESKTOP_INACTIVE = 'text-muted-foreground hover:bg-muted hover:text-foreground';
 const MOBILE_ACTIVE = 'border-b-2 border-primary text-primary';
@@ -21,6 +22,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
     RouterLink,
     RouterLinkActive,
     Logo,
+    ThemeToggle,
     LucideCalendarDays,
     LucideClipboardList,
     LucideChartColumn,
@@ -30,9 +32,14 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
   host: { class: 'flex min-h-dvh flex-col bg-muted/30' },
   template: `
     @if (session(); as user) {
+      <a
+        href="#contenido"
+        class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30 focus:rounded-xl focus:border focus:bg-background focus:px-4 focus:py-3 focus:text-base focus:font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >Saltar al contenido</a
+      >
       <header class="sticky top-0 z-20 border-b bg-background">
-        <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-2 sm:px-6">
-          <div class="flex items-center gap-6">
+        <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-6">
+          <div class="flex min-w-0 items-center gap-6">
             <app-logo [href]="sections()[0]?.href ?? '/'" />
             <nav aria-label="Secciones del panel" class="hidden items-center gap-1 md:flex">
               @for (s of sections(); track s.href) {
@@ -59,7 +66,8 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
               }
             </nav>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+            <app-theme-toggle />
             <div class="hidden flex-col items-end leading-tight sm:flex">
               <span class="text-base font-semibold">{{ user.name }}</span>
               <span class="text-sm text-muted-foreground">{{ user.role }}</span>
@@ -73,7 +81,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
             <button
               type="button"
               (click)="logout()"
-              class="flex min-h-12 items-center gap-2 rounded-xl border bg-card px-4 text-base font-semibold hover:bg-muted outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+              class="flex min-h-12 items-center gap-2 rounded-xl border bg-card px-3 text-base font-semibold hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
             >
               <svg lucideLogOut class="size-5" aria-hidden="true"></svg>
               <span class="hidden sm:inline">Cerrar sesión</span>
@@ -81,7 +89,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
             </button>
           </div>
         </div>
-        <nav aria-label="Secciones del panel" class="flex border-t md:hidden">
+        <nav aria-label="Secciones del panel (móvil)" class="flex border-t md:hidden">
           @for (s of sections(); track s.href) {
             <a
               [routerLink]="s.href"
@@ -106,7 +114,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
           }
         </nav>
       </header>
-      <main class="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+      <main id="contenido" class="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
         <router-outlet />
       </main>
     }

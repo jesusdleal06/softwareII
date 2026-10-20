@@ -52,7 +52,7 @@ describe('BookingFlow', () => {
   }
 
   it('starts on step 1 with the continue button focusable and explained', () => {
-    expect(text(el)).toContain('Paso 1 de 3');
+    expect(el.querySelector('h1')?.textContent).toContain('Elige tu horario');
     expect(text(el)).toContain('Cada odontólogo tiene su propia agenda.');
     const button = getByText<HTMLButtonElement>(el, 'button', 'Continuar');
     expect(button.disabled).toBe(false);
@@ -93,10 +93,10 @@ describe('BookingFlow', () => {
     pickSlot();
     clickButton(el, 'Continuar');
     fixture.detectChanges();
-    expect(text(el)).toContain('Paso 2 de 3');
+    expect(el.querySelector('h1')?.textContent).toContain('Tus datos');
 
     fillPatient('Ana Pérez', '300 999 8877');
-    expect(text(el)).toContain('Paso 3 de 3');
+    expect(el.querySelector('h1')?.textContent).toContain('Confirma tu cita');
     expect(text(el)).toContain('Revisa que todo esté correcto antes de confirmar.');
     expect(text(el)).toContain('el día anterior (14/10/2026) a las 6:00 PM');
 
@@ -119,7 +119,7 @@ describe('BookingFlow', () => {
     clickButton(el, 'Continuar');
     fixture.detectChanges();
     fillPatient('Ana', '123');
-    expect(text(el)).toContain('Paso 2 de 3');
+    expect(el.querySelector('h1')?.textContent).toContain('Tus datos');
     expect(text(el)).toContain('Escribe nombre y apellido.');
     expect(text(el)).toContain('El celular debe tener 10 dígitos.');
   });
@@ -133,7 +133,7 @@ describe('BookingFlow', () => {
     expect(text(el)).toContain('Ya tienes una cita programada');
     expect(text(el)).toContain('Con el celular 313 555 6677 encontramos una cita activa.');
     expect(text(el)).toContain('VD-1049');
-    expect(getByText(el, 'a', 'Reprogramar esa cita').getAttribute('href')).toBe('/cita/VD-1049?accion=reprogramar');
+    expect(getByText(el, 'a', 'Reprogramar').getAttribute('href')).toBe('/cita/VD-1049?accion=reprogramar');
   });
 
   it('cancels the active appointment and continues with the new one', () => {
@@ -149,7 +149,7 @@ describe('BookingFlow', () => {
     fixture.detectChanges();
 
     expect(store.appointmentByCode('VD-1049')?.status).toBe('Cancelada');
-    expect(text(el)).toContain('Paso 3 de 3');
+    expect(el.querySelector('h1')?.textContent).toContain('Confirma tu cita');
   });
 
   it('returns to step 1 with the conflict message when the slot was just taken', () => {
@@ -172,10 +172,81 @@ describe('BookingFlow', () => {
     clickButton(el, 'Confirmar cita');
     fixture.detectChanges();
 
-    expect(text(el)).toContain('Paso 1 de 3');
+    expect(el.querySelector('h1')?.textContent).toContain('Elige tu horario');
     expect(el.querySelector('[role="alert"]')?.textContent).toContain(
       'Este horario acaba de ser ocupado. Por favor elige otro.',
     );
     expect(store.appointments().some((a) => a.patientPhone === '3009998877')).toBe(false);
+  });
+
+  it('announces its step changes in a live region of its own', () => {
+    expect(el.querySelector('[role="status"]')?.textContent).toContain('Elige tu horario');
+
+    pickSlot();
+    clickButton(el, 'Continuar');
+    fixture.detectChanges();
+    expect(el.querySelector('[role="status"]')?.textContent).toContain('Tus datos');
+  });
+
+  it('hooks the continue hint through aria-describedby only while the hint applies', () => {
+    const button = () => getByText<HTMLButtonElement>(el, 'button', 'Continuar');
+    expect(button().getAttribute('aria-describedby')).toBe('booking-continue-hint');
+
+    pickSlot();
+    fixture.detectChanges();
+    expect(button().getAttribute('aria-describedby')).toBeNull();
+    expect(el.querySelector('#booking-continue-hint')).toBeNull();
+  });
+
+  it('moves focus back to the heading when returning to a previous step', async () => {
+    pickSlot();
+    clickButton(el, 'Continuar');
+    fixture.detectChanges();
+    await new Promise((r) => setTimeout(r, 0));
+
+    clickButton(el, 'Atrás');
+    fixture.detectChanges();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.activeElement?.tagName).toBe('H1');
+    expect(document.activeElement?.textContent).toContain('Elige tu horario');
+  });
+
+  it('focuses the first invalid field when the patient data is rejected', async () => {
+    pickSlot();
+    clickButton(el, 'Continuar');
+    fixture.detectChanges();
+
+    // A single-word name is invalid while the phone is valid: the name field takes focus.
+    fillPatient('Ana', '300 999 8877');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.activeElement?.id).toBe('pac-nombre');
+
+    // Now the name is valid but the phone is too short: the phone field takes focus.
+    fillPatient('Ana Pérez', '123');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.activeElement?.id).toBe('pac-telefono');
+  });
+
+  it('gives the inline help link the full-opacity focus ring', () => {
+    pickSlot();
+    clickButton(el, 'Continuar');
+    fixture.detectChanges();
+    fillPatient('Ana Pérez', '300 999 8877');
+    const link = getByText(el, 'a', 'vuelve al inicio');
+    expect(link.className).toContain('focus-visible:ring-2');
+    expect(link.className).toContain('focus-visible:ring-ring');
+  });
+
+  it('keeps the dark success tint at the S2 ceiling after booking', () => {
+    pickSlot();
+    clickButton(el, 'Continuar');
+    fixture.detectChanges();
+    fillPatient('Ana Pérez', '300 999 8877');
+    clickButton(el, 'Confirmar cita');
+    fixture.detectChanges();
+
+    const tint = el.querySelector('[class*="dark:bg-success/"]');
+    expect(tint?.className).toContain('dark:bg-success/20');
+    expect(el.innerHTML).not.toContain('dark:bg-success/25');
   });
 });

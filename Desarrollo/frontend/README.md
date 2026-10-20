@@ -6,16 +6,40 @@ Aplicación web en **Angular** para el agendamiento de citas del Centro Odontol�
 
 **Stack:** Angular 22.2 (componentes standalone, signals) · Tailwind CSS v4 · `@lucide/angular` · Vitest 5 + jsdom
 
+**Tema:** la interfaz es clara por omisión y el encabezado tiene un conmutador claro/oscuro. La preferencia se guarda en `localStorage` y se aplica antes del primer pintado, para que no haya destello de tema incorrecto.
+
 ---
 
 ## Requisitos
 
-- Node.js 26 (versión usada en el desarrollo: v26.11.1)
-- pnpm 11 (declarado en `packageManager`: `pnpm@11.28.5`)
+- **Node.js 26** y **pnpm 11** (`packageManager`: `pnpm@11.28.5`), o
+- **Docker** con Docker Compose: la imagen ya incluye Node 26 y pnpm 11.28.5, así que no hay que instalarlos en el equipo.
 
-## Comandos
+## Cómo iniciar el entorno de desarrollo
 
-Ejecutar desde `Desarrollo/frontend/`:
+Todos los comandos se ejecutan desde `Desarrollo/frontend/`.
+
+### Opción A — Docker (recomendada: no exige Node ni pnpm en el equipo)
+
+| Comando                                         | Descripción                                             |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| `docker compose up -d`                          | Construye la imagen y arranca el servidor de desarrollo |
+| `docker compose exec frontend pnpm run test:ci` | Ejecuta las pruebas unitarias dentro del contenedor     |
+| `docker compose logs -f frontend`               | Sigue los registros del servidor                        |
+| `docker compose down`                           | Detiene el contenedor                                   |
+
+La aplicación queda en `http://localhost:4200/`. El código se monta como volumen, así que los cambios en `src/` se reflejan con recarga automática sin reconstruir la imagen.
+
+- El contenedor instala sus propias dependencias con pnpm en un volumen anónimo que oculta el `node_modules` del equipo: una instalación local previa no interfiere.
+- El contenedor corre como usuario `node` (uid 1000), no como root, para que los archivos que `ng` escribe sobre el código montado sigan siendo editables en el equipo. Si el uid del equipo no es 1000, ajustar `user: "<uid>:<gid>"` en `docker-compose.yml`.
+- `node_modules` y `.angular` son volúmenes anónimos. Si vienen de una construcción anterior a la corrección de permisos, o se cambió el uid, hay que recrearlos una vez con `docker compose up -d --renew-anon-volumes`.
+
+### Opción B — Local con Node y pnpm
+
+```bash
+pnpm install
+pnpm start
+```
 
 | Comando            | Descripción                                                 |
 | ------------------ | ----------------------------------------------------------- |
@@ -76,7 +100,7 @@ src/app/
 ├── shared/
 │   ├── ui/         # Componentes de presentación reutilizables (botones, badges, stepper, modal, campos)
 │   ├── booking/    # Selector de horario y formulario del paciente (usados por paciente y personal)
-│   └── browser/    # Utilidades del navegador (media queries)
+│   └── browser/    # Utilidades del navegador (media queries y preferencia de tema)
 └── features/
     ├── public/     # Inicio, agendamiento y página de la cita
     └── staff/      # Ingreso, panel del personal, agenda, mi agenda y reportes

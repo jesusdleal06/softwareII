@@ -13,6 +13,9 @@ import { cn } from './class-names';
 
 const WIDTHS = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl' } as const;
 
+/** Monotonic counter so two open modals never share `aria-labelledby`/`aria-describedby` ids. */
+let nextModalId = 0;
+
 /** Smoothly scrolls the open modal's body to the top. */
 export function scrollModalToTop(): void {
   const body = document.querySelector('dialog[open] [data-modal-scroll]');
@@ -31,8 +34,8 @@ export function scrollModalToTop(): void {
   template: `
     <dialog
       #dialog
-      aria-labelledby="modal-title"
-      [attr.aria-describedby]="description() ? 'modal-desc' : null"
+      [attr.aria-labelledby]="titleId"
+      [attr.aria-describedby]="description() ? descriptionId : null"
       [class]="dialogClass()"
       (close)="onNativeClose()"
       (cancel)="onCancel($event)"
@@ -43,15 +46,15 @@ export function scrollModalToTop(): void {
           <div [class]="panelClass()" role="document">
             <header class="flex items-start justify-between gap-4 border-b px-6 py-5">
               <div class="flex flex-col gap-1">
-                <h2 id="modal-title" class="text-xl font-bold text-balance">{{ title() }}</h2>
+                <h2 [id]="titleId" class="text-xl font-bold text-balance">{{ title() }}</h2>
                 @if (description()) {
-                  <p id="modal-desc" class="text-base text-muted-foreground text-pretty">{{ description() }}</p>
+                  <p [id]="descriptionId" class="text-base text-muted-foreground text-pretty">{{ description() }}</p>
                 }
               </div>
               <button
                 type="button"
                 aria-label="Cerrar"
-                class="flex size-12 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-ring/40 outline-none"
+                class="flex size-12 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring outline-none"
                 (click)="closed.emit()"
               >
                 <svg lucideX class="size-6"></svg>
@@ -77,6 +80,11 @@ export class Modal {
 
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly backdrop = viewChild<ElementRef<HTMLDivElement>>('backdrop');
+
+  /** Per-instance ids: a second open modal must not steal the first one's labels. */
+  private readonly instanceId = nextModalId++;
+  protected readonly titleId = `modal-title-${this.instanceId}`;
+  protected readonly descriptionId = `modal-desc-${this.instanceId}`;
 
   protected readonly dialogClass = computed(() =>
     cn(

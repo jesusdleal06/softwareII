@@ -37,7 +37,12 @@ const ROW_ICON = 'flex size-11 shrink-0 items-center justify-center rounded-xl b
           </div>
         }
         @if (a.status) {
-          <span appStatusBadge [status]="a.status"></span>
+          <div class="flex flex-col items-end">
+            <dt class="sr-only">Estado</dt>
+            <dd>
+              <span appStatusBadge [status]="a.status"></span>
+            </dd>
+          </div>
         }
       </div>
     }
