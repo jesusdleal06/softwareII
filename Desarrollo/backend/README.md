@@ -4,7 +4,7 @@ API y lógica de negocio del sistema de agendamiento y recordatorios del Centro 
 
 **Stack:** Java 21 · Spring Boot 4.1.2 · JPA (Hibernate) · Flyway · Spring Security (OAuth2 Resource Server) · PostgreSQL · Gradle 9.8.1
 
-> **Nota sobre la versión:** `build.gradle` usa `4.1.2-SNAPSHOT`, que se descarga de `repo.spring.io/snapshot`. Un snapshot no es una versión publicada: puede cambiar sin aviso. Cuando salga la versión estable conviene fijarla.
+> **Nota sobre la versión:** `build.gradle` usa la versión estable `4.1.2`, publicada en Maven Central; los repositorios de snapshots fueron eliminados.
 
 ---
 
