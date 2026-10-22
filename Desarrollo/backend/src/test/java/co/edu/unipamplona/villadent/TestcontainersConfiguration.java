@@ -7,11 +7,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 
 	@Bean
 	@ServiceConnection
-	PostgreSQLContainer postgresContainer() {
+	public PostgreSQLContainer postgresContainer() {
 		// Pinned to the same major as Desarrollo/backend/docker-compose.yml, so
 		// tests and the dev database cannot drift apart; `latest` would change
 		// the PostgreSQL version under the suite whenever Docker pulls again.
