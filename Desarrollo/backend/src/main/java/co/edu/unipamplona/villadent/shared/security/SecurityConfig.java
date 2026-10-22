@@ -1,5 +1,6 @@
 package co.edu.unipamplona.villadent.shared.security;
 
+import jakarta.servlet.DispatcherType;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -44,6 +45,10 @@ public class SecurityConfig {
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
             .authorizeHttpRequests(auth -> auth
+                // The servlet container forwards 404s and unhandled exceptions to /error.
+                // Security re-checks that dispatch, so blocking it would turn every error
+                // on a public path into a 401. The original request was already authorized.
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/api/v1/public/**", "/api/v1/auth/login", "/actuator/health").permitAll()
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())));
