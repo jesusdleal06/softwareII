@@ -2,31 +2,17 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { cn } from './class-names';
 
-/** Tooth glyph used by the brand logo. */
-@Component({
-  selector: 'svg[appToothIcon]',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    'stroke-width': '2',
-    'stroke-linecap': 'round',
-    'stroke-linejoin': 'round',
-    'aria-hidden': 'true',
-  },
-  template: `<svg:path
-    d="M12 5.5c-1.8-1.6-4.5-2.2-6.4-.8C3.6 6.2 3.2 9 4.3 11.5c1 2.3 1.5 4.6 1.9 7 .2 1.2 1.7 1.5 2.3.4L10 15.5c.7-1.3 2.3-1.3 3 0l1.5 3.4c.6 1.1 2.1.8 2.3-.4.4-2.4.9-4.7 1.9-7 1.1-2.5.7-5.3-1.3-6.8-1.9-1.4-4.6-.8-6.4.8Z"
-  />`,
-})
-export class ToothIcon {}
-
+/**
+ * Clinic logo linking home. The images live in `public/brand/` (generated from the
+ * originals in `Documentacion/marca/`). They are decorative (`alt=""`) because the link's
+ * aria-label already names it.
+ */
 @Component({
   selector: 'app-logo',
-  imports: [RouterLink, ToothIcon],
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // `min-w-0` lets the host shrink below its content width; without it the
-  // wordmark's `truncate` never takes effect and a narrow header overflows.
+  // product name's `truncate` never takes effect and a narrow header overflows.
   host: { class: 'min-w-0' },
   template: `
     <a
@@ -34,14 +20,14 @@ export class ToothIcon {}
       [class]="linkClass()"
       aria-label="Villadent, ir al inicio"
     >
-      <span class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-        <svg appToothIcon class="size-6"></svg>
-      </span>
-      @if (!compact()) {
-        <span class="flex min-w-0 flex-col leading-tight">
-          <span class="min-w-0 truncate text-xl font-bold tracking-tight text-foreground">Villadent</span>
-          <span class="min-w-0 truncate text-xs font-medium text-muted-foreground">AgendaPro</span>
+      @if (compact()) {
+        <img src="brand/icon-192.png" alt="" width="192" height="192" class="size-10 shrink-0 rounded-full" />
+      } @else {
+        <!-- The logo's navy and grey text needs a light backdrop: a white plate in dark mode. -->
+        <span class="shrink-0 rounded-lg dark:bg-white dark:px-1.5 dark:py-0.5">
+          <img src="brand/villadent-logo.png" alt="" width="374" height="160" class="h-10 w-auto" />
         </span>
+        <span class="min-w-0 truncate border-l pl-2 text-xs font-medium text-muted-foreground">AgendaPro</span>
       }
     </a>
   `,

@@ -49,7 +49,7 @@ describe('shared ui markup', () => {
   it('renders the public header with logo and staff link', () => {
     const header = render().querySelector('header') as HTMLElement;
     expect(header.querySelector('a[aria-label="Villadent, ir al inicio"]')?.getAttribute('href')).toBe('/');
-    expect(text(header)).toContain('Villadent');
+    expect(header.querySelector('a[aria-label="Villadent, ir al inicio"] img')?.getAttribute('src')).toBe('brand/villadent-logo.png');
     expect(text(header)).toContain('AgendaPro');
     const staff = Array.from(header.querySelectorAll('a')).find((a) => text(a) === 'Ingreso del personal');
     expect(staff?.getAttribute('href')).toBe('/ingreso');
