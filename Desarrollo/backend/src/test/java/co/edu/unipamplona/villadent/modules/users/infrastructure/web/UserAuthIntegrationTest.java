@@ -92,6 +92,18 @@ class UserAuthIntegrationTest {
     }
 
     @Test
+    @DisplayName("CP-RF09-03: an odontólogo cannot reach the reports route")
+    void odontologoCannotReachReports() throws Exception {
+        String email = uniqueEmail("reports-dentist");
+        createUser(email, "clave-segura", Role.ODONTOLOGO);
+
+        mockMvc.perform(get("/api/v1/reports/summary")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + login(email, "clave-segura")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
     @DisplayName("CP-RF09-02: a wrong password answers 401 without a session")
     void wrongPasswordAnswersUnauthorized() throws Exception {
         String email = uniqueEmail("wrong-password");
