@@ -35,6 +35,11 @@ public class AppointmentPersistenceAdapter implements AppointmentRepository {
     }
 
     @Override
+    public Optional<Appointment> findByTokenHash(String tokenHash) {
+        return appointments.findByTokenHash(tokenHash).map(mapper::toDomain);
+    }
+
+    @Override
     public List<Appointment> findByDentistIdAndDate(Long dentistId, LocalDate date) {
         return appointments.findByDentistIdAndDate(dentistId, date).stream()
                 .map(mapper::toDomain)

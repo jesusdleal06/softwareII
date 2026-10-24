@@ -1,7 +1,9 @@
 package co.edu.unipamplona.villadent.modules.appointments.domain.model;
 
+import co.edu.unipamplona.villadent.modules.appointments.domain.error.AppointmentNotManageableException;
 import co.edu.unipamplona.villadent.modules.appointments.domain.error.SlotTakenException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
@@ -83,6 +85,34 @@ public final class Appointment {
         return new Appointment(
                 id, code, patientId, dentistId, procedureId, date, time, durationMinutes,
                 AppointmentStatus.CANCELADA, origin, tokenHash);
+    }
+
+    public Appointment confirm() {
+        if (!occupiesSlot()) {
+            throw new AppointmentNotManageableException();
+        }
+        return new Appointment(
+                id, code, patientId, dentistId, procedureId, date, time, durationMinutes,
+                AppointmentStatus.CONFIRMADA, origin, tokenHash);
+    }
+
+    public Appointment reschedule(LocalDate newDate, LocalTime newTime) {
+        if (!occupiesSlot()) {
+            throw new AppointmentNotManageableException();
+        }
+        return new Appointment(
+                id, code, patientId, dentistId, procedureId, newDate, newTime, durationMinutes,
+                AppointmentStatus.REPROGRAMADA, origin, tokenHash);
+    }
+
+    public Appointment withTokenHash(String newTokenHash) {
+        return new Appointment(
+                id, code, patientId, dentistId, procedureId, date, time, durationMinutes,
+                status, origin, newTokenHash);
+    }
+
+    public boolean canBeManaged(LocalDateTime now) {
+        return occupiesSlot() && date.atTime(time).isAfter(now);
     }
 
     public LocalTime end() {

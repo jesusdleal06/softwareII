@@ -19,5 +19,7 @@ public record AppointmentResult(
         LocalTime time,
         int durationMinutes,
         AppointmentStatus status,
-        AppointmentOrigin origin) {
+        AppointmentOrigin origin,
+        String reminderStatus,
+        int reminderAttempts) {
 }

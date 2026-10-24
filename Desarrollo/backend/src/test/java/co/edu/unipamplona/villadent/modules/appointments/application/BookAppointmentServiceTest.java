@@ -24,6 +24,7 @@ import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivers.Resolv
 import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivers.ResolvePatientUseCase.ResolvePatientCommand;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.FindProcedureUseCase;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.ProcedureResult;
+import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivers.ScheduleReminderUseCase;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -61,11 +62,15 @@ class BookAppointmentServiceTest {
     @Mock
     private AppointmentRepository appointments;
 
+    @Mock
+    private ScheduleReminderUseCase scheduleReminder;
+
     private BookAppointmentService service;
 
     @BeforeEach
     void setUp() {
-        service = new BookAppointmentService(dentists, schedules, procedures, patients, appointments, CLOCK);
+        service = new BookAppointmentService(
+                dentists, schedules, procedures, patients, appointments, scheduleReminder, CLOCK);
     }
 
     private void activeDentistAndProcedure(int durationMinutes) {
@@ -156,6 +161,7 @@ class BookAppointmentServiceTest {
         verify(appointments).save(saved.capture());
         assertThat(saved.getValue().origin()).isEqualTo(AppointmentOrigin.WEB);
         assertThat(saved.getValue().durationMinutes()).isEqualTo(45);
+        verify(scheduleReminder).schedule(7L);
     }
 
     @Test

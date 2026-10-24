@@ -120,6 +120,10 @@ Las pruebas de integración levantan su **propio** PostgreSQL con Testcontainers
 | `GET` | `/api/v1/public/procedures` | Público, solo activos |
 | `GET` | `/api/v1/public/availability?dentistId=&date=&procedureId=` | Público; devuelve solo franjas libres |
 | `POST` | `/api/v1/public/appointments` | Público; agenda una cita con la duración del procedimiento |
+| `GET` | `/api/v1/public/appointments/manage/{token}` | Público; enlace personal del paciente, solo citas futuras y activas |
+| `POST` | `/api/v1/public/appointments/manage/{token}/confirm` | Público; confirma la cita |
+| `POST` | `/api/v1/public/appointments/manage/{token}/cancel` | Público; cancela y libera la franja |
+| `POST` | `/api/v1/public/appointments/manage/{token}/reschedule` | Público; reprograma a otra franja libre |
 | `GET` | `/api/v1/appointments?date=&dentistId=` | `AUXILIAR` y `ODONTOLOGO`; el odontólogo solo ve su propia agenda |
 | `POST` | `/api/v1/appointments` | `AUXILIAR`; registra una cita manual |
 | `GET/POST/PATCH` | `/api/v1/users/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
@@ -143,4 +147,19 @@ src/test/java/co/edu/unipamplona/villadent/   # Pruebas
 
 El esquema lo construye **Flyway** a partir de `src/main/resources/db/migration/`, con nombres `V1__descripcion.sql`, `V2__…`. Hibernate corre con `ddl-auto=validate`: **nunca** altera el esquema por su cuenta, solo comprueba que las entidades coincidan con lo que las migraciones crearon. Si agregas una entidad sin su migración, el arranque falla a propósito: así el esquema siempre queda versionado.
 
-La primera migración es `V1__initial_schema.sql`: crea todas las tablas del modelo, el índice de agenda por odontólogo y fecha, y la restricción `citas_sin_cruce` que impide dobles reservas en PostgreSQL. La segunda, `V2__appointment_booking.sql`, agrega la secuencia de códigos `VD-####` y deja `token_gestion_hash` nullable hasta que el recordatorio de la fase 3 cree el enlace de gestión.
+La primera migración es `V1__initial_schema.sql`: crea todas las tablas del modelo, el índice de agenda por odontólogo y fecha, y la restricción `citas_sin_cruce` que impide dobles reservas en PostgreSQL. La segunda, `V2__appointment_booking.sql`, agrega la secuencia de códigos `VD-####` y deja `token_gestion_hash` nullable hasta que el recordatorio cree el enlace de gestión. La tercera, `V3__reminder_scheduling.sql`, agrega el estado `CANCELADO`, garantiza un solo recordatorio pendiente por cita y acelera la consulta de recordatorios vencidos.
+
+### Recordatorios y enlace de gestión
+
+Al agendar, el backend programa el recordatorio con las reglas del prototipo: una cita de mañana (antes de las 12:00) se recuerda el día anterior a las 18:00; una de tarde, el mismo día a las 08:00. Si esa hora ya pasó al agendar, se envía de inmediato. Un proceso programado consulta cada minuto los recordatorios vencidos; si el envío falla, guarda el error y reintenta a los 5 minutos hasta tres intentos.
+
+El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`ReminderSender`). El token del enlace se genera al enviar (32 bytes aleatorios en base64url); en la base solo se guarda su hash SHA-256, y cada recordatorio nuevo reemplaza el anterior, así que un enlace viejo deja de servir. El enlace apunta a `app.manage-link-base` (por defecto `http://localhost:4200/cita/`).
+
+| Variable | Uso |
+| --- | --- |
+| `app.whatsapp.token` (`WHATSAPP_TOKEN`) | Token de la API de WhatsApp; sin él los envíos quedan registrados como fallidos |
+| `app.whatsapp.phone-number-id` (`WHATSAPP_PHONE_NUMBER_ID`) | Número emisor |
+| `app.whatsapp.template-name` (`WHATSAPP_TEMPLATE_NAME`) | Plantilla aprobada con cinco parámetros de cuerpo y uno de botón |
+| `app.whatsapp.api-url` (`WHATSAPP_API_URL`) | Base de la API; por defecto `https://graph.facebook.com/v21.0` |
+| `app.manage-link-base` (`MANAGE_LINK_BASE`) | Base del enlace de gestión |
+| `app.reminders.scheduler.enabled` (`REMINDERS_SCHEDULER_ENABLED`) | `false` apaga el sondeo (las pruebas de integración lo apagan) |

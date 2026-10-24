@@ -17,6 +17,7 @@ import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivers.Patien
 import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivers.ResolvePatientUseCase;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.FindProcedureUseCase;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.ProcedureResult;
+import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivers.ScheduleReminderUseCase;
 import co.edu.unipamplona.villadent.shared.error.NotFoundException;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -31,6 +32,7 @@ public class BookAppointmentService implements BookAppointmentUseCase {
     private final FindProcedureUseCase procedures;
     private final ResolvePatientUseCase patients;
     private final AppointmentRepository appointments;
+    private final ScheduleReminderUseCase scheduleReminder;
     private final Clock clock;
 
     public BookAppointmentService(
@@ -39,12 +41,14 @@ public class BookAppointmentService implements BookAppointmentUseCase {
             FindProcedureUseCase procedures,
             ResolvePatientUseCase patients,
             AppointmentRepository appointments,
+            ScheduleReminderUseCase scheduleReminder,
             Clock clock) {
         this.dentists = dentists;
         this.schedules = schedules;
         this.procedures = procedures;
         this.patients = patients;
         this.appointments = appointments;
+        this.scheduleReminder = scheduleReminder;
         this.clock = clock;
     }
 
@@ -83,6 +87,7 @@ public class BookAppointmentService implements BookAppointmentUseCase {
                 command.origin());
         appointment.ensureNoOverlap(booked);
         Appointment saved = appointments.save(appointment);
+        scheduleReminder.schedule(saved.id());
         return toResult(saved, patient, dentist, procedure);
     }
 
@@ -120,6 +125,8 @@ public class BookAppointmentService implements BookAppointmentUseCase {
                 appointment.time(),
                 appointment.durationMinutes(),
                 appointment.status(),
-                appointment.origin());
+                appointment.origin(),
+                null,
+                0);
     }
 }

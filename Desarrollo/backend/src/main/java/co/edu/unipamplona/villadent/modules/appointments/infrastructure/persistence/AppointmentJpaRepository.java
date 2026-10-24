@@ -4,6 +4,7 @@ import co.edu.unipamplona.villadent.modules.appointments.domain.model.Appointmen
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -12,6 +13,8 @@ public interface AppointmentJpaRepository extends JpaRepository<AppointmentJpaEn
     List<AppointmentJpaEntity> findByDentistIdAndDate(Long dentistId, LocalDate date);
 
     List<AppointmentJpaEntity> findByDate(LocalDate date);
+
+    Optional<AppointmentJpaEntity> findByTokenHash(String tokenHash);
 
     long countByDentistIdAndDateGreaterThanEqualAndStatusIn(
             Long dentistId, LocalDate date, Collection<AppointmentStatus> statuses);

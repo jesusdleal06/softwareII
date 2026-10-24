@@ -1,7 +1,6 @@
 package co.edu.unipamplona.villadent.modules.appointments.infrastructure.web;
 
 import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentOrigin;
-import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentOrigin;
 import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
@@ -21,5 +20,7 @@ public record StaffAppointmentResponse(
         @JsonFormat(pattern = "HH:mm") LocalTime time,
         int durationMinutes,
         AppointmentStatus status,
-        AppointmentOrigin origin) {
+        AppointmentOrigin origin,
+        String reminderStatus,
+        int reminderAttempts) {
 }

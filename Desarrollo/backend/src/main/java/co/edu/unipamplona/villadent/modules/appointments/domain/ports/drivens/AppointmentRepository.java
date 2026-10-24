@@ -9,6 +9,8 @@ public interface AppointmentRepository {
 
     Optional<Appointment> findById(Long id);
 
+    Optional<Appointment> findByTokenHash(String tokenHash);
+
     List<Appointment> findByDentistIdAndDate(Long dentistId, LocalDate date);
 
     List<Appointment> findByDate(LocalDate date);
