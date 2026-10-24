@@ -1,5 +1,9 @@
 # Project instructions for agents
 
+## Backend
+
+Before any work in `Desarrollo/backend`, read `Desarrollo/backend/docs/development-prompt.md`: architecture, dependencies, data model, conventions and order of work.
+
 ## Test plan
 
 The test plan is `Documentacion/pruebas/Actividad módulo 2_Plan de pruebas.docx` (ISO/IEC/IEEE 29119-3, cases `CP-RFxx-nn` / `CP-RNFxx-nn`). It is the source of truth for what "done" means. `Documentacion/Plan_de_Pruebas.docx` is an older draft: do not use it.
