@@ -81,11 +81,11 @@ class UserAuthIntegrationTest {
         String auxiliarToken = JsonPath.read(auxiliarLogin.getResponse().getContentAsString(), "$.token");
         String dentistToken = login(dentistEmail, "clave-segura");
 
-        mockMvc.perform(get("/api/v1/reports/summary")
+        mockMvc.perform(get("/api/v1/reports?from=2026-10-01&to=2026-10-31")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + auxiliarToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/reports/summary")
+        mockMvc.perform(get("/api/v1/reports?from=2026-10-01&to=2026-10-31")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + dentistToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
@@ -97,7 +97,7 @@ class UserAuthIntegrationTest {
         String email = uniqueEmail("reports-dentist");
         createUser(email, "clave-segura", Role.ODONTOLOGO);
 
-        mockMvc.perform(get("/api/v1/reports/summary")
+        mockMvc.perform(get("/api/v1/reports?from=2026-10-01&to=2026-10-31")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + login(email, "clave-segura")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));

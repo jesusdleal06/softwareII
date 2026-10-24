@@ -52,6 +52,13 @@ public class AppointmentPersistenceAdapter implements AppointmentRepository {
     }
 
     @Override
+    public List<Appointment> findForReport(LocalDate from, LocalDate to, Long dentistId) {
+        return appointments.findForReport(from, to, dentistId).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public long countActiveFrom(Long dentistId, LocalDate from) {
         return appointments.countByDentistIdAndDateGreaterThanEqualAndStatusIn(
                 dentistId, from, occupyingStatuses());

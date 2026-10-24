@@ -5,12 +5,14 @@ import co.edu.unipamplona.villadent.modules.appointments.application.BookAppoint
 import co.edu.unipamplona.villadent.modules.appointments.application.GetReminderAppointmentService;
 import co.edu.unipamplona.villadent.modules.appointments.application.ManageAppointmentService;
 import co.edu.unipamplona.villadent.modules.appointments.application.GetAgendaService;
+import co.edu.unipamplona.villadent.modules.appointments.application.GetAppointmentReportService;
 import co.edu.unipamplona.villadent.modules.appointments.application.GetAvailabilityService;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.AttachManageTokenUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.BookAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetReminderAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.ManageAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetAgendaUseCase;
+import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetAppointmentReportUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetAvailabilityUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivens.AppointmentRepository;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.FindDentistUseCase;
@@ -89,6 +91,11 @@ public class AppointmentConfig {
                 cancelReminder,
                 tokenGenerator,
                 clock);
+    }
+
+    @Bean
+    public GetAppointmentReportUseCase getAppointmentReportUseCase(AppointmentRepository appointments) {
+        return new GetAppointmentReportService(appointments);
     }
 
     @Bean

@@ -130,7 +130,8 @@ Las pruebas de integración levantan su **propio** PostgreSQL con Testcontainers
 | `GET/POST/PATCH` | `/api/v1/dentists/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
 | `GET/POST/PATCH` | `/api/v1/procedures/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
 | `GET/POST/PATCH` | `/api/v1/patients/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
-| `GET` | `/api/v1/reports/**` | `AUXILIAR` |
+| `GET` | `/api/v1/reports?from=&to=&dentistId=` | `AUXILIAR`; reporte consolidado por rango de fechas y odontólogo opcional |
+| `GET` | `/api/v1/reports/export?from=&to=&dentistId=` | `AUXILIAR`; descarga el mismo reporte en CSV |
 
 ---
 
@@ -147,7 +148,7 @@ src/test/java/co/edu/unipamplona/villadent/   # Pruebas
 
 El esquema lo construye **Flyway** a partir de `src/main/resources/db/migration/`, con nombres `V1__descripcion.sql`, `V2__…`. Hibernate corre con `ddl-auto=validate`: **nunca** altera el esquema por su cuenta, solo comprueba que las entidades coincidan con lo que las migraciones crearon. Si agregas una entidad sin su migración, el arranque falla a propósito: así el esquema siempre queda versionado.
 
-La primera migración es `V1__initial_schema.sql`: crea todas las tablas del modelo, el índice de agenda por odontólogo y fecha, y la restricción `citas_sin_cruce` que impide dobles reservas en PostgreSQL. La segunda, `V2__appointment_booking.sql`, agrega la secuencia de códigos `VD-####` y deja `token_gestion_hash` nullable hasta que el recordatorio cree el enlace de gestión. La tercera, `V3__reminder_scheduling.sql`, agrega el estado `CANCELADO`, garantiza un solo recordatorio pendiente por cita y acelera la consulta de recordatorios vencidos.
+La primera migración es `V1__initial_schema.sql`: crea todas las tablas del modelo, el índice de agenda por odontólogo y fecha, y la restricción `citas_sin_cruce` que impide dobles reservas en PostgreSQL. La segunda, `V2__appointment_booking.sql`, agrega la secuencia de códigos `VD-####` y deja `token_gestion_hash` nullable hasta que el recordatorio cree el enlace de gestión. La tercera, `V3__reminder_scheduling.sql`, agrega el estado `CANCELADO`, garantiza un solo recordatorio pendiente por cita y acelera la consulta de recordatorios vencidos. La cuarta, `V4__report_index.sql`, agrega el índice por fecha que usan los reportes.
 
 ### Recordatorios y enlace de gestión
 
@@ -163,3 +164,16 @@ El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`Remin
 | `app.whatsapp.api-url` (`WHATSAPP_API_URL`) | Base de la API; por defecto `https://graph.facebook.com/v21.0` |
 | `app.manage-link-base` (`MANAGE_LINK_BASE`) | Base del enlace de gestión |
 | `app.reminders.scheduler.enabled` (`REMINDERS_SCHEDULER_ENABLED`) | `false` apaga el sondeo (las pruebas de integración lo apagan) |
+
+### Reportes administrativos
+
+`GET /api/v1/reports?from=2026-10-01&to=2026-10-31&dentistId=3` devuelve el consolidado del periodo para el rol `AUXILIAR`. `dentistId` es opcional: sin él se incluyen todos los odontólogos. El reporte trae:
+
+- `total`: todas las citas del periodo.
+- `attended`: citas en estado `ATENDIDA`.
+- `cancelled`: citas en estado `CANCELADA`.
+- `noShow`: citas en estado `NO_ASISTIO`.
+- `noShowRate`: porcentaje entero de inasistencias sobre las citas finalizadas (`ATENDIDA` + `NO_ASISTIO`); es `0` cuando no hay citas finalizadas.
+- `daily`: una fila por cada día del rango, con el total y el conteo por estado. Los días sin citas aparecen en cero.
+
+Si `from` es posterior a `to`, la API responde `400` con código `INVALID_DATE_RANGE` y el mensaje «La fecha final debe ser igual o posterior a la inicial.». La misma consulta se descarga como CSV con `GET /api/v1/reports/export`; el archivo se llama `reporte-<desde>-<hasta>.csv`.

@@ -15,6 +15,8 @@ public interface AppointmentRepository {
 
     List<Appointment> findByDate(LocalDate date);
 
+    List<Appointment> findForReport(LocalDate from, LocalDate to, Long dentistId);
+
     long countActiveFrom(Long dentistId, LocalDate from);
 
     long countActiveByPatientFrom(Long patientId, LocalDate from);

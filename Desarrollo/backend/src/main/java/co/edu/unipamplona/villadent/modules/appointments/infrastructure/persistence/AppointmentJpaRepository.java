@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface AppointmentJpaRepository extends JpaRepository<AppointmentJpaEntity, Long> {
 
@@ -15,6 +16,17 @@ public interface AppointmentJpaRepository extends JpaRepository<AppointmentJpaEn
     List<AppointmentJpaEntity> findByDate(LocalDate date);
 
     Optional<AppointmentJpaEntity> findByTokenHash(String tokenHash);
+
+    @Query("""
+            select appointment from AppointmentJpaEntity appointment
+            where appointment.date between :from and :to
+              and (:dentistId is null or appointment.dentistId = :dentistId)
+            order by appointment.date, appointment.time, appointment.id
+            """)
+    List<AppointmentJpaEntity> findForReport(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
+            @Param("dentistId") Long dentistId);
 
     long countByDentistIdAndDateGreaterThanEqualAndStatusIn(
             Long dentistId, LocalDate date, Collection<AppointmentStatus> statuses);
