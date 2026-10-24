@@ -15,6 +15,8 @@ public interface DentistWebMapper {
 
     DentistResponse toResponse(DentistResult result);
 
+    PublicDentistResponse toPublicResponse(DentistResult result);
+
     @Mapping(target = "dentistId", source = "dentistId")
     AddScheduleCommand toCommand(Long dentistId, RegisterScheduleRequest request);
 

@@ -7,12 +7,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.edu.unipamplona.villadent.TestcontainersConfiguration;
+import co.edu.unipamplona.villadent.modules.appointments.domain.model.Appointment;
+import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentOrigin;
+import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentStatus;
+import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivens.AppointmentRepository;
+import co.edu.unipamplona.villadent.modules.patients.domain.model.Patient;
+import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivens.PatientRepository;
+import co.edu.unipamplona.villadent.modules.procedures.domain.model.Procedure;
+import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivens.ProcedureRepository;
 import co.edu.unipamplona.villadent.modules.users.domain.model.Role;
 import co.edu.unipamplona.villadent.modules.users.domain.model.User;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.PasswordHasher;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.UserRepository;
 import com.jayway.jsonpath.JsonPath;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +50,15 @@ class CatalogIntegrationTest {
 
     @Autowired
     private PasswordHasher passwordHasher;
+
+    @Autowired
+    private PatientRepository patients;
+
+    @Autowired
+    private ProcedureRepository procedures;
+
+    @Autowired
+    private AppointmentRepository appointments;
 
     private String uniqueEmail(String prefix) {
         return prefix + "-" + UUID.randomUUID() + "@villadent.co";
@@ -129,6 +151,42 @@ class CatalogIntegrationTest {
                                 {"name":"No permitido","durationMinutes":30}
                                 """))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void rejectsDeactivatingADentistWithFutureAppointments() throws Exception {
+        String token = tokenFor(Role.AUXILIAR);
+        MvcResult created = mockMvc.perform(post("/api/v1/dentists")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Dra. Camila Ortiz","specialty":"Cirugía oral"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Number dentistId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        Patient patient = patients.save(Patient.create(
+                "Paciente Ficticio",
+                "3" + ThreadLocalRandom.current().nextInt(100_000_000, 1_000_000_000)));
+        Procedure procedure = procedures.save(Procedure.create("Exodoncia " + UUID.randomUUID(), 60));
+        LocalDate date = LocalDate.now(Clock.system(ZoneId.of("America/Bogota"))).plusDays(2);
+        appointments.save(new Appointment(
+                null,
+                "VD-" + ThreadLocalRandom.current().nextInt(1_000_000_000),
+                patient.id(),
+                dentistId.longValue(),
+                procedure.id(),
+                date,
+                LocalTime.of(10, 0),
+                60,
+                AppointmentStatus.PENDIENTE,
+                AppointmentOrigin.MANUAL,
+                UUID.randomUUID().toString().replace("-", "")));
+
+        mockMvc.perform(patch("/api/v1/dentists/{id}/desactivar", dentistId.longValue())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DENTIST_HAS_FUTURE_APPOINTMENTS"));
     }
 
     @Test

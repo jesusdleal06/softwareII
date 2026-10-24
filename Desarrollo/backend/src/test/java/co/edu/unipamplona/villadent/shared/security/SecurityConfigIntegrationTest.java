@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 @Import(co.edu.unipamplona.villadent.TestcontainersConfiguration.class)
-@SpringBootTest
+@SpringBootTest(properties = "app.bootstrap-admin.enabled=false")
 @AutoConfigureMockMvc
 class SecurityConfigIntegrationTest {
 
@@ -19,8 +19,13 @@ class SecurityConfigIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    void publicPathsArePermitted() throws Exception {
-        mockMvc.perform(get("/api/v1/public/dentists")).andExpect(status().isNotFound());
+    void anUnknownPublicPathIsNotFoundNotUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/public/does-not-exist")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void publicDentistsArePermitted() throws Exception {
+        mockMvc.perform(get("/api/v1/public/dentists")).andExpect(status().isOk());
     }
 
     @Test

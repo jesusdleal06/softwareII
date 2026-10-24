@@ -11,4 +11,6 @@ public interface ProcedureWebMapper {
     RegisterProcedureCommand toCommand(RegisterProcedureRequest request);
 
     ProcedureResponse toResponse(ProcedureResult result);
+
+    PublicProcedureResponse toPublicResponse(ProcedureResult result);
 }
