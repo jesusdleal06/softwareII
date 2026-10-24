@@ -37,7 +37,29 @@ class AppointmentTest {
 
         assertThatThrownBy(() -> candidate.ensureNoOverlap(List.of(existing)))
                 .isInstanceOf(SlotTakenException.class)
-                .hasMessage("Este horario acaba de ser ocupado, elige otro.");
+                .hasMessage(Appointment.PUBLIC_CONFLICT);
+    }
+
+    @Test
+    @DisplayName("CP-RF08-03: a manual appointment reports the staff conflict message")
+    void reportsTheStaffConflictMessage() {
+        Appointment existing = appointmentAt(LocalTime.of(10, 0), 30);
+        Appointment candidate = new Appointment(
+                null,
+                "VD-0003",
+                1L,
+                1L,
+                1L,
+                DATE,
+                LocalTime.of(10, 15),
+                30,
+                AppointmentStatus.PENDIENTE,
+                AppointmentOrigin.MANUAL,
+                "hash");
+
+        assertThatThrownBy(() -> candidate.ensureNoOverlap(List.of(existing)))
+                .isInstanceOf(SlotTakenException.class)
+                .hasMessage(Appointment.STAFF_CONFLICT);
     }
 
     @Test

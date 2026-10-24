@@ -11,7 +11,13 @@ public interface AppointmentRepository {
 
     List<Appointment> findByDentistIdAndDate(Long dentistId, LocalDate date);
 
+    List<Appointment> findByDate(LocalDate date);
+
     long countActiveFrom(Long dentistId, LocalDate from);
+
+    long countActiveByPatientFrom(Long patientId, LocalDate from);
+
+    String nextCode();
 
     Appointment save(Appointment appointment);
 }

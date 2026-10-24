@@ -30,6 +30,16 @@ public class PatientPersistenceAdapter implements PatientRepository {
     }
 
     @Override
+    public Optional<Patient> findByPhoneForUpdate(String phone) {
+        return patients.findByPhoneForUpdate(phone).map(mapper::toDomain);
+    }
+
+    @Override
+    public void createIfAbsent(String fullName, String phone) {
+        patients.insertIfAbsent(fullName, phone);
+    }
+
+    @Override
     public List<Patient> findAll() {
         return patients.findAll().stream().map(mapper::toDomain).toList();
     }

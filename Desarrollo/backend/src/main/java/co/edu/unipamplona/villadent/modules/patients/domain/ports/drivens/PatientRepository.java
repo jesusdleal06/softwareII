@@ -10,6 +10,10 @@ public interface PatientRepository {
 
     Optional<Patient> findByPhone(String phone);
 
+    Optional<Patient> findByPhoneForUpdate(String phone);
+
+    void createIfAbsent(String fullName, String phone);
+
     List<Patient> findAll();
 
     Patient save(Patient patient);

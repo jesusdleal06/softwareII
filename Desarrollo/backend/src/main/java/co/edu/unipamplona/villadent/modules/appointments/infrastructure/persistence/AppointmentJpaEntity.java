@@ -55,7 +55,7 @@ public class AppointmentJpaEntity {
     @Column(name = "origen", nullable = false)
     private AppointmentOrigin origin;
 
-    @Column(name = "token_gestion_hash", nullable = false, unique = true)
+    @Column(name = "token_gestion_hash", unique = true)
     private String tokenHash;
 
     @Version

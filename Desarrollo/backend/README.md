@@ -119,6 +119,9 @@ Las pruebas de integración levantan su **propio** PostgreSQL con Testcontainers
 | `GET` | `/api/v1/public/dentists` | Público, solo activos |
 | `GET` | `/api/v1/public/procedures` | Público, solo activos |
 | `GET` | `/api/v1/public/availability?dentistId=&date=&procedureId=` | Público; devuelve solo franjas libres |
+| `POST` | `/api/v1/public/appointments` | Público; agenda una cita con la duración del procedimiento |
+| `GET` | `/api/v1/appointments?date=&dentistId=` | `AUXILIAR` y `ODONTOLOGO`; el odontólogo solo ve su propia agenda |
+| `POST` | `/api/v1/appointments` | `AUXILIAR`; registra una cita manual |
 | `GET/POST/PATCH` | `/api/v1/users/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
 | `GET/POST/PATCH` | `/api/v1/dentists/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
 | `GET/POST/PATCH` | `/api/v1/procedures/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
@@ -140,4 +143,4 @@ src/test/java/co/edu/unipamplona/villadent/   # Pruebas
 
 El esquema lo construye **Flyway** a partir de `src/main/resources/db/migration/`, con nombres `V1__descripcion.sql`, `V2__…`. Hibernate corre con `ddl-auto=validate`: **nunca** altera el esquema por su cuenta, solo comprueba que las entidades coincidan con lo que las migraciones crearon. Si agregas una entidad sin su migración, el arranque falla a propósito: así el esquema siempre queda versionado.
 
-La primera migración es `V1__initial_schema.sql`: crea todas las tablas del modelo, el índice de agenda por odontólogo y fecha, y la restricción `citas_sin_cruce` que impide dobles reservas en PostgreSQL.
+La primera migración es `V1__initial_schema.sql`: crea todas las tablas del modelo, el índice de agenda por odontólogo y fecha, y la restricción `citas_sin_cruce` que impide dobles reservas en PostgreSQL. La segunda, `V2__appointment_booking.sql`, agrega la secuencia de códigos `VD-####` y deja `token_gestion_hash` nullable hasta que el recordatorio de la fase 3 cree el enlace de gestión.

@@ -1,6 +1,7 @@
 package co.edu.unipamplona.villadent.modules.dentists.infrastructure.config;
 
 import co.edu.unipamplona.villadent.modules.dentists.application.AddScheduleService;
+import co.edu.unipamplona.villadent.modules.dentists.application.FindDentistByUserIdService;
 import co.edu.unipamplona.villadent.modules.dentists.application.FindDentistService;
 import co.edu.unipamplona.villadent.modules.dentists.application.ListActiveDentistsService;
 import co.edu.unipamplona.villadent.modules.dentists.application.ListDentistsService;
@@ -9,6 +10,7 @@ import co.edu.unipamplona.villadent.modules.dentists.application.RegisterDentist
 import co.edu.unipamplona.villadent.modules.dentists.application.SetDentistActiveService;
 import co.edu.unipamplona.villadent.modules.dentists.application.SetScheduleActiveService;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.AddScheduleUseCase;
+import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.FindDentistByUserIdUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.FindDentistUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.ListActiveDentistsUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.ListDentistsUseCase;
@@ -44,6 +46,11 @@ public class DentistConfig {
     @Bean
     public FindDentistUseCase findDentistUseCase(DentistRepository dentists) {
         return new FindDentistService(dentists);
+    }
+
+    @Bean
+    public FindDentistByUserIdUseCase findDentistByUserIdUseCase(DentistRepository dentists) {
+        return new FindDentistByUserIdService(dentists);
     }
 
     @Bean

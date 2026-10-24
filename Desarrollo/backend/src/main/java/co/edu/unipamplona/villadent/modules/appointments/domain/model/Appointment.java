@@ -20,6 +20,11 @@ public final class Appointment {
     private final AppointmentOrigin origin;
     private final String tokenHash;
 
+    public static final String PUBLIC_CONFLICT =
+            "Este horario acaba de ser ocupado. Por favor elige otro.";
+    public static final String STAFF_CONFLICT =
+            "Este horario acaba de ser ocupado, elige otro.";
+
     public Appointment(
             Long id,
             String code,
@@ -51,6 +56,35 @@ public final class Appointment {
         this.tokenHash = tokenHash;
     }
 
+    public static Appointment book(
+            String code,
+            Long patientId,
+            Long dentistId,
+            Long procedureId,
+            LocalDate date,
+            LocalTime time,
+            int durationMinutes,
+            AppointmentOrigin origin) {
+        return new Appointment(
+                null,
+                code,
+                patientId,
+                dentistId,
+                procedureId,
+                date,
+                time,
+                durationMinutes,
+                AppointmentStatus.PENDIENTE,
+                origin,
+                null);
+    }
+
+    public Appointment cancel() {
+        return new Appointment(
+                id, code, patientId, dentistId, procedureId, date, time, durationMinutes,
+                AppointmentStatus.CANCELADA, origin, tokenHash);
+    }
+
     public LocalTime end() {
         return time.plusMinutes(durationMinutes);
     }
@@ -78,8 +112,12 @@ public final class Appointment {
     /** Booking rule shared by the web and the manual flows. */
     public void ensureNoOverlap(List<Appointment> existing) {
         if (existing.stream().anyMatch(this::overlaps)) {
-            throw new SlotTakenException("Este horario acaba de ser ocupado, elige otro.");
+            throw new SlotTakenException(conflictMessage());
         }
+    }
+
+    public String conflictMessage() {
+        return origin == AppointmentOrigin.MANUAL ? STAFF_CONFLICT : PUBLIC_CONFLICT;
     }
 
     public Long id() {
