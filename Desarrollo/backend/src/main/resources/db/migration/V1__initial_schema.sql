@@ -6,12 +6,12 @@
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE roles (
-    id_rol SERIAL PRIMARY KEY,
+    id_rol BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre_rol VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE usuarios (
-    id_usuario SERIAL PRIMARY KEY,
+    id_usuario BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     correo VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE usuarios (
 );
 
 CREATE TABLE odontologos (
-    id_odontologo SERIAL PRIMARY KEY,
+    id_odontologo BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     especialidad VARCHAR(255),
     id_usuario BIGINT,
@@ -35,7 +35,7 @@ CREATE TABLE odontologos (
 );
 
 CREATE TABLE horarios_odontologo (
-    id_horario SERIAL PRIMARY KEY,
+    id_horario BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_odontologo BIGINT NOT NULL,
     dia_semana INT NOT NULL,
     hora_inicio TIME NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE horarios_odontologo (
 );
 
 CREATE TABLE procedimientos (
-    id_procedimiento SERIAL PRIMARY KEY,
+    id_procedimiento BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL UNIQUE,
     duracion_min INT NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -56,7 +56,7 @@ CREATE TABLE procedimientos (
 );
 
 CREATE TABLE pacientes (
-    id_paciente SERIAL PRIMARY KEY,
+    id_paciente BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre_completo VARCHAR(255) NOT NULL,
     telefono VARCHAR(20) NOT NULL UNIQUE,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -66,7 +66,7 @@ CREATE TABLE pacientes (
 );
 
 CREATE TABLE citas (
-    id_cita SERIAL PRIMARY KEY,
+    id_cita BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     codigo VARCHAR(20) NOT NULL UNIQUE,
     id_paciente BIGINT NOT NULL,
     id_odontologo BIGINT NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE citas (
 );
 
 CREATE TABLE recordatorios (
-    id_recordatorio SERIAL PRIMARY KEY,
+    id_recordatorio BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_cita BIGINT NOT NULL,
     canal VARCHAR(20) NOT NULL,
     programado_para TIMESTAMPTZ NOT NULL,
@@ -102,6 +102,12 @@ CREATE TABLE recordatorios (
     CONSTRAINT recordatorios_canal_check CHECK (canal = 'WHATSAPP'),
     CONSTRAINT recordatorios_estado_envio_check CHECK (estado_envio IN ('PROGRAMADO', 'ENVIADO', 'FALLIDO'))
 );
+
+-- Agenda reads filter by dentist and day: 15 appointments a day must answer in
+-- under 2 seconds (RNF04). Patient history and the active-appointment rule look
+-- appointments up by patient (section 9).
+CREATE INDEX citas_odontologo_fecha_idx ON citas (id_odontologo, fecha);
+CREATE INDEX citas_paciente_idx ON citas (id_paciente);
 
 -- No double booking, enforced by the database (CP-RF07-03, CP-RF08-02).
 -- The overlapping interval is the appointment slot: [fecha + hora, fecha + hora + duracion_min).
