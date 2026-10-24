@@ -1,8 +1,10 @@
 package co.edu.unipamplona.villadent;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvent;
@@ -13,7 +15,9 @@ import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-@AnalyzeClasses(packages = "co.edu.unipamplona.villadent")
+// Production code only: test classes (including the fixtures in archfixture) are not
+// bound by the layer rules.
+@AnalyzeClasses(packages = "co.edu.unipamplona.villadent", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
 
     @ArchTest
@@ -31,14 +35,16 @@ class ArchitectureTest {
         .allowEmptyShould(true);
 
     @ArchTest
-    static final ArchRule applicationDependsOnlyOnDomain = noClasses()
+    static final ArchRule applicationDependsOnlyOnDomain = classes()
         .that()
         .resideInAPackage("co.edu.unipamplona.villadent..modules..application..")
         .should()
-        .dependOnClassesThat()
+        .onlyDependOnClassesThat()
         .resideInAnyPackage(
+            "co.edu.unipamplona.villadent..modules..application..",
             "co.edu.unipamplona.villadent..modules..domain..",
-            "org.springframework.transaction.annotation..")
+            "org.springframework.transaction.annotation..",
+            "java..")
         .because("the application layer may only depend on the domain and the transaction annotation")
         .allowEmptyShould(true);
 
