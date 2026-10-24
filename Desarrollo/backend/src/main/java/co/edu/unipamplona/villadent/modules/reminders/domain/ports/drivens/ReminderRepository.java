@@ -16,4 +16,7 @@ public interface ReminderRepository {
     List<Reminder> findDue(LocalDateTime now);
 
     Reminder save(Reminder reminder);
+
+    /** Flushes pending changes so the partial unique index sees the cancelled row first. */
+    void flush();
 }

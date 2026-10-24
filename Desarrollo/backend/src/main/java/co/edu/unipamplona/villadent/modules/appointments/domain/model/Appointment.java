@@ -96,6 +96,26 @@ public final class Appointment {
                 AppointmentStatus.CONFIRMADA, origin, tokenHash);
     }
 
+    /**
+     * Staff status transition. The target may only be one of the staff-managed states;
+     * a terminal appointment cannot change again.
+     */
+    public Appointment withStatus(AppointmentStatus target) {
+        Objects.requireNonNull(target, "target");
+        if (!occupiesSlot()) {
+            throw new AppointmentNotManageableException();
+        }
+        if (target != AppointmentStatus.CONFIRMADA
+                && target != AppointmentStatus.CANCELADA
+                && target != AppointmentStatus.ATENDIDA
+                && target != AppointmentStatus.NO_ASISTIO) {
+            throw new AppointmentNotManageableException();
+        }
+        return new Appointment(
+                id, code, patientId, dentistId, procedureId, date, time, durationMinutes,
+                target, origin, tokenHash);
+    }
+
     public Appointment reschedule(LocalDate newDate, LocalTime newTime) {
         if (!occupiesSlot()) {
             throw new AppointmentNotManageableException();

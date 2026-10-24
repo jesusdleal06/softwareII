@@ -137,6 +137,8 @@ public class ManageAppointmentService implements ManageAppointmentUseCase {
         return new ManagedAppointmentResult(
                 appointment.id(),
                 appointment.code(),
+                appointment.dentistId(),
+                appointment.procedureId(),
                 patient == null ? "" : patient.fullName(),
                 patient == null ? "" : patient.phone(),
                 dentist == null ? "" : dentist.name(),

@@ -37,5 +37,6 @@ public interface AppointmentPersistenceMapper {
     @Mapping(target = "origin", source = "entity.origin")
     @Mapping(target = "tokenHash", source = "entity.tokenHash")
     @Mapping(target = "withTokenHash", ignore = true)
+    @Mapping(target = "withStatus", ignore = true)
     Appointment toDomain(AppointmentJpaEntity entity);
 }

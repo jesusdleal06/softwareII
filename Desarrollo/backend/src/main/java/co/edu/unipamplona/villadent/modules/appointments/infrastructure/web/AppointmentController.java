@@ -2,7 +2,9 @@ package co.edu.unipamplona.villadent.modules.appointments.infrastructure.web;
 
 import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentOrigin;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.BookAppointmentUseCase;
+import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.ChangeAppointmentStatusUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetAgendaUseCase;
+import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.RescheduleStaffAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.DentistResult;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.FindDentistByUserIdUseCase;
 import co.edu.unipamplona.villadent.shared.error.ForbiddenException;
@@ -15,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,16 +32,22 @@ public class AppointmentController {
 
     private final BookAppointmentUseCase bookAppointmentUseCase;
     private final GetAgendaUseCase getAgendaUseCase;
+    private final ChangeAppointmentStatusUseCase changeAppointmentStatusUseCase;
+    private final RescheduleStaffAppointmentUseCase rescheduleStaffAppointmentUseCase;
     private final FindDentistByUserIdUseCase findDentistByUserIdUseCase;
     private final AppointmentWebMapper mapper;
 
     public AppointmentController(
             BookAppointmentUseCase bookAppointmentUseCase,
             GetAgendaUseCase getAgendaUseCase,
+            ChangeAppointmentStatusUseCase changeAppointmentStatusUseCase,
+            RescheduleStaffAppointmentUseCase rescheduleStaffAppointmentUseCase,
             FindDentistByUserIdUseCase findDentistByUserIdUseCase,
             AppointmentWebMapper mapper) {
         this.bookAppointmentUseCase = bookAppointmentUseCase;
         this.getAgendaUseCase = getAgendaUseCase;
+        this.changeAppointmentStatusUseCase = changeAppointmentStatusUseCase;
+        this.rescheduleStaffAppointmentUseCase = rescheduleStaffAppointmentUseCase;
         this.findDentistByUserIdUseCase = findDentistByUserIdUseCase;
         this.mapper = mapper;
     }
@@ -57,6 +67,24 @@ public class AppointmentController {
     public StaffAppointmentResponse book(@Valid @RequestBody BookAppointmentRequest request) {
         return mapper.toStaffResponse(
                 bookAppointmentUseCase.book(mapper.toCommand(request, AppointmentOrigin.MANUAL)));
+    }
+
+    @PatchMapping("/{id}/status")
+    public StaffAppointmentResponse changeStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody ChangeAppointmentStatusRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        return mapper.toStaffResponse(
+                changeAppointmentStatusUseCase.changeStatus(id, request.status(), ownDentistId(jwt, null)));
+    }
+
+    @PatchMapping("/{id}/reschedule")
+    public StaffAppointmentResponse reschedule(
+            @PathVariable Long id,
+            @Valid @RequestBody RescheduleAppointmentRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        return mapper.toStaffResponse(rescheduleStaffAppointmentUseCase.reschedule(
+                id, request.date(), request.time(), ownDentistId(jwt, null)));
     }
 
     private Long ownDentistId(Jwt jwt, Long requestedDentistId) {

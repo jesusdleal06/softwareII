@@ -92,6 +92,33 @@ class AppointmentTest {
     }
 
     @Test
+    void changesTheStaffStatusOfAnActiveAppointment() {
+        Appointment attended = appointmentAt(LocalTime.of(10, 0), 30)
+                .withStatus(AppointmentStatus.ATENDIDA);
+
+        assertThat(attended.status()).isEqualTo(AppointmentStatus.ATENDIDA);
+        assertThat(attended.occupiesSlot()).isFalse();
+    }
+
+    @Test
+    void rejectsAStaffTransitionFromATerminalStatus() {
+        Appointment cancelled = new Appointment(
+                null, "VD-0002", 1L, 1L, 1L, DATE, LocalTime.of(10, 0), 30,
+                AppointmentStatus.CANCELADA, AppointmentOrigin.WEB, "hash");
+
+        assertThatThrownBy(() -> cancelled.withStatus(AppointmentStatus.ATENDIDA))
+                .isInstanceOf(AppointmentNotManageableException.class)
+                .hasMessage(AppointmentNotManageableException.MESSAGE);
+    }
+
+    @Test
+    void rejectsAStatusThatOnlyThePatientFlowCanSet() {
+        assertThatThrownBy(() -> appointmentAt(LocalTime.of(10, 0), 30)
+                        .withStatus(AppointmentStatus.REPROGRAMADA))
+                .isInstanceOf(AppointmentNotManageableException.class);
+    }
+
+    @Test
     void reschedulesAnActiveAppointment() {
         Appointment rescheduled = appointmentAt(LocalTime.of(10, 0), 30)
                 .reschedule(DATE.plusDays(1), LocalTime.of(11, 0));

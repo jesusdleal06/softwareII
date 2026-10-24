@@ -47,7 +47,10 @@ public class ScheduleReminderService implements ScheduleReminderUseCase {
         ReminderAppointment view = appointment.get();
         LocalDateTime scheduledFor = ReminderSchedule.dueAtOrNow(view.date(), view.time(), now);
         reminders.findProgrammedByAppointmentId(appointmentId)
-                .ifPresent(existing -> reminders.save(existing.cancelled()));
+                .ifPresent(existing -> {
+                    reminders.save(existing.cancelled());
+                    reminders.flush();
+                });
         Reminder saved = reminders.save(Reminder.scheduled(appointmentId, scheduledFor));
         if (saved.isDue(now)) {
             delivery.deliver(saved.id());

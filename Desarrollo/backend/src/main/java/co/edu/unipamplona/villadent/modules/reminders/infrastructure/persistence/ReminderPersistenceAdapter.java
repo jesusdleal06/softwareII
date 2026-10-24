@@ -49,6 +49,11 @@ public class ReminderPersistenceAdapter implements ReminderRepository {
     }
 
     @Override
+    public void flush() {
+        reminders.flush();
+    }
+
+    @Override
     public Reminder save(Reminder reminder) {
         ReminderJpaEntity entity = reminder.id() == null
                 ? new ReminderJpaEntity()

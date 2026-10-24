@@ -8,6 +8,8 @@ import java.time.LocalTime;
 public record ManagedAppointmentResponse(
         Long id,
         String code,
+        Long dentistId,
+        Long procedureId,
         String patientName,
         String patientPhone,
         String dentistName,
@@ -21,6 +23,8 @@ public record ManagedAppointmentResponse(
         return new ManagedAppointmentResponse(
                 result.id(),
                 result.code(),
+                result.dentistId(),
+                result.procedureId(),
                 result.patientName(),
                 result.patientPhone(),
                 result.dentistName(),

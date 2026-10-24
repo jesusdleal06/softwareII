@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -340,6 +341,191 @@ class StaffAgendaIntegrationTest {
         mockMvc.perform(get("/api/v1/appointments?date=%s&dentistId=%d".formatted(date, other.id()))
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("staff status: the assistant confirms, attends and cannot change a terminal appointment")
+    void assistantChangesStatusAndTerminalAppointmentsAreLocked() throws Exception {
+        LocalDate date = nextWorkingDay();
+        Dentist dentist = dentist("Dra. Camila Ortiz", null);
+        clinicHours(dentist, date);
+        Procedure cleaning = procedure("Limpieza", 30);
+        String token = tokenFor(Role.AUXILIAR);
+        MvcResult created = bookManual(
+                token, dentist, cleaning, date, LocalTime.of(9, 0), "Ana María Rueda", uniquePhone());
+        Long id = ((Number) JsonPath.read(created.getResponse().getContentAsString(), "$.id")).longValue();
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/status", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"CONFIRMADA"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONFIRMADA"));
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/status", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"ATENDIDA"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ATENDIDA"));
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/status", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"CANCELADA"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("APPOINTMENT_NOT_MANAGEABLE"))
+                .andExpect(jsonPath("$.detail").value("Esta cita ya no admite cambios."));
+    }
+
+    @Test
+    @DisplayName("staff reschedule: the assistant moves an appointment and the old slot is freed")
+    void assistantReschedulesAnAppointment() throws Exception {
+        LocalDate date = nextWorkingDay();
+        Dentist dentist = dentist("Dra. Camila Ortiz", null);
+        clinicHours(dentist, date);
+        Procedure cleaning = procedure("Limpieza", 30);
+        String token = tokenFor(Role.AUXILIAR);
+        MvcResult created = bookManual(
+                token, dentist, cleaning, date, LocalTime.of(9, 0), "Ana María Rueda", uniquePhone());
+        Long id = ((Number) JsonPath.read(created.getResponse().getContentAsString(), "$.id")).longValue();
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/reschedule", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"%s","time":"11:00"}
+                                """.formatted(date)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REPROGRAMADA"))
+                .andExpect(jsonPath("$.time").value("11:00"));
+
+        mockMvc.perform(get("/api/v1/public/availability?dentistId=%d&date=%s&procedureId=%d"
+                        .formatted(dentist.id(), date, cleaning.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slots", hasItem("09:00")))
+                .andExpect(jsonPath("$.slots", not(hasItem("11:00"))));
+    }
+
+    @Test
+    @DisplayName("staff reschedule: an overlapping slot is rejected with the staff message")
+    void rescheduleRejectsAnOverlappingSlot() throws Exception {
+        LocalDate date = nextWorkingDay();
+        Dentist dentist = dentist("Dra. Laura Villamizar", null);
+        clinicHours(dentist, date);
+        Procedure cleaning = procedure("Limpieza", 30);
+        String token = tokenFor(Role.AUXILIAR);
+        MvcResult created = bookManual(
+                token, dentist, cleaning, date, LocalTime.of(9, 0), "Ana María Rueda", uniquePhone());
+        Long id = ((Number) JsonPath.read(created.getResponse().getContentAsString(), "$.id")).longValue();
+        bookManual(token, dentist, cleaning, date, LocalTime.of(10, 0), "Carlos Pérez", uniquePhone());
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/reschedule", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"%s","time":"10:00"}
+                                """.formatted(date)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("SLOT_TAKEN"))
+                .andExpect(jsonPath("$.detail").value("Este horario acaba de ser ocupado, elige otro."));
+    }
+
+    @Test
+    @DisplayName("staff status: a dentist changes only their own appointments")
+    void dentistChangesOnlyTheirOwnStatus() throws Exception {
+        LocalDate date = nextWorkingDay();
+        User dentistUser = user(Role.ODONTOLOGO);
+        Dentist own = dentist("Dra. Laura Villamizar", dentistUser.id());
+        Dentist other = dentist("Dr. Andrés Peña", null);
+        clinicHours(own, date);
+        clinicHours(other, date);
+        Procedure cleaning = procedure("Limpieza", 30);
+        String auxiliarToken = tokenFor(Role.AUXILIAR);
+        Long ownId = ((Number) JsonPath.read(bookManual(
+                        auxiliarToken, own, cleaning, date, LocalTime.of(9, 0), "Ana María Rueda", uniquePhone())
+                .getResponse().getContentAsString(), "$.id")).longValue();
+        Long otherId = ((Number) JsonPath.read(bookManual(
+                        auxiliarToken, other, cleaning, date, LocalTime.of(10, 0), "Carlos Pérez", uniquePhone())
+                .getResponse().getContentAsString(), "$.id")).longValue();
+        String token = login(dentistUser);
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/status", ownId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"CONFIRMADA"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONFIRMADA"));
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/status", otherId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"CONFIRMADA"}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("staff reschedule: a dentist reschedules only their own appointments")
+    void dentistReschedulesOnlyTheirOwnAppointments() throws Exception {
+        LocalDate date = nextWorkingDay();
+        User dentistUser = user(Role.ODONTOLOGO);
+        Dentist own = dentist("Dra. Laura Villamizar", dentistUser.id());
+        Dentist other = dentist("Dr. Andrés Peña", null);
+        clinicHours(own, date);
+        clinicHours(other, date);
+        Procedure cleaning = procedure("Limpieza", 30);
+        String auxiliarToken = tokenFor(Role.AUXILIAR);
+        Long ownId = ((Number) JsonPath.read(bookManual(
+                        auxiliarToken, own, cleaning, date, LocalTime.of(9, 0), "Ana María Rueda", uniquePhone())
+                .getResponse().getContentAsString(), "$.id")).longValue();
+        Long otherId = ((Number) JsonPath.read(bookManual(
+                        auxiliarToken, other, cleaning, date, LocalTime.of(10, 0), "Carlos Pérez", uniquePhone())
+                .getResponse().getContentAsString(), "$.id")).longValue();
+        String token = login(dentistUser);
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/reschedule", ownId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"%s","time":"11:00"}
+                                """.formatted(date)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.time").value("11:00"));
+
+        mockMvc.perform(patch("/api/v1/appointments/{id}/reschedule", otherId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"date":"%s","time":"15:00"}
+                                """.formatted(date)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/public/availability?dentistId=%d&date=%s&procedureId=%d"
+                        .formatted(other.id(), date, cleaning.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slots", not(hasItem("10:00"))))
+                .andExpect(jsonPath("$.slots", hasItem("15:00")));
+    }
+
+    @Test
+    @DisplayName("staff status: an anonymous request is rejected")
+    void anonymousStatusChangeIsRejected() throws Exception {
+        mockMvc.perform(patch("/api/v1/appointments/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"CONFIRMADA"}
+                                """))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

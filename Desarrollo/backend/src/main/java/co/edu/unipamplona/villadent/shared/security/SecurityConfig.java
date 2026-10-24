@@ -112,7 +112,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/appointments")
                     .hasRole("AUXILIAR")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/appointments/**")
-                    .hasRole("AUXILIAR")
+                    .hasAnyRole("AUXILIAR", "ODONTOLOGO")
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
                 .decoder(jwtDecoder())

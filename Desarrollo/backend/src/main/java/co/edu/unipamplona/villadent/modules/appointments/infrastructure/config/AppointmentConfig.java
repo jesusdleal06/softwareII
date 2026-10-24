@@ -1,16 +1,21 @@
 package co.edu.unipamplona.villadent.modules.appointments.infrastructure.config;
 
+import co.edu.unipamplona.villadent.modules.appointments.application.AppointmentResultAssembler;
 import co.edu.unipamplona.villadent.modules.appointments.application.AttachManageTokenService;
 import co.edu.unipamplona.villadent.modules.appointments.application.BookAppointmentService;
+import co.edu.unipamplona.villadent.modules.appointments.application.ChangeAppointmentStatusService;
 import co.edu.unipamplona.villadent.modules.appointments.application.GetReminderAppointmentService;
 import co.edu.unipamplona.villadent.modules.appointments.application.ManageAppointmentService;
+import co.edu.unipamplona.villadent.modules.appointments.application.RescheduleStaffAppointmentService;
 import co.edu.unipamplona.villadent.modules.appointments.application.GetAgendaService;
 import co.edu.unipamplona.villadent.modules.appointments.application.GetAppointmentReportService;
 import co.edu.unipamplona.villadent.modules.appointments.application.GetAvailabilityService;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.AttachManageTokenUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.BookAppointmentUseCase;
+import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.ChangeAppointmentStatusUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetReminderAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.ManageAppointmentUseCase;
+import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.RescheduleStaffAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetAgendaUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetAppointmentReportUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetAvailabilityUseCase;
@@ -99,12 +104,37 @@ public class AppointmentConfig {
     }
 
     @Bean
-    public GetAgendaUseCase getAgendaUseCase(
-            AppointmentRepository appointments,
+    public AppointmentResultAssembler appointmentResultAssembler(
             FindDentistUseCase dentists,
             FindProcedureUseCase procedures,
             FindPatientUseCase patients,
             GetReminderStatusUseCase reminderStatus) {
-        return new GetAgendaService(appointments, dentists, procedures, patients, reminderStatus);
+        return new AppointmentResultAssembler(dentists, procedures, patients, reminderStatus);
+    }
+
+    @Bean
+    public GetAgendaUseCase getAgendaUseCase(
+            AppointmentRepository appointments,
+            AppointmentResultAssembler assembler) {
+        return new GetAgendaService(appointments, assembler);
+    }
+
+    @Bean
+    public RescheduleStaffAppointmentUseCase rescheduleStaffAppointmentUseCase(
+            AppointmentRepository appointments,
+            ListSchedulesUseCase schedules,
+            ScheduleReminderUseCase scheduleReminder,
+            AppointmentResultAssembler assembler,
+            Clock clock) {
+        return new RescheduleStaffAppointmentService(
+                appointments, schedules, scheduleReminder, assembler, clock);
+    }
+
+    @Bean
+    public ChangeAppointmentStatusUseCase changeAppointmentStatusUseCase(
+            AppointmentRepository appointments,
+            CancelReminderUseCase cancelReminder,
+            AppointmentResultAssembler assembler) {
+        return new ChangeAppointmentStatusService(appointments, cancelReminder, assembler);
     }
 }

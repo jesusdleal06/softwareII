@@ -6,6 +6,8 @@ import java.time.LocalTime;
 public record ManagedAppointmentResult(
         Long id,
         String code,
+        Long dentistId,
+        Long procedureId,
         String patientName,
         String patientPhone,
         String dentistName,
