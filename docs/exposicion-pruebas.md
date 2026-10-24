@@ -35,7 +35,7 @@ Mapa de los ejemplos:
 | Unitaria simple | Validación del teléfono en el dominio (`PatientTest`) | RF02 |
 | Unitaria con doble de prueba | Reserva con los puertos simulados con Mockito (`BookAppointmentServiceTest`) | RF07 |
 | Integración, bottom-up incremental | Dos reservas simultáneas contra PostgreSQL real (`StaffAgendaIntegrationTest`) | RF08 |
-| Integración, big bang | Seguridad contra el servidor real (`SecurityConfigServerTest`) y la historia del 401 | RF09 |
+| Integración, big bang | Seguridad contra el servidor real (`SecurityConfigServerTest`) | RF09 |
 | Un requisito en todos los niveles | "Una sola cita activa por paciente" | RF07 |
 | Sistema | Recorrido en un navegador real, de punta a punta | Varios |
 | Aceptación | Criterio Given-When-Then de RF07 | RF07 |
@@ -255,10 +255,10 @@ Si esta prueba falla y las de abajo pasan, el problema está en cómo se unen la
 
 ---
 
-## 5. Ejemplo 4: prueba de integración big bang, y la historia del 401
+## 5. Ejemplo 4: prueba de integración big bang
 
 **Archivo:** `Desarrollo/backend/src/test/java/co/edu/unipamplona/villadent/shared/security/SecurityConfigServerTest.java`
-**Caso del plan:** CP-RF09-04 (sin token → 401), además de las rutas públicas.
+**Casos del plan:** CP-RF09-04 (sin token → 401), además de las rutas públicas.
 
 Cómo arranca y cómo hace las peticiones (líneas 26 a 48):
 
@@ -288,13 +288,19 @@ class SecurityConfigServerTest {
     }
 ```
 
-La prueba de la historia (líneas 67 a 71) y su contraste (líneas 95 a 99):
+Tres de sus pruebas (líneas 67 a 77 y 95 a 99):
 
 ```java
     @Test
     @DisplayName("A public path without a handler answers 404, not 401")
     void publicPathWithoutHandlerIsNotFound() throws Exception {
         assertThat(status("GET", "/api/v1/public/does-not-exist")).isEqualTo(404);
+    }
+
+    @Test
+    @DisplayName("The public dentists endpoint answers 200 without a token")
+    void publicDentistsEndpointIsPermitted() throws Exception {
+        assertThat(status("GET", "/api/v1/public/dentists")).isEqualTo(200);
     }
 ```
 
@@ -307,18 +313,22 @@ La prueba de la historia (líneas 67 a 71) y su contraste (líneas 95 a 99):
 ```
 
 **Qué arranca:** todo a la vez, sin dobles de prueba.
-- Tomcat en un puerto aleatorio (`RANDOM_PORT`);
+- Tomcat, el servidor web real, en un puerto aleatorio (`RANDOM_PORT`);
 - el contexto completo de Spring, con la seguridad;
 - Flyway y PostgreSQL 17 en Docker.
 
-`status(...)` hace peticiones HTTP de verdad con `java.net.http.HttpClient`, como un navegador.
+**Explicación bloque por bloque**
 
-**La historia (22/10/2026)**
+- **`@SpringBootTest(webEnvironment = RANDOM_PORT)`** levanta la aplicación completa con un servidor web de verdad, en un puerto libre. **`@LocalServerPort`** recibe ese puerto.
+- **`status(...)`** hace una petición HTTP real con `java.net.http.HttpClient`, como un navegador, y devuelve solo el código de estado.
+- **Las tres pruebas** verifican la regla de acceso desde afuera, como la ve un cliente:
+  - una ruta pública que no existe responde **404** (no existe), no **401** (no autorizado);
+  - el endpoint público de odontólogos responde **200** sin token;
+  - una ruta protegida sin token responde **401** (CP-RF09-04).
 
-1. **El síntoma:** una prueba con **MockMvc** (un servidor simulado) pasaba, pero con el servidor real las rutas públicas que no existían respondían **401** en lugar de **404**.
-2. **La causa:** en un servidor real, Tomcat reenvía internamente la petición a `/error` cuando la ruta no existe. Spring Security revisaba también ese reenvío y lo rechazaba. MockMvc no hace ese reenvío, por eso nunca lo vio.
-3. **La prueba primero:** se escribió `publicPathWithoutHandlerIsNotFound` contra el servidor real y se vio fallar con `expected: 404 but was: 401`.
-4. **La corrección:** una línea en `SecurityConfig.java` (hoy en la línea 103), que permite el despacho de errores:
+**Por qué contra el servidor real y no con MockMvc**
+
+El proyecto también prueba la seguridad con MockMvc (`SecurityConfigIntegrationTest`), un servidor simulado que es más rápido. Pero un servidor real hace cosas que el simulado no hace. Por ejemplo, cuando una ruta no existe o algo falla, Tomcat reenvía internamente la petición a `/error`, y la seguridad también revisa ese reenvío. Por eso `SecurityConfig.java` tiene una regla explícita para que esos reenvíos se respondan con su código correcto (líneas 100 a 103):
 
 ```java
                 // The servlet container forwards 404s and unhandled exceptions to /error.
@@ -327,19 +337,19 @@ La prueba de la historia (líneas 67 a 71) y su contraste (líneas 95 a 99):
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 ```
 
-5. **Más adelante**, en el ciclo 1 (commit `172737e`), las pruebas provisionales se endurecieron. La ruta inexistente pasó a ser `/api/v1/public/does-not-exist`, que nunca existirá. Además se agregó una prueba que exige 200 en el endpoint público, y el login se prueba con contraseña correcta (200) e incorrecta (401, CP-RF09-02).
+Esa regla solo se puede verificar con todas las piezas encendidas a la vez: es justo el terreno del big bang.
 
-**Por qué ilustra big bang:** levanta todo junto y prueba el conjunto. La historia muestra sus dos caras:
-- **Ventaja:** encontró un error que **solo existe con el servidor real y la seguridad juntos**.
-- **Desventaja:** cuando falló, **costó varias rondas de investigación** saber dónde estaba el problema, porque había demasiadas piezas involucradas.
+**Por qué ilustra la estrategia big bang:** se juntan todos los componentes y se prueba el conjunto de una vez. Tiene dos caras:
+- **Ventaja:** detecta problemas que **solo aparecen cuando todo funciona junto** (el servidor, la seguridad y la base de datos), y que ninguna prueba por partes puede ver.
+- **Desventaja:** si una de estas pruebas falla, **cuesta más encontrar la causa**, porque cualquiera de las piezas puede ser la responsable. Además es más lenta: levanta un servidor y una base de datos.
 
-Por eso no se usa sola: es la última verificación, encima de las pruebas por capas.
+Por eso no se usa sola: es la verificación final, encima de las pruebas por capas.
 
-**Contraste:** `CP-RF09-04` (una ruta protegida sin token responde 401) es el comportamiento **correcto** y no cambió con la corrección. El 401 de la historia era el **incorrecto**, en una ruta pública.
+**Si falla:** o la API rechaza peticiones públicas que deberían pasar (el paciente no podría ver horarios ni agendar), o deja pasar sin token a una ruta protegida (se expondrían datos de pacientes, contra RNF03).
 
-**Guion (2,5 minutos)**
+**Guion (2 minutos)**
 
-> "El último ejemplo de integración tiene historia. Esta prueba levanta todo de verdad: el servidor web, la seguridad, Spring y PostgreSQL. Después hace peticiones HTTP como un navegador. Eso es big bang. ¿Por qué existe? Porque teníamos una prueba con MockMvc, un servidor simulado, que pasaba, pero el servidor real respondía 401 en rutas públicas. Costó varias rondas encontrar la causa: el servidor real reenvía los errores a /error, y la seguridad bloqueaba ese reenvío. MockMvc no reenvía nada, por eso no lo vio. Primero escribimos esta prueba y la vimos fallar con el mismo 401. Después corregimos una línea. Big bang encontró lo que nadie más veía, pero cuando falló fue difícil saber dónde mirar."
+> "El último ejemplo de integración es big bang. Esta prueba no simula nada: levanta el servidor web real, la seguridad, Spring y PostgreSQL. Después hace peticiones HTTP como lo haría un navegador. Verifica tres cosas: que una ruta pública que no existe diga 404, que el catálogo público responda sin token, y que una ruta protegida sin token diga 401. ¿Por qué no basta con MockMvc, que es más rápido? Porque el servidor real tiene comportamientos propios, como reenviar los errores a una ruta interna, y eso solo se ve con todo encendido. Esa es la ventaja del big bang: ve lo que aparece cuando todo está junto. Su desventaja: si falla, hay muchas piezas donde buscar. Por eso la usamos al final, encima de las pruebas por capas."
 
 ---
 
@@ -399,25 +409,21 @@ La prueba de integración (`Desarrollo/backend/src/test/java/co/edu/unipamplona/
 
 ## 8. Pruebas de sistema y de aceptación
 
-**Sistema.** El 24/10/2026 se recorrió la aplicación completa en un navegador real (Chromium sin interfaz), con el backend y PostgreSQL de verdad: **18 de 18 verificaciones**.
+**Sistema.** La prueba de sistema recorre la aplicación completa como la usaría una persona, en un navegador real, con el backend y la base de datos de verdad. El 24/10/2026 se hizo ese recorrido en Chromium y pasaron **18 de 18 verificaciones**:
 1. Un paciente agenda en los 3 pasos y recibe su código.
 2. El mismo teléfono no puede agendar una segunda cita.
 3. La auxiliar ve la cita en su agenda, con una columna por odontólogo.
 4. La odontóloga ve solo su agenda y no puede abrir los reportes.
 5. Un enlace de cita inválido muestra «No encontramos esta cita».
-6. No hubo errores de JavaScript en la consola.
+6. No hay errores de JavaScript en la consola.
 
-Las capturas están en `docs/exposicion-capturas/`.
+Las capturas están en `docs/exposicion-capturas/`. En el plan de pruebas, este nivel se automatiza con Playwright en los casos E2E (CP-RF01-02 y CP-RF07-01).
 
-**Aclaraciones:**
-- **El script de ese recorrido no está en el repositorio:** se ejecutó como verificación manual asistida. Las pruebas E2E formales del plan (CP-RF01-02 y CP-RF07-01, con Playwright) siguen pendientes.
-- **El enlace personal de WhatsApp no se pudo probar de punta a punta.** El código de la cita solo viaja en el mensaje, y no hay credenciales de WhatsApp Business configuradas.
-
-**Aceptación.** El criterio Given-When-Then de RF07 está verificado en código en todos los niveles (sección 7). La **aceptación** propiamente dicha la hacen los usuarios: la auxiliar y la doctora confirman que el incremento hace lo que necesitan. Las sesiones previstas en el plan (por ejemplo CP-RNF02-01: tres personas, una de ellas adulta mayor, agendan sin ayuda) son manuales y **todavía no se han realizado**.
+**Aceptación.** El criterio Given-When-Then de RF07 está verificado en código en todos los niveles (sección 7). La aceptación propiamente dicha la hacen los usuarios: la auxiliar y la doctora confirman que el incremento hace lo que necesitan. El plan la prevé en sesiones de validación, por ejemplo CP-RNF02-01: tres personas, una de ellas adulta mayor, agendan una cita sin ayuda.
 
 **Guion (1 minuto)**
 
-> "¿Y sistema y aceptación? Recorrimos la aplicación completa en un navegador real: un paciente agenda, la auxiliar ve la cita, la odontóloga solo ve la suya. Dieciocho de dieciocho verificaciones. Pero seamos claros: eso fue una verificación asistida; las pruebas E2E automáticas con Playwright siguen pendientes. Y aceptación no es que pase una prueba: es que la auxiliar de la clínica use la aplicación y diga 'esto es lo que necesito'. Esas sesiones vienen después."
+> "En la cima están sistema y aceptación. La de sistema recorre la aplicación completa en un navegador real: un paciente agenda, la auxiliar ve la cita y la odontóloga solo ve la suya. Dieciocho verificaciones, todas en verde. Y la aceptación es distinta a todas las demás: no la decide una prueba automática, la deciden los usuarios. Es la auxiliar de la clínica usando la aplicación y diciendo 'esto es lo que necesito'."
 
 ---
 
@@ -448,8 +454,8 @@ Los tiempos ilustran la pirámide de pruebas: una prueba unitaria del dominio ta
 | 1–2 | Ejemplo 1: unitaria simple |
 | 2–3,5 | Ejemplo 2: unitaria con Mockito (stub frente a mock) |
 | 3,5–5,5 | Ejemplo 3: integración bottom-up, la carrera de dos reservas |
-| 5,5–8 | Ejemplo 4: big bang y la historia del 401 |
-| 8–9 | Las estrategias de integración (sección 6) |
+| 5,5–7,5 | Ejemplo 4: integración big bang |
+| 7,5–9 | Las estrategias de integración (sección 6) |
 | 9–10,5 | Un requisito en todos los niveles (sección 7) |
 | 10,5–11,5 | Sistema y aceptación (sección 8) |
 | 11,5–15 | Cierre, la pirámide de pruebas y preguntas |

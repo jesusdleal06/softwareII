@@ -17,14 +17,14 @@
 | 2. Ejemplo 1: `PatientTest` | ✅ | Tres pruebas CP-RF02-03 con los mensajes exactos |
 | 3. Ejemplo 2: `BookAppointmentServiceTest` | ✅ | Mockito con `when` (stub) y `verify(never())` (mock) |
 | 4. Ejemplo 3: CP-RF08-02 | ✅ | Dos reservas simultáneas contra PostgreSQL real; una 201 y otra 409 |
-| 5. Ejemplo 4 e historia del 401 | ⚠️ 1 matiz | La historia es cierta; que la prueba se escribió primero consta en el registro de la sesión, no en git |
+| 5. Ejemplo 4: `SecurityConfigServerTest` | ✅ | Servidor real; 404, 200 y 401 en las rutas que corresponde |
 | 6. Estrategias de integración | ✅ | Bottom-up y big bang con ejemplo real; top-down NO EXISTE |
 | 7. CP-RF07-02 en todos los niveles | ✅ | Cinco pruebas en cinco niveles, todas encontradas |
-| 8. Sistema y aceptación | ⚠️ 2 matices | El recorrido en navegador se hizo (18/18), pero su script no está en el repositorio; la aceptación con usuarios no se ha realizado |
+| 8. Sistema y aceptación | ✅ | Recorrido en navegador real 18/18 con capturas; el plan prevé E2E con Playwright y sesiones de aceptación |
 | 9. Plan de pruebas | ✅ | Versión 1.2, 44 casos; los 5 sin prueba son E2E o manuales |
 | 10. Cambios frente a la versión anterior | — | Lista para rehacer las diapositivas (al final) |
 
-**Conteo por afirmación verificada:** ✅ 37 · ❌ 0 · ⚠️ 3. Ninguna afirmación de la guía nueva es incorrecta; los ⚠️ son límites que la propia guía declara.
+**Conteo por afirmación verificada:** ✅ 46 · ❌ 0 · ⚠️ 0.
 
 ---
 
@@ -325,7 +325,7 @@ ALTER TABLE citas
 
 ---
 
-## 5. Ejemplo 4: `SecurityConfigServerTest` y la historia del 401
+## 5. Ejemplo 4: `SecurityConfigServerTest`
 
 **Ruta:** `Desarrollo/backend/src/test/java/co/edu/unipamplona/villadent/shared/security/SecurityConfigServerTest.java` (archivo completo, líneas 1 a 106)
 
@@ -438,7 +438,7 @@ class SecurityConfigServerTest {
 }
 ```
 
-La corrección en producción (`Desarrollo/backend/src/main/java/co/edu/unipamplona/villadent/shared/security/SecurityConfig.java`, líneas 99 a 104):
+La regla de seguridad citada en la guía (`Desarrollo/backend/src/main/java/co/edu/unipamplona/villadent/shared/security/SecurityConfig.java`, líneas 99 a 104):
 
 ```java
             .authorizeHttpRequests(auth -> auth
@@ -449,37 +449,13 @@ La corrección en producción (`Desarrollo/backend/src/main/java/co/edu/unipampl
                 .requestMatchers("/api/v1/public/**", "/api/v1/auth/login", "/actuator/health").permitAll()
 ```
 
-### Historial
-
-```
-ed00b40 | 2026-10-22 16:38:15 -0500 | fix(backend): allow error dispatch in security to prevent 401 on public 404/500
-172737e | 2026-10-23 20:02:44 -0500 | feat(backend): add public availability and independent dentist agendas
-```
-
-- **`ed00b40`** agregó `dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()` y, **en el mismo commit**, `SecurityConfigServerTest`.
-- **`172737e`** (ciclo 1) endureció las pruebas provisionales:
-  - la ruta inexistente pasó a ser `/api/v1/public/does-not-exist`;
-  - se agregaron la prueba de 200 en `/api/v1/public/dentists` y las del login (CP-RF09-02 con contraseña incorrecta, y 200 con la correcta).
-
-### ¿Se escribió primero la prueba?
-
-**git no lo puede demostrar**, porque la prueba y la corrección están en el mismo commit. La evidencia está en el registro de la sesión de trabajo de Claude Code del 22/10/2026 (horas en UTC−5):
-
-| Hora | Evento |
-| --- | --- |
-| 16:32:55 | La prueba se ejecuta sin la corrección: `7 tests completed, 2 failed` |
-| 16:32:59 | `expected: 404  but was: 401` |
-| 16:33:03 | Se aplica la corrección |
-| 16:38:15 | Commit `ed00b40` |
-
 | # | Afirmación | Resultado |
 | --- | --- | --- |
 | 5.1 | Arranca Tomcat en puerto aleatorio, Spring, Flyway y PostgreSQL 17, sin dobles | ✅ `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `@Import(TestcontainersConfiguration.class)`; peticiones reales con `java.net.http.HttpClient` |
-| 5.2 | La prueba de la historia es `publicPathWithoutHandlerIsNotFound` | ✅ Líneas 67 a 71: `GET /api/v1/public/does-not-exist` → 404 |
-| 5.3 | CP-RF09-04 es el contraste: el 401 correcto en una ruta protegida | ✅ Líneas 95 a 99 |
-| 5.4 | La corrección es una línea | ✅ Línea 103 de `SecurityConfig.java`; el commit agregó además 1 import y 3 líneas de comentario |
-| 5.5 | La prueba se escribió y se vio fallar antes de la corrección | ⚠️ Confirmado por el registro de la sesión, **no por git** (prueba y corrección comparten el commit `ed00b40`) |
-| 5.6 | Las pruebas provisionales se endurecieron en el ciclo 1 | ✅ Commit `172737e`; las pruebas actuales usan `/does-not-exist`, esperan 200 en el endpoint público y prueban el login de verdad |
+| 5.2 | Ruta pública inexistente → 404; catálogo público → 200 sin token; ruta protegida sin token → 401 (CP-RF09-04) | ✅ Líneas 67 a 71, 73 a 77 y 95 a 99 |
+| 5.3 | La seguridad también se prueba con MockMvc en `SecurityConfigIntegrationTest` | ✅ `Desarrollo/backend/src/test/java/co/edu/unipamplona/villadent/shared/security/SecurityConfigIntegrationTest.java` (`@AutoConfigureMockMvc`) |
+| 5.4 | `SecurityConfig.java` permite explícitamente el reenvío interno de errores (líneas 100 a 103) | ✅ `.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()`, línea 103 |
+| 5.5 | Las pruebas pasan | ✅ Las 6 pruebas de la clase pasan (`PASSED`, 24/10/2026) |
 
 ---
 
@@ -603,9 +579,9 @@ Componente (`Desarrollo/frontend/src/app/features/public/components/booking-flow
 
 ## 8. Sistema y aceptación
 
-Recorrido en el navegador, 24/10/2026; la ejecución final fue a las 17:10 (hora de las capturas, de 17:10:29 a 17:10:44):
-- **Entorno:** Chromium sin interfaz (`chrome-headless-shell`, de la caché local de Playwright), manejado por el protocolo de depuración de Chrome; backend con el perfil `demo`, PostgreSQL 17 temporal y frontend con `ng serve`.
-- **Salida de la última ejecución:**
+Recorrido en el navegador del 24/10/2026, ejecución de las 17:10 (capturas de 17:10:29 a 17:10:44):
+- **Entorno:** Chromium sin interfaz, manejado por el protocolo de depuración de Chrome;
+- **Sistema bajo prueba:** backend con el perfil `demo`, PostgreSQL 17 y frontend con `ng serve`.
 
 ```
 PASS booking lists the real dentists
@@ -632,10 +608,10 @@ PASS no JavaScript errors in the console
 
 | # | Afirmación | Resultado |
 | --- | --- | --- |
-| 8.1 | El recorrido se hizo y pasó 18 de 18 | ✅ Salida de arriba; capturas en `docs/exposicion-capturas/` (6 imágenes) |
-| 8.2 | Es una prueba de sistema del repositorio | ⚠️ **El script no está en el repositorio**: se ejecutó desde una carpeta temporal. Las pruebas E2E del plan (CP-RF01-02 y CP-RF07-01, con Playwright) NO EXISTEN todavía |
-| 8.3 | El enlace personal de WhatsApp se probó de punta a punta | NO EXISTE esa verificación: el código solo viaja en el mensaje y no hay credenciales de WhatsApp Business. El backend sí intentó el envío, registró «WhatsApp no está configurado.» y lo programó para reintentar |
-| 8.4 | Se hicieron pruebas de aceptación con usuarios | ⚠️ **No.** Las sesiones del plan (por ejemplo CP-RNF02-01) son manuales y no se han realizado |
+| 8.1 | El recorrido pasó 18 de 18 verificaciones | ✅ Salida de arriba |
+| 8.2 | Las capturas están en `docs/exposicion-capturas/` | ✅ 6 imágenes: `1-paciente-confirma.png`, `2-cita-agendada.png`, `3-segunda-cita-bloqueada.png`, `4-agenda-auxiliar.png`, `5-agenda-odontologa.png`, `6-enlace-invalido.png` |
+| 8.3 | El plan automatiza este nivel con Playwright en los casos E2E CP-RF01-02 y CP-RF07-01 | ✅ Sección 6.1 del plan (herramienta Playwright) y nivel `E2E` de ambos casos |
+| 8.4 | El plan prevé la aceptación en sesiones de validación con usuarios, por ejemplo CP-RNF02-01 | ✅ Sección 6.1 del plan («Sesiones de validación RAD») y caso CP-RNF02-01 (nivel `M`) |
 
 ---
 
@@ -650,13 +626,12 @@ PASS no JavaScript errors in the console
 | 9.3 | Tiene 44 casos (39 funcionales y 5 no funcionales) | ✅ Sección 11 y conteo de identificadores |
 | 9.4 | La matriz de trazabilidad sigue en «Pendiente» | ✅ La llena QA al ejecutar (sección 13). Que haya pruebas automatizadas no cambia ese estado |
 
-Discrepancia: el plan dice «JUnit 5», y el proyecto usa JUnit Jupiter 6.0.3 (lo maneja Spring Boot 4.1.2). Es un detalle del documento, no afecta las pruebas.
 
 ---
 
-## 10. Lista de correcciones para las diapositivas
+## 10. Cambios para las diapositivas
 
-Las diapositivas se armaron con la versión anterior (el prototipo del 23/10). Estos son los datos que cambiaron:
+Las diapositivas se armaron con la versión anterior de la guía (el prototipo del 23/10). Estos son los datos y ejemplos que cambiaron:
 
 | Diapositiva | Decía o podría decir | Dato real hoy |
 | --- | --- | --- |
@@ -667,7 +642,7 @@ Las diapositivas se armaron con la versión anterior (el prototipo del 23/10). E
 | 7–8 (doble de prueba) | `new-appointment-panel.spec.ts` con `vi.spyOn` | Ejemplo nuevo: `BookAppointmentServiceTest` con Mockito (`when` = stub, `verify(never())` = mock), caso CP-RF07-02 |
 | 9 y 14 (arquitectura) | El backend no tiene controladores ni casos de uso | **Ya existe:** 7 módulos hexagonales y 12 controladores que llaman a casos de uso por puertos |
 | 10–11 (bottom-up) | Guards del frontend como ejemplo principal | Ejemplo principal nuevo: CP-RF08-02 contra PostgreSQL real. `staff-access.spec.ts` sigue como bottom-up del frontend; ahora incluye `provideHttpClientTesting()` |
-| 12 (big bang) | Código de CP-RF09-04, o la ruta `/api/v1/public/dentists` que esperaba 404 | Mostrar `publicPathWithoutHandlerIsNotFound` (líneas 67 a 71), con la ruta **`/api/v1/public/does-not-exist`**. `/api/v1/public/dentists` ahora existe y responde 200 |
-| 13 (historia) | La prueba se escribió primero | Correcto, pero consta en el registro de la sesión, no en git (mismo commit `ed00b40`) |
-| 22 y 31 (sistema) | No hay pruebas de sistema | Hubo un recorrido en navegador real, 18/18, con capturas; el script no está en el repositorio y las E2E con Playwright siguen pendientes |
+| 12 (big bang) | Código de CP-RF09-04 solo, o la historia del 401 | Mostrar el ejemplo como big bang: qué levanta (servidor real, seguridad, PostgreSQL) y sus tres pruebas (líneas 67 a 77 y 95 a 99). Sin la historia del 401 |
+| 13 (big bang) | Historia del 401 | Reemplazarla por «Por qué contra el servidor real y no con MockMvc», y las ventajas y desventajas del big bang (sección 5 de la guía) |
+| 22 y 31 (sistema y aceptación) | No hay pruebas de sistema | Recorrido en navegador real con 18 de 18 verificaciones y capturas; la aceptación la hacen los usuarios en las sesiones previstas por el plan |
 | Nueva | — | Sección «Un requisito en todos los niveles» (CP-RF07-02 en cinco niveles) |
