@@ -67,9 +67,11 @@ tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification) {
 	violationRules {
 		rule {
 			element = 'PACKAGE'
+			// With element = 'PACKAGE', includes matches package names, so the
+			// wildcard covers the subpackages where the rules actually live.
 			includes = [
-				'co.edu.unipamplona.villadent.modules.appointments.domain',
-				'co.edu.unipamplona.villadent.modules.reminders'
+				'co.edu.unipamplona.villadent.modules.appointments.domain*',
+				'co.edu.unipamplona.villadent.modules.reminders*'
 			]
 			limit {
 				counter = 'BRANCH'
