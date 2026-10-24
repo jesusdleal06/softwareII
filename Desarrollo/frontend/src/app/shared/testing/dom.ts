@@ -33,3 +33,8 @@ export function typeInto(input: HTMLInputElement, value: string): void {
   input.value = value;
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
+
+/** Lets pending microtasks and timers run before the next assertion. */
+export async function settle(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}

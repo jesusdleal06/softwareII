@@ -13,7 +13,7 @@ export const PUBLIC_ROUTES: Routes = [
     loadComponent: () => import('./pages/booking-page').then((m) => m.BookingPage),
   },
   {
-    path: 'cita/:codigo',
+    path: 'cita/:token',
     title: 'Tu cita · Villadent AgendaPro',
     loadComponent: () => import('./pages/appointment-page').then((m) => m.AppointmentPage),
   },

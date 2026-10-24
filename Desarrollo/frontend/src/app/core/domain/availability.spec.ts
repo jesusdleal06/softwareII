@@ -72,7 +72,7 @@ describe('availability', () => {
 
   it('blocks starts that overlap the tail of a longer appointment', () => {
     // Exodoncia (60 min) at 14:00 occupies 14:00-15:00.
-    const appointments = [makeAppointment({ date: THURSDAY, time: '14:00', procedureId: 'p4' })];
+    const appointments = [makeAppointment({ date: THURSDAY, time: '14:00', procedureId: 'p4', durationMinutes: 60 })];
     const slots = availableSlots({
       dentistId: 'd1',
       date: THURSDAY,

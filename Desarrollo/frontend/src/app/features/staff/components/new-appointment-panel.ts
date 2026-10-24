@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, isDevMode, OnInit, output, signal } from '@angular/core';
 import { LucideCircleCheck, LucideTriangleAlert } from '@lucide/angular';
 import {
-  formatDate,
   formatPhone,
-  formatTime,
   normalizePhone,
   PatientData,
   PatientErrors,
@@ -69,20 +67,19 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
             <p appAlertMessage>{{ text }}</p>
           }
 
-          @if (activeAppointment(); as active) {
+          @if (activeMessage(); as message) {
             <div role="alert" class="flex flex-col gap-3 rounded-2xl border border-warning/50 bg-warning/15 p-4">
               <p class="flex items-start gap-3 text-base font-medium">
                 <svg lucideTriangleAlert class="mt-0.5 size-5 shrink-0 text-warning-foreground" aria-hidden="true"></svg>
-                El paciente con celular {{ formatPhone(patient().phone) }} ya tiene una cita activa:
-                {{ active.code }} el {{ formatDate(active.date) }} a las {{ formatTime(active.time) }}. Solo se permite
-                una cita activa por paciente. Reprograma o cancela esa cita desde la agenda antes de crear una nueva.
+                {{ message }}
               </p>
             </div>
           }
 
           <app-slot-picker
             [value]="selection()"
-            [appointments]="store.appointments()"
+            [dentists]="store.dentists()"
+            [procedures]="store.procedures()"
             [now]="now"
             [compact]="true"
             (valueChange)="onSelectionChange($event)"
@@ -116,7 +113,9 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
           }
 
           <div class="flex flex-col gap-3">
-            <button type="submit" appBigButton size="lg" [full]="true">Guardar cita</button>
+            <button type="submit" appBigButton size="lg" [full]="true" [disabled]="saving()">
+              {{ saving() ? 'Guardando…' : 'Guardar cita' }}
+            </button>
             <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="close()">
               Cancelar
             </button>
@@ -134,8 +133,6 @@ export class NewAppointmentPanel implements OnInit {
   readonly initialDate = input.required<string>();
   readonly closed = output<void>();
 
-  protected readonly formatDate = formatDate;
-  protected readonly formatTime = formatTime;
   protected readonly formatPhone = formatPhone;
   protected readonly labels = { name: 'Nombre completo del paciente', phone: 'Celular del paciente' };
   /** Fixed for the panel lifetime so the slot picker gets a stable input. */
@@ -145,7 +142,8 @@ export class NewAppointmentPanel implements OnInit {
   protected readonly patient = signal<PatientData>({ name: '', phone: '' });
   protected readonly errors = signal<PatientErrors>({});
   protected readonly notice = signal<string | null>(null);
-  protected readonly activeAppointment = signal<Appointment | null>(null);
+  protected readonly activeMessage = signal<string | null>(null);
+  protected readonly saving = signal(false);
   protected readonly created = signal<Appointment | null>(null);
   protected readonly simulateConflict = signal(false);
   /** Demo helper, rendered only in dev builds so it never ships in the production DOM. */
@@ -153,6 +151,7 @@ export class NewAppointmentPanel implements OnInit {
 
   ngOnInit(): void {
     this.reset();
+    void this.store.ensureCatalogs();
   }
 
   protected reset(): void {
@@ -160,7 +159,7 @@ export class NewAppointmentPanel implements OnInit {
     this.patient.set({ name: '', phone: '' });
     this.errors.set({});
     this.notice.set(null);
-    this.activeAppointment.set(null);
+    this.activeMessage.set(null);
     this.created.set(null);
     this.simulateConflict.set(false);
   }
@@ -181,13 +180,13 @@ export class NewAppointmentPanel implements OnInit {
 
   protected onPatientChange(next: PatientData): void {
     this.patient.set(next);
-    this.activeAppointment.set(null);
+    this.activeMessage.set(null);
   }
 
-  protected save(event: Event): void {
+  protected async save(event: Event): Promise<void> {
     event.preventDefault();
     this.notice.set(null);
-    this.activeAppointment.set(null);
+    this.activeMessage.set(null);
 
     const patient = this.patient();
     const errors = validatePatient(patient);
@@ -199,31 +198,32 @@ export class NewAppointmentPanel implements OnInit {
     }
     if (Object.keys(errors).length > 0) return;
 
-    const active = this.store.activeAppointmentFor(patient.phone);
-    if (active) {
-      this.showActive(active);
-      return;
-    }
-
     if (this.simulateConflict()) {
       this.conflict();
       this.simulateConflict.set(false);
       return;
     }
 
-    const result = this.store.createAppointment({
-      ...this.selection(),
-      patientName: patient.name.trim(),
-      patientPhone: normalizePhone(patient.phone),
-      origin: 'Manual',
-    });
-    if (result.ok) {
-      this.created.set(result.appointment);
-      scrollModalToTop();
-    } else if (result.reason === 'conflicto') {
-      this.conflict();
-    } else {
-      this.showActive(result.activeAppointment);
+    this.saving.set(true);
+    try {
+      const result = await this.store.createAppointment({
+        ...this.selection(),
+        patientName: patient.name.trim(),
+        patientPhone: normalizePhone(patient.phone),
+        origin: 'Manual',
+      });
+      if (result.ok) {
+        this.created.set(result.appointment);
+        scrollModalToTop();
+      } else if (result.reason === 'conflicto') {
+        this.conflict();
+      } else {
+        this.showActive();
+      }
+    } catch {
+      this.warn('No pudimos guardar la cita. Revisa la conexión e intenta de nuevo.');
+    } finally {
+      this.saving.set(false);
     }
   }
 
@@ -237,8 +237,10 @@ export class NewAppointmentPanel implements OnInit {
     scrollModalToTop();
   }
 
-  private showActive(active: Appointment): void {
-    this.activeAppointment.set(active);
+  private showActive(): void {
+    this.activeMessage.set(
+      `El paciente con celular ${formatPhone(this.patient().phone)} ya tiene una cita activa. Solo se permite una cita activa por paciente. Reprograma o cancela esa cita desde la agenda antes de crear una nueva.`,
+    );
     scrollModalToTop();
   }
 }

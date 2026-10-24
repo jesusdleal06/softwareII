@@ -40,11 +40,11 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
               }
               <app-slot-picker
                 [value]="selection()"
-                [appointments]="store.appointments()"
+                [dentists]="store.dentists()"
+                [procedures]="store.procedures()"
                 [now]="now"
                 [fixedDentist]="true"
                 [fixedProcedure]="true"
-                [excludeAppointmentId]="cita.id"
                 [compact]="true"
                 (valueChange)="onSelectionChange($event)"
               />
@@ -142,6 +142,10 @@ export class AppointmentDetail {
   /** Fixed for the panel lifetime so the slot picker gets a stable input. */
   protected readonly now = this.store.now();
 
+  constructor() {
+    void this.store.ensureCatalogs();
+  }
+
   protected readonly appointment = computed(() => {
     const id = this.appointmentId();
     return id ? (this.store.appointments().find((a) => a.id === id) ?? null) : null;
@@ -151,6 +155,7 @@ export class AppointmentDetail {
   protected readonly selection = signal<SlotSelection>(EMPTY_SELECTION);
   protected readonly notice = signal<string | null>(null);
   protected readonly message = signal<string | null>(null);
+  protected readonly saving = signal(false);
 
   protected close(): void {
     this.mode.set('detail');
@@ -170,23 +175,41 @@ export class AppointmentDetail {
     this.notice.set(null);
   }
 
-  protected confirmReschedule(cita: Appointment): void {
+  protected async confirmReschedule(cita: Appointment): Promise<void> {
+    if (this.saving()) return;
     const { date, time } = this.selection();
-    const result = this.store.rescheduleAppointment(cita.id, date, time);
-    if (result.ok) {
-      this.showMessage(`Cita reprogramada para el ${formatDate(date)} a las ${formatTime(time)}.`);
-      this.mode.set('detail');
-    } else {
-      this.notice.set(CONFLICT_MESSAGE);
-      this.selection.update((s) => ({ ...s, time: '' }));
+    this.saving.set(true);
+    try {
+      const result = await this.store.rescheduleAppointment(cita.id, date, time);
+      if (result.ok) {
+        this.showMessage(`Cita reprogramada para el ${formatDate(date)} a las ${formatTime(time)}.`);
+        this.mode.set('detail');
+      } else {
+        this.notice.set(CONFLICT_MESSAGE);
+        this.selection.update((s) => ({ ...s, time: '' }));
+        scrollModalToTop();
+      }
+    } catch {
+      this.notice.set('No pudimos reprogramar la cita. Intenta de nuevo.');
       scrollModalToTop();
+    } finally {
+      this.saving.set(false);
     }
   }
 
-  protected mark(cita: Appointment, status: AppointmentStatus, text: string): void {
-    this.store.changeStatus(cita.id, status);
-    this.showMessage(text);
-    this.mode.set('detail');
+  protected async mark(cita: Appointment, status: AppointmentStatus, text: string): Promise<void> {
+    if (this.saving()) return;
+    this.saving.set(true);
+    try {
+      await this.store.changeStatus(cita.id, status);
+      this.showMessage(text);
+      this.mode.set('detail');
+    } catch {
+      this.notice.set('No pudimos actualizar la cita. Intenta de nuevo.');
+      scrollModalToTop();
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   private showMessage(text: string): void {

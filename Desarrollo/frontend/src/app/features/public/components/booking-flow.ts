@@ -1,5 +1,5 @@
 import { ViewportScroller } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideArrowRight, LucideCalendarX2, LucideCircleCheck, LucideMessageCircle } from '@lucide/angular';
 import { formatPhone, normalizePhone, PatientData, PatientErrors, reminderInfo, validatePatient } from '../../../core/domain';
@@ -7,7 +7,6 @@ import { Appointment } from '../../../core/models';
 import { AppStore } from '../../../core/services/app-store.service';
 import { AppointmentSummary } from '../../../shared/ui/appointment-summary';
 import { BigButton } from '../../../shared/ui/big-button';
-import { Modal } from '../../../shared/ui/modal';
 import { Stepper } from '../../../shared/ui/stepper';
 import { AlertMessage } from '../../../shared/ui/alert-message';
 import { PatientForm } from '../../../shared/booking/patient-form';
@@ -32,7 +31,6 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
     PatientForm,
     AppointmentSummary,
     BigButton,
-    Modal,
     AlertMessage,
     LucideArrowLeft,
     LucideArrowRight,
@@ -66,66 +64,26 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
               </p>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row">
-              <a appBigButton variant="outline" size="lg" class="flex-1" [routerLink]="['/cita', appointment.code]">
-                Ver mi cita
-              </a>
-              <a appBigButton size="lg" class="flex-1" routerLink="/">Volver al inicio</a>
+              <a appBigButton variant="outline" size="lg" class="flex-1" routerLink="/">Volver al inicio</a>
             </div>
           </div>
         }
       }
       @case ('blocked') {
-        @if (activeAppointment(); as active) {
-          <div class="flex flex-col gap-8">
-            <div class="flex flex-col items-center gap-4 text-center">
-              <span
-                class="flex size-20 items-center justify-center rounded-full bg-warning/20 text-warning-foreground"
-                aria-hidden="true"
-              >
-                <svg lucideCalendarX2 class="size-12"></svg>
-              </span>
-              <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance">Ya tienes una cita programada</h1>
-              <p class="max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty">
-                Con el celular <strong class="text-foreground">{{ formatPhone(patient().phone) }}</strong> encontramos una
-                cita activa. Para cuidar el tiempo de todos, cada paciente puede tener una sola cita pendiente a la vez.
-              </p>
-            </div>
-            <dl appAppointmentSummary [appointment]="active"></dl>
-            <div class="flex flex-col gap-3">
-              <a
-                appBigButton
-                size="lg"
-                [full]="true"
-                [routerLink]="['/cita', active.code]"
-                [queryParams]="{ accion: 'reprogramar' }"
-              >
-                Reprogramar
-              </a>
-              <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="confirmCancel.set(true)">
-                Cancelar esa cita y agendar la nueva
-              </button>
-              <button type="button" appBigButton variant="ghost" size="md" [full]="true" (click)="goTo(2)">
-                <svg lucideArrowLeft aria-hidden="true"></svg> Volver
-              </button>
-            </div>
-            <app-modal
-              [open]="confirmCancel()"
-              (closed)="confirmCancel.set(false)"
-              title="¿Cancelar tu cita actual?"
-              description="Se liberará el turno para otro paciente y continuarás con la nueva cita."
-              size="sm"
-            >
-              <div class="flex flex-col gap-3">
-                <button type="button" appBigButton variant="danger" size="lg" [full]="true" (click)="cancelActive()">
-                  Sí, cancelar la cita actual
-                </button>
-                <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="confirmCancel.set(false)">
-                  No, conservarla
-                </button>
-              </div>
-            </app-modal>
-          </div>
-        }
+        <div class="flex flex-col items-center gap-6 text-center">
+          <span class="flex size-20 items-center justify-center rounded-full bg-warning/20 text-warning-foreground" aria-hidden="true">
+            <svg lucideCalendarX2 class="size-12"></svg>
+          </span>
+          <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance">Ya tienes una cita programada</h1>
+          <p class="max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty">
+            Con el celular <strong class="text-foreground">{{ formatPhone(patient().phone) }}</strong> ya existe una cita
+            activa. Para cuidar el tiempo de todos, cada paciente puede tener una sola cita pendiente a la vez. Usa el
+            enlace personal de tu recordatorio para reprogramarla o cancelarla.
+          </p>
+          <button type="button" appBigButton variant="outline" size="lg" (click)="goTo(1)">
+            <svg lucideArrowLeft aria-hidden="true"></svg> Volver
+          </button>
+        </div>
       }
       @default {
         @let current = step();
@@ -156,7 +114,8 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
             @case (1) {
               <app-slot-picker
                 [value]="selection()"
-                [appointments]="store.appointments()"
+                [dentists]="store.dentists()"
+                [procedures]="store.procedures()"
                 [now]="now"
                 (valueChange)="onSelectionChange($event)"
               />
@@ -199,7 +158,9 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                   </span>
                 </p>
                 <div class="flex flex-col gap-3 sm:flex-row-reverse">
-                  <button type="button" appBigButton size="xl" class="flex-1" (click)="confirm()">Confirmar cita</button>
+                  <button type="button" appBigButton size="xl" class="flex-1" [disabled]="saving()" (click)="confirm()">
+                    {{ saving() ? 'Guardando…' : 'Confirmar cita' }}
+                  </button>
                   <button type="button" appBigButton variant="outline" size="xl" class="sm:w-auto" (click)="goTo(2)">
                     <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
                   </button>
@@ -220,10 +181,11 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
     }
   `,
 })
-export class BookingFlow {
+export class BookingFlow implements OnInit {
   protected readonly store = inject(AppStore);
   private readonly scroller = inject(ViewportScroller);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly injector = inject(Injector);
 
   protected readonly steps = STEPS;
   protected readonly formatPhone = formatPhone;
@@ -235,9 +197,8 @@ export class BookingFlow {
   protected readonly patient = signal<PatientData>({ name: '', phone: '' });
   protected readonly errors = signal<PatientErrors>({});
   protected readonly notice = signal<string | null>(null);
-  protected readonly activeAppointment = signal<Appointment | null>(null);
   protected readonly created = signal<Appointment | null>(null);
-  protected readonly confirmCancel = signal(false);
+  protected readonly saving = signal(false);
 
   protected readonly step = computed<Step>(() => {
     const view = this.view();
@@ -252,11 +213,22 @@ export class BookingFlow {
     return Boolean(s.dentistId && s.procedureId && s.date && s.time);
   });
 
-  protected readonly draft = computed(() => ({
-    ...this.selection(),
-    patientName: this.patient().name.trim(),
-    patientPhone: this.patient().phone,
-  }));
+  protected readonly draft = computed(() => {
+    const selection = this.selection();
+    const procedure = this.store.procedureById(selection.procedureId);
+    return {
+      ...selection,
+      durationMinutes: procedure?.durationMinutes ?? 30,
+      dentistName: this.store.dentistById(selection.dentistId)?.name ?? '',
+      procedureName: procedure?.name ?? '',
+      patientName: this.patient().name.trim(),
+      patientPhone: this.patient().phone,
+    };
+  });
+
+  ngOnInit(): void {
+    void this.store.ensureCatalogs();
+  }
 
   protected reminderText(appointment: Pick<Appointment, 'date' | 'time'>): string {
     return reminderInfo(appointment).text;
@@ -283,13 +255,7 @@ export class BookingFlow {
       this.focusFirstInvalidField();
       return;
     }
-    const active = this.store.activeAppointmentFor(this.patient().phone);
-    if (active) {
-      this.activeAppointment.set(active);
-      this.view.set('blocked');
-    } else {
-      this.view.set(3);
-    }
+    this.view.set(3);
     this.scrollToTop();
   }
 
@@ -301,50 +267,48 @@ export class BookingFlow {
 
   /** Puts the caret on the first rejected field so keyboard users land on the error. */
   private focusFirstInvalidField(): void {
-    queueMicrotask(() => {
+    afterNextRender(() => {
       const field = this.host.nativeElement.querySelector('input[aria-invalid="true"]') as HTMLInputElement | null;
       field?.focus({ preventScroll: true });
-    });
+    }, { injector: this.injector });
   }
 
-  protected confirm(): void {
-    const result = this.store.createAppointment({
-      ...this.selection(),
-      patientName: this.patient().name.trim(),
-      patientPhone: normalizePhone(this.patient().phone),
-      origin: 'Web',
-    });
-    if (result.ok) {
-      this.created.set(result.appointment);
-      this.view.set('success');
-    } else if (result.reason === 'cita-activa') {
-      this.activeAppointment.set(result.activeAppointment);
-      this.view.set('blocked');
-    } else {
-      this.notice.set(CONFLICT_MESSAGE);
-      this.selection.update((s) => ({ ...s, time: '' }));
-      this.view.set(1);
+  protected async confirm(): Promise<void> {
+    if (this.saving()) return;
+    this.saving.set(true);
+    try {
+      const result = await this.store.createAppointment({
+        ...this.selection(),
+        patientName: this.patient().name.trim(),
+        patientPhone: normalizePhone(this.patient().phone),
+        origin: 'Web',
+      });
+      if (result.ok) {
+        this.created.set(result.appointment);
+        this.view.set('success');
+      } else if (result.reason === 'cita-activa') {
+        this.view.set('blocked');
+      } else {
+        this.notice.set(CONFLICT_MESSAGE);
+        this.selection.update((s) => ({ ...s, time: '' }));
+        this.view.set(1);
+      }
+    } catch {
+      this.notice.set('No pudimos guardar tu cita. Revisa tu conexión e intenta de nuevo.');
+    } finally {
+      this.saving.set(false);
     }
     this.scrollToTop();
   }
 
-  protected cancelActive(): void {
-    const active = this.activeAppointment();
-    if (!active) return;
-    this.store.cancel(active.id);
-    this.confirmCancel.set(false);
-    this.activeAppointment.set(null);
-    this.view.set(3);
-  }
-
   private scrollToTop(): void {
     this.scroller.scrollToPosition([0, 0]);
-    // Defer so the new view renders before moving screen-reader and keyboard focus.
-    queueMicrotask(() => {
+    // Wait for the next render: after an API call the new view is not in the DOM yet.
+    afterNextRender(() => {
       const heading = this.host.nativeElement.querySelector('h1');
       if (!heading) return;
       heading.setAttribute('tabindex', '-1');
       heading.focus({ preventScroll: true });
-    });
+    }, { injector: this.injector });
   }
 }

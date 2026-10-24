@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { LucidePlus } from '@lucide/angular';
-import { DENTISTS } from '../../../core/data/mock-data';
 import { STATUS_ORDER, STATUS_STYLES } from '../../../core/data/status-styles';
 import { toDateKey } from '../../../core/domain';
 import { AppStore } from '../../../core/services/app-store.service';
@@ -36,7 +35,7 @@ import { NewAppointmentPanel } from '../components/new-appointment-panel';
           fieldId="filtro-dentista"
           label="Odontólogo"
           placeholder="Todos los odontólogos"
-          [options]="dentistOptions"
+          [options]="dentistOptions()"
           [value]="dentistId()"
           inputClass="min-h-12 text-base"
           (valueChange)="dentistId.set($event)"
@@ -70,7 +69,9 @@ export class AgendaPage {
 
   protected readonly now = this.store.now();
   protected readonly today = toDateKey(this.now);
-  protected readonly dentistOptions: SelectOption[] = DENTISTS.map((d) => ({ value: d.id, label: d.name }));
+  protected readonly dentistOptions = computed<SelectOption[]>(() =>
+    this.store.dentists().map((d) => ({ value: d.id, label: d.name })),
+  );
   protected readonly legend = STATUS_ORDER.map((status) => ({
     status,
     label: STATUS_STYLES[status].label,
@@ -84,7 +85,8 @@ export class AgendaPage {
 
   protected readonly dentists = computed(() => {
     const id = this.dentistId();
-    return id ? DENTISTS.filter((d) => d.id === id) : DENTISTS;
+    const dentists = this.store.dentists();
+    return id ? dentists.filter((d) => d.id === id) : dentists;
   });
 
   protected readonly dayAppointments = computed(() => {
@@ -93,6 +95,20 @@ export class AgendaPage {
       .appointments()
       .filter((a) => a.date === this.date() && (!dentistId || a.dentistId === dentistId));
   });
+
+  private readonly agendaSeq = { value: 0 };
+
+  constructor() {
+    effect(() => {
+      const date = this.date();
+      const dentistId = this.dentistId();
+      const seq = ++this.agendaSeq.value;
+      void this.store
+        .ensureCatalogs()
+        .then(() => (seq === this.agendaSeq.value ? this.store.loadAgenda(date, dentistId || undefined) : undefined))
+        .catch(() => undefined);
+    });
+  }
 
   protected readonly countText = computed(() => {
     const n = this.dayAppointments().length;

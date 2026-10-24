@@ -14,6 +14,8 @@ class Host {
     patientName: 'Rosa Elvira Jaimes',
     patientPhone: '3135556677',
     procedureId: 'p4',
+    procedureName: 'Exodoncia',
+    durationMinutes: 60,
     date: '2026-10-14',
     time: '14:00',
   });
@@ -43,6 +45,6 @@ describe('WhatsappBubble', () => {
     expect(url).toBeDefined();
     expect(url?.className).not.toContain('text-primary');
     expect(url?.className).not.toContain('underline');
-    expect(text(bubble)).toContain('villadent.co/cita/VD-1049');
+    expect(text(bubble)).toContain('villadent.co/cita/enlace-personal');
   });
 });

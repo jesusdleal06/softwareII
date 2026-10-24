@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, isDevMode, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideEye, LucideEyeOff, LucideLockKeyhole, LucideTriangleAlert } from '@lucide/angular';
-import { USERS } from '../../../core/data/mock-data';
 import { landingPathFor } from '../../../core/guards/staff-access';
 import { AppStore } from '../../../core/services/app-store.service';
 import { BigButton } from '../../../shared/ui/big-button';
@@ -75,37 +74,19 @@ import { TextField } from '../../../shared/ui/field';
       </button>
     </form>
 
-    @if (showDemoUsers()) {
-      <details class="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
-        <summary class="cursor-pointer font-semibold text-foreground">Usuarios de prueba del prototipo</summary>
-        <ul class="mt-3 flex flex-col gap-2">
-          @for (u of users; track u.email) {
-            <li class="flex flex-col">
-              <span class="font-mono text-foreground">{{ u.email }}</span>
-              <span>
-                {{ u.role }} · contraseña: <span class="font-mono">{{ u.password }}</span>
-              </span>
-            </li>
-          }
-        </ul>
-      </details>
-    }
   `,
 })
 export class LoginForm {
   private readonly store = inject(AppStore);
   private readonly router = inject(Router);
 
-  protected readonly users = USERS;
-  /** Demo credentials, rendered only in dev builds so they never ship in the production DOM. */
-  protected readonly showDemoUsers = signal(isDevMode());
   protected readonly email = signal('');
   protected readonly password = signal('');
   protected readonly showPassword = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
 
-  protected submit(event: Event): void {
+  protected async submit(event: Event): Promise<void> {
     event.preventDefault();
     this.error.set(null);
     if (!this.email().trim() || !this.password()) {
@@ -113,12 +94,17 @@ export class LoginForm {
       return;
     }
     this.loading.set(true);
-    const session = this.store.login(this.email(), this.password());
-    if (!session) {
+    try {
+      const session = await this.store.login(this.email(), this.password());
+      if (!session) {
+        this.error.set('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
+        return;
+      }
+      await this.router.navigateByUrl(landingPathFor(session));
+    } catch {
+      this.error.set('No pudimos conectar con el servidor. Intenta de nuevo.');
+    } finally {
       this.loading.set(false);
-      this.error.set('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
-      return;
     }
-    void this.router.navigateByUrl(landingPathFor(session));
   }
 }

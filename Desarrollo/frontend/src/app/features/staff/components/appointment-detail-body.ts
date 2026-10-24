@@ -108,6 +108,7 @@ export class AppointmentDetailBody {
     const info = reminderInfo(a);
     if (a.reminder === 'Programado') return `se enviará ${info.text}`;
     if (a.reminder === 'Enviado') return `enviado el ${formatDate(info.date)} a las ${formatTime(info.time)}`;
+    if (a.reminder === 'Cancelado') return 'no se enviará porque la cita ya no está activa.';
     return 'el número no recibió el mensaje. Llamar al paciente.';
   });
 }

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { settle } from './shared/testing/dom';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -18,6 +19,7 @@ describe('App', () => {
   it('should render a router outlet', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
+    await settle();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });

@@ -1,17 +1,25 @@
-import { USERS } from '../../core/data/mock-data';
 import { Session } from '../../core/models';
 import { SessionStorageLike } from '../../core/services/tokens';
 
 export const SESSION_KEY = 'villadent-sesion';
 
-/** Prototype users as sessions: the administrative assistant and the dentist (d1). */
-export const ASSISTANT_SESSION: Session = toSession(0);
-export const DENTIST_SESSION: Session = toSession(1);
+/** Staff sessions: the administrative assistant and the dentist (d1). */
+export const ASSISTANT_SESSION: Session = {
+  email: 'ana@villadent.co',
+  name: 'Ana María Rueda',
+  role: 'Auxiliar administrativa',
+  userId: '2',
+  token: 'test-token-assistant',
+};
 
-function toSession(index: number): Session {
-  const { password: _password, ...session } = USERS[index];
-  return session;
-}
+export const DENTIST_SESSION: Session = {
+  email: 'laura@villadent.co',
+  name: 'Dra. Laura Villamizar',
+  role: 'Odontóloga',
+  userId: '3',
+  dentistId: 'd1',
+  token: 'test-token-dentist',
+};
 
 /** In-memory `sessionStorage` replacement, optionally holding a saved staff session. */
 export function memoryStorage(session?: Session): SessionStorageLike & { data: Map<string, string> } {

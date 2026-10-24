@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DENTISTS, PROCEDURES } from '../../../core/data/mock-data';
+import { DENTISTS, PROCEDURES } from '../../../shared/testing/fake-store';
 import { STATUS_STYLES } from '../../../core/data/status-styles';
 import { Appointment, Dentist, Procedure } from '../../../core/models';
 import { makeAppointment } from '../../../core/testing/appointment.fixture';
@@ -22,12 +22,22 @@ function withShortProcedure<T>(run: () => T): T {
 
 const APPOINTMENTS: Appointment[] = [
   // 08:30 Limpieza (30 min) → top (30 × 2.4) + 16 + 2 = 90px, height 72 − 4 = 68px.
-  makeAppointment({ id: 'a1', dentistId: 'd1', procedureId: 'p1', time: '08:30', patientName: 'Gloria Mantilla' }),
+  makeAppointment({
+    id: 'a1',
+    dentistId: 'd1',
+    procedureId: 'p1',
+    procedureName: 'Limpieza',
+    durationMinutes: 30,
+    time: '08:30',
+    patientName: 'Gloria Mantilla',
+  }),
   // 14:00 Exodoncia (60 min) → top (360 × 2.4) + 18 = 882px, height 144 − 4 = 140px.
   makeAppointment({
     id: 'a2',
     dentistId: 'd1',
     procedureId: 'p4',
+    procedureName: 'Exodoncia',
+    durationMinutes: 60,
     time: '14:00',
     patientName: 'Rosa Jaimes',
     patientPhone: '3135556677',
@@ -36,6 +46,8 @@ const APPOINTMENTS: Appointment[] = [
     id: 'a3',
     dentistId: 'd3',
     procedureId: 'p3',
+    procedureName: 'Endodoncia',
+    durationMinutes: 30,
     time: '10:00',
     patientName: 'Luz Pérez',
     status: 'Cancelada',
@@ -191,6 +203,8 @@ describe('DayAgenda', () => {
         id: 's1',
         dentistId: 'd1',
         procedureId: SHORT_PROCEDURE.id,
+        procedureName: SHORT_PROCEDURE.name,
+        durationMinutes: SHORT_PROCEDURE.durationMinutes,
         time: '09:00',
         patientName: 'Nicolás Ríos',
       });

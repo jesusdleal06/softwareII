@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
 import { LucideCalendarX } from '@lucide/angular';
-import { SHIFTS } from '../../../core/data/mock-data';
+import { SHIFTS } from '../../../core/config/clinic';
 import { STATUS_STYLES } from '../../../core/data/status-styles';
 import {
   endOf,
   formatPhone,
   formatTime,
   formatTimeFromMinutes,
-  procedureById,
   toDateKey,
   toMinutes,
 } from '../../../core/domain';
@@ -265,7 +264,7 @@ export class DayAgenda {
 function toBlock(appointment: Appointment): Block {
   const start = toMinutes(appointment.time);
   const end = endOf(appointment);
-  const procedureName = procedureById(appointment.procedureId)?.name ?? '';
+  const procedureName = appointment.procedureName;
   // Labels come from the shared canon, never from the raw enum.
   const statusLabel = STATUS_STYLES[appointment.status].label;
   const height = (end - start) * PX_PER_MINUTE;

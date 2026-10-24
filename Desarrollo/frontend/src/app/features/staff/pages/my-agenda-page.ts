@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { LucideEye } from '@lucide/angular';
-import { DENTISTS } from '../../../core/data/mock-data';
-import { formatPhone, formatTime, isActiveStatus, procedureById, toDateKey } from '../../../core/domain';
+import { formatPhone, formatTime, isActiveStatus, toDateKey } from '../../../core/domain';
 import { AppStore } from '../../../core/services/app-store.service';
 import { StatusBadge } from '../../../shared/ui/status-badge';
 import { AppointmentDetail } from '../components/appointment-detail';
@@ -57,7 +56,7 @@ import { DayAgenda } from '../components/day-agenda';
                   <span class="flex flex-col">
                     <span class="font-semibold">{{ formatTime(c.time) }} · {{ c.patientName }}</span>
                     <span class="text-sm text-muted-foreground">
-                      {{ procedureName(c.procedureId) }} · {{ formatPhone(c.patientPhone) }}
+                      {{ c.procedureName }} · {{ formatPhone(c.patientPhone) }}
                     </span>
                   </span>
                   <span appStatusBadge [status]="c.status" class="mt-0.5"></span>
@@ -84,18 +83,34 @@ export class MyAgendaPage {
   protected readonly selectedId = signal<string | null>(null);
 
   /** The session's dentist (the prototype falls back to the first dentist). */
-  private readonly dentist = computed(
-    () => DENTISTS.find((d) => d.id === this.store.session()?.dentistId) ?? DENTISTS[0],
-  );
-  protected readonly dentists = computed(() => [this.dentist()]);
+  private readonly dentist = computed(() => {
+    const id = this.store.session()?.dentistId;
+    return this.store.dentists().find((d) => d.id === id) ?? this.store.dentists()[0];
+  });
+  protected readonly dentists = computed(() => {
+    const dentist = this.dentist();
+    return dentist ? [dentist] : [];
+  });
+
+  constructor() {
+    effect(() => {
+      const date = this.date();
+      const dentist = this.dentist();
+      if (!dentist) return;
+      void this.store
+        .ensureCatalogs()
+        .then(() => this.store.loadAgenda(date, dentist.id))
+        .catch(() => undefined);
+    });
+  }
 
   protected readonly own = computed(() =>
-    this.store.appointments().filter((a) => a.dentistId === this.dentist().id && a.date === this.date()),
+    this.store.appointments().filter((a) => a.dentistId === this.dentist()?.id && a.date === this.date()),
   );
   protected readonly sorted = computed(() => [...this.own()].sort((a, b) => a.time.localeCompare(b.time)));
   protected readonly pendingCount = computed(() => this.sorted().filter((a) => isActiveStatus(a.status)).length);
 
-  protected procedureName(id: string): string {
-    return procedureById(id)?.name ?? '';
+  protected procedureName(name: string): string {
+    return name;
   }
 }

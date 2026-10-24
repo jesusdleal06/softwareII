@@ -5,6 +5,12 @@ services:
     build: .
     ports:
       - "4200:4200"
+    environment:
+      # The API runs on the host (backend compose or ./gradlew bootRun), not in this container.
+      API_TARGET: http://host.docker.internal:8080
+    extra_hosts:
+      # Makes host.docker.internal resolve on Linux too (Docker Desktop defines it already).
+      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
       # Anonymous volumes, seeded from the image, so their ownership is the one

@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -27,6 +29,9 @@ describe('StaffShell', () => {
         provideRouter(routes, withComponentInputBinding()),
         { provide: CLOCK, useValue: () => new Date(NOW) },
         { provide: SESSION_STORAGE, useValue: storage },
+        // The real AppStore talks to the API: keep every request inside the test.
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     });
     harness = await RouterTestingHarness.create(url);

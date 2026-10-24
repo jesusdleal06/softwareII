@@ -1,6 +1,7 @@
 export * from './appointment-code';
 export * from './availability';
 export * from './catalog';
+export * from './constants';
 export * from './dates';
 export * from './patient';
 export * from './reminder';

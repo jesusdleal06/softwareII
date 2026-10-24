@@ -1,21 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { AppStore } from '../../../core/services/app-store.service';
-import { SESSION_STORAGE } from '../../../core/services/tokens';
-import { clickButton, getByText, text, typeInto } from '../../../shared/testing/dom';
-import { memoryStorage, SESSION_KEY } from '../../../shared/testing/session';
+import { clickButton, settle, text, typeInto } from '../../../shared/testing/dom';
+import { createFakeStore, FakeStore, provideFakeStore } from '../../../shared/testing/fake-store';
+import { ASSISTANT_SESSION, DENTIST_SESSION } from '../../../shared/testing/session';
 import { LoginForm } from './login-form';
 
 describe('LoginForm', () => {
   let fixture: ComponentFixture<LoginForm>;
   let el: HTMLElement;
-  let storage: ReturnType<typeof memoryStorage>;
+  let store: FakeStore;
   let navigate: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    storage = memoryStorage();
+    store = createFakeStore({ session: null });
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: SESSION_STORAGE, useValue: storage }],
+      providers: [provideRouter([]), provideFakeStore(store)],
     });
     navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
     fixture = TestBed.createComponent(LoginForm);
@@ -25,11 +24,13 @@ describe('LoginForm', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  function submit(email: string, password: string): void {
+  async function submit(email: string, password: string): Promise<void> {
     typeInto(el.querySelector('#login-email') as HTMLInputElement, email);
     typeInto(el.querySelector('#login-password') as HTMLInputElement, password);
     fixture.detectChanges();
     clickButton(el, 'Ingresar');
+    fixture.detectChanges();
+    await settle();
     fixture.detectChanges();
   }
 
@@ -38,60 +39,49 @@ describe('LoginForm', () => {
     return alert ? text(alert) : '';
   }
 
-  function demoUsers(): { set(value: boolean): void } {
-    return (fixture.componentInstance as unknown as { showDemoUsers: { set(value: boolean): void } })
-      .showDemoUsers;
-  }
-
-  it('renders the prototype form and the test users', () => {
+  it('renders the sign-in form without demo credentials', () => {
     expect(text(el)).toContain('Ingreso del personal');
     expect(text(el)).toContain('Acceso exclusivo para el equipo de Villadent.');
     expect(el.querySelector('#login-email')?.getAttribute('placeholder')).toBe('nombre@villadent.co');
-    expect(text(el)).toContain('ana@villadent.co');
-    expect(text(el)).toContain('Odontóloga · contraseña: villadent2024');
-  });
-
-  it('hides the demo credentials outside dev mode', () => {
-    demoUsers().set(false);
-    fixture.detectChanges();
     expect(el.querySelector('details')).toBeNull();
-    expect(text(el)).not.toContain('Usuarios de prueba');
     expect(text(el)).not.toContain('villadent2024');
   });
 
-  it('still logs in when the demo credentials are hidden', () => {
-    demoUsers().set(false);
-    fixture.detectChanges();
-    submit('ana@villadent.co', 'villadent2024');
-    expect(TestBed.inject(AppStore).session()?.name).toBe('Ana María Rueda');
-    expect(navigate).toHaveBeenCalledWith('/panel/agenda');
-  });
-
-  it('asks for both fields when empty', () => {
-    submit('', '');
+  it('asks for both fields when empty', async () => {
+    await submit('', '');
     expect(alertText()).toBe('Escribe tu correo y tu contraseña.');
+    expect(store.login).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('shows the prototype error for wrong credentials', () => {
-    submit('ana@villadent.co', 'mala');
+  it('shows the error for wrong credentials', async () => {
+    store.login.mockResolvedValue(null);
+    await submit('ana@villadent.co', 'mala');
+    expect(store.login).toHaveBeenCalledWith('ana@villadent.co', 'mala');
     expect(alertText()).toBe('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
-    expect(TestBed.inject(AppStore).session()).toBeNull();
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('logs the assistant in and goes to the agenda', () => {
-    submit('ana@villadent.co', 'villadent2024');
-    expect(TestBed.inject(AppStore).session()?.name).toBe('Ana María Rueda');
-    expect(storage.data.get(SESSION_KEY)).toContain('Ana María Rueda');
+  it('logs the assistant in and goes to the agenda', async () => {
+    store.login.mockResolvedValue(ASSISTANT_SESSION);
+    await submit('ana@villadent.co', 'villadent2024');
+    expect(store.login).toHaveBeenCalledWith('ana@villadent.co', 'villadent2024');
     expect(navigate).toHaveBeenCalledWith('/panel/agenda');
-    expect(getByText<HTMLButtonElement>(el, 'button', 'Ingresando…').disabled).toBe(true);
   });
 
-  it('logs the dentist in and goes to her agenda', () => {
-    submit('LAURA@villadent.co ', 'villadent2024');
-    expect(TestBed.inject(AppStore).session()?.role).toBe('Odontóloga');
+  // Email normalization (trim + lowercase) belongs to AppStore.login and is covered in app-store.service.spec.ts.
+  it('sends dentists to their agenda', async () => {
+    store.login.mockResolvedValue(DENTIST_SESSION);
+    await submit('laura@villadent.co', 'villadent2024');
+    expect(store.login).toHaveBeenCalledWith('laura@villadent.co', 'villadent2024');
     expect(navigate).toHaveBeenCalledWith('/panel/mi-agenda');
+  });
+
+  it('reports a network failure instead of staying silent', async () => {
+    store.login.mockRejectedValue(new Error('offline'));
+    await submit('ana@villadent.co', 'villadent2024');
+    expect(alertText()).toContain('No pudimos conectar con el servidor.');
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('toggles the password visibility', () => {
@@ -110,10 +100,19 @@ describe('LoginForm', () => {
     }
   });
 
-  it('announces the pending submit with aria-busy', () => {
+  it('announces the pending submit with aria-busy', async () => {
+    let resolve: (value: typeof ASSISTANT_SESSION | null) => void = () => undefined;
+    store.login.mockReturnValue(new Promise((r) => (resolve = r)));
+    typeInto(el.querySelector('#login-email') as HTMLInputElement, 'ana@villadent.co');
+    typeInto(el.querySelector('#login-password') as HTMLInputElement, 'villadent2024');
+    fixture.detectChanges();
+    clickButton(el, 'Ingresar');
+    fixture.detectChanges();
     const form = el.querySelector('form') as HTMLFormElement;
-    expect(form.getAttribute('aria-busy')).toBeNull();
-    submit('ana@villadent.co', 'villadent2024');
     expect(form.getAttribute('aria-busy')).toBe('true');
+    resolve(ASSISTANT_SESSION);
+    await settle();
+    fixture.detectChanges();
+    expect(form.getAttribute('aria-busy')).toBeNull();
   });
 });

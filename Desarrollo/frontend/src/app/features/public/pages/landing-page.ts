@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   LucideCalendarCheck,
@@ -8,7 +8,6 @@ import {
   LucideMessageCircle,
   LucideShieldCheck,
 } from '@lucide/angular';
-import { DENTISTS, DEMO_CODE } from '../../../core/data/mock-data';
 import { addDays, formatTime, isWorkingDay, shortDayName, toDateKey } from '../../../core/domain';
 import { AppStore } from '../../../core/services/app-store.service';
 import { BigButton } from '../../../shared/ui/big-button';
@@ -65,9 +64,6 @@ const PANEL_LOOKAHEAD_DAYS = 14;
             </p>
             <div class="flex w-full flex-col gap-3 sm:flex-row">
               <a appBigButton size="xl" [full]="true" routerLink="/agendar">Agendar mi cita</a>
-              <a appBigButton variant="outline" size="xl" [full]="true" [routerLink]="['/cita', demoCode]">
-                Consultar mi cita
-              </a>
             </div>
           </div>
 
@@ -80,7 +76,9 @@ const PANEL_LOOKAHEAD_DAYS = 14;
               <h2 id="proximos-horarios" class="text-lg font-bold">Próximos horarios</h2>
             </div>
 
-            @if (availability().length > 0) {
+            @if (loadingAvailability()) {
+              <p role="status" class="text-base leading-relaxed text-muted-foreground">Buscando los próximos horarios…</p>
+            } @else if (availability().length > 0) {
               <ul class="flex flex-col gap-4">
                 @for (day of availability(); track day.key) {
                   <li class="flex flex-col gap-2">
@@ -135,7 +133,7 @@ const PANEL_LOOKAHEAD_DAYS = 14;
           <p class="text-lg text-muted-foreground">Cada odontólogo tiene su propia agenda.</p>
         </div>
         <ul class="grid gap-6 sm:grid-cols-3">
-          @for (d of dentists; track d.id) {
+          @for (d of dentists(); track d.id) {
             <li class="flex items-center gap-4">
               <span
                 class="flex size-14 shrink-0 items-center justify-center rounded-full bg-accent text-lg font-bold text-accent-foreground"
@@ -164,35 +162,41 @@ export class LandingPage {
   private readonly store = inject(AppStore);
 
   protected readonly howItWorks = HOW_IT_WORKS;
-  protected readonly dentists = DENTISTS;
-  protected readonly demoCode = DEMO_CODE;
+  protected readonly dentists = this.store.dentists;
   protected readonly formatTime = formatTime;
+  protected readonly availability = signal<AvailabilityDay[]>([]);
+  protected readonly loadingAvailability = signal(true);
 
-  /** Next free times straight from the store agenda, so the hero never "invents" availability. */
-  protected readonly availability = computed<AvailabilityDay[]>(() => {
-    const start = this.store.now();
-    const today = toDateKey(start);
-    const days: AvailabilityDay[] = [];
+  ngOnInit(): void {
+    void this.loadAvailability();
+  }
 
-    for (let offset = 0; offset < PANEL_LOOKAHEAD_DAYS && days.length < PANEL_DAYS; offset++) {
-      const date = addDays(start, offset);
-      const key = toDateKey(date);
-      if (!isWorkingDay(key)) continue;
-      const times = this.nextTimes(key);
-      if (times.length === 0) continue;
-      days.push({ key, label: key === today ? 'Hoy' : shortDayName(date), times });
-    }
-
-    return days;
-  });
-
-  private nextTimes(dateKey: string): string[] {
-    const times = new Set<string>();
-    for (const dentist of DENTISTS) {
-      for (const time of this.store.availableSlots({ dentistId: dentist.id, date: dateKey, durationMinutes: 30 })) {
-        times.add(time);
+  /** Next free times from the API, so the hero never "invents" availability. */
+  private async loadAvailability(): Promise<void> {
+    try {
+      await this.store.ensureCatalogs();
+      const dentists = this.store.dentists();
+      const procedure = this.store.procedures()[0];
+      if (dentists.length === 0 || !procedure) return;
+      const start = this.store.now();
+      const today = toDateKey(start);
+      const days: AvailabilityDay[] = [];
+      for (let offset = 0; offset < PANEL_LOOKAHEAD_DAYS && days.length < PANEL_DAYS; offset++) {
+        const date = addDays(start, offset);
+        const key = toDateKey(date);
+        if (!isWorkingDay(key)) continue;
+        const responses = await Promise.all(
+          dentists.map((dentist) =>
+            this.store.availability(dentist.id, procedure.id, key).catch(() => [] as string[]),
+          ),
+        );
+        const times = [...new Set(responses.flat())].sort().slice(0, PANEL_TIMES);
+        if (times.length === 0) continue;
+        days.push({ key, label: key === today ? 'Hoy' : shortDayName(date), times });
       }
+      this.availability.set(days);
+    } finally {
+      this.loadingAvailability.set(false);
     }
-    return [...times].sort().slice(0, PANEL_TIMES);
   }
 }

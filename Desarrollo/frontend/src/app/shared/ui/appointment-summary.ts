@@ -1,20 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { LucideCalendarDays, LucideClock, LucidePhone, LucideStethoscope, LucideUser } from '@lucide/angular';
 import {
-  dentistById,
   endOf,
   formatDate,
   formatLongDate,
   formatPhone,
   formatTime,
   formatTimeFromMinutes,
-  procedureById,
 } from '../../core/domain';
 import { Appointment } from '../../core/models';
+import { AppStore } from '../../core/services/app-store.service';
 import { StatusBadge } from './status-badge';
 
 /** Data needed by the summary: a saved appointment or a booking still being confirmed. */
-export type AppointmentSummaryData = Pick<Appointment, 'dentistId' | 'procedureId' | 'date' | 'time'> &
+export type AppointmentSummaryData = Pick<
+  Appointment,
+  'dentistId' | 'procedureId' | 'dentistName' | 'procedureName' | 'durationMinutes' | 'date' | 'time'
+> &
   Partial<Pick<Appointment, 'patientName' | 'patientPhone' | 'status' | 'code'>>;
 
 const ROW = 'flex items-start gap-4 px-5 py-4';
@@ -73,10 +75,8 @@ const ROW_ICON = 'flex size-11 shrink-0 items-center justify-center rounded-xl b
       <div class="min-w-0 flex-1">
         <dt class="text-sm text-muted-foreground">Procedimiento</dt>
         <dd class="text-lg font-semibold leading-snug text-pretty">
-          {{ procedure()?.name }}
-          @if (procedure(); as p) {
-            <span class="text-muted-foreground"> · {{ p.durationMinutes }} min</span>
-          }
+          {{ a.procedureName }}
+          <span class="text-muted-foreground"> · {{ a.durationMinutes }} min</span>
         </dd>
       </div>
     </div>
@@ -85,8 +85,10 @@ const ROW_ICON = 'flex size-11 shrink-0 items-center justify-center rounded-xl b
       <div class="min-w-0 flex-1">
         <dt class="text-sm text-muted-foreground">Odontólogo</dt>
         <dd class="text-lg font-semibold leading-snug text-pretty">
-          {{ dentist()?.name }}
-          <span class="block text-sm text-muted-foreground">{{ dentist()?.specialty }}</span>
+          {{ a.dentistName }}
+          @if (specialty(); as specialty) {
+            <span class="block text-sm text-muted-foreground">{{ specialty }}</span>
+          }
         </dd>
       </div>
     </div>
@@ -114,9 +116,8 @@ export class AppointmentSummary {
   protected readonly formatLongDate = formatLongDate;
   protected readonly formatTime = formatTime;
   protected readonly formatPhone = formatPhone;
-  protected readonly dentist = computed(() => dentistById(this.appointment().dentistId));
-  protected readonly procedure = computed(() => procedureById(this.appointment().procedureId));
-  protected readonly end = computed(() =>
-    this.procedure() ? formatTimeFromMinutes(endOf(this.appointment())) : '',
-  );
+  protected readonly end = computed(() => formatTimeFromMinutes(endOf(this.appointment())));
+  // The appointment carries the dentist's name only; the specialty comes from the loaded catalog.
+  private readonly store = inject(AppStore);
+  protected readonly specialty = computed(() => this.store.dentistById(this.appointment().dentistId)?.specialty);
 }

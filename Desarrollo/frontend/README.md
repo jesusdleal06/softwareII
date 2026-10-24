@@ -2,7 +2,7 @@
 
 Aplicación web en **Angular** para el agendamiento de citas del Centro Odontológico Villadent.
 
-> **Fase actual:** prototipo funcional. Los datos son simulados en memoria (`src/app/core/data/mock-data.ts`) y no hay backend todavía. Al recargar la página se pierden las citas creadas; solo la sesión del personal se conserva por pestaña (`sessionStorage`).
+> **Fase actual:** conectado a la API Spring Boot de `Desarrollo/backend`. Todos los datos (odontólogos, procedimientos, disponibilidad, citas y reportes) vienen del backend, que también aplica las reglas de negocio. La sesión del personal se conserva por pestaña (`sessionStorage`).
 
 **Stack:** Angular 22.2 (componentes standalone, signals) · Tailwind CSS v4 · `@lucide/angular` · Vitest 5 + jsdom
 
@@ -17,7 +17,16 @@ Aplicación web en **Angular** para el agendamiento de citas del Centro Odontol�
 
 ## Cómo iniciar el entorno de desarrollo
 
-Todos los comandos se ejecutan desde `Desarrollo/frontend/`.
+**Primero el backend.** El frontend no trae datos propios: necesita la API en el puerto 8080. Desde `Desarrollo/backend/`, con el perfil de demostración para tener odontólogos, procedimientos y usuarios de prueba:
+
+```bash
+docker compose up -d postgres
+SPRING_PROFILES_ACTIVE=demo ./gradlew bootRun
+```
+
+Los detalles (base de datos, variables y la primera cuenta de la auxiliar) están en `Desarrollo/backend/README.md`.
+
+Luego el frontend. Todos los comandos siguientes se ejecutan desde `Desarrollo/frontend/`. En los dos modos, el servidor de desarrollo reenvía las llamadas a `/api` hacia el backend (`proxy.conf.mjs`): en local apunta a `http://localhost:8080`, y en Docker a `http://host.docker.internal:8080`, porque dentro del contenedor `localhost` es el propio contenedor. Otro destino se indica con la variable `API_TARGET`.
 
 ### Opción A — Docker (recomendada: no exige Node ni pnpm en el equipo)
 
@@ -52,18 +61,20 @@ pnpm start
 
 ## Datos de demostración
 
-**Usuarios del personal** (ingreso en `/ingreso`):
+Los carga el backend con el perfil `demo` (ver `Desarrollo/backend/README.md`), con los mismos odontólogos, procedimientos y horarios del prototipo. Sin ese perfil, la aplicación arranca vacía.
+
+**Usuarios del personal** (ingreso en `/ingreso`; solo existen con el perfil `demo`):
 
 | Correo               | Contraseña      | Nombre                | Rol                     |
 | -------------------- | --------------- | --------------------- | ----------------------- |
 | `ana@villadent.co`   | `villadent2024` | Ana María Rueda       | Auxiliar administrativa |
 | `laura@villadent.co` | `villadent2024` | Dra. Laura Villamizar | Odontóloga              |
 
-**Cita de ejemplo:** `/cita/VD-1049` (constante `DEMO_CODE`), la página a la que llega el paciente desde el recordatorio de WhatsApp.
+**Página de la cita:** el paciente llega a `/cita/<enlace>` desde el recordatorio de WhatsApp. El enlace es un código personal e imposible de adivinar; el backend guarda solo su hash, así que no hay un enlace de ejemplo. Sin credenciales de WhatsApp Business configuradas, el recordatorio no se envía (queda registrado el error y se reintenta).
 
 **Teléfono del paciente:** celular colombiano de 10 dígitos que empieza por `3` (por ejemplo `3001234567`). El paciente debe escribir nombre y apellido.
 
-Las citas de ejemplo se generan relativas a la semana actual (a partir del lunes), por lo que siempre hay datos visibles en la agenda.
+El perfil `demo` no crea citas: se agendan desde `/agendar` o como cita manual en el panel.
 
 ---
 
@@ -73,7 +84,7 @@ Las citas de ejemplo se generan relativas a la semana actual (a partir del lunes
 | ------------------ | ------------------------------------------ | --------------------------------------- |
 | `/`                | Inicio                                     | Público                                 |
 | `/agendar`         | Agendamiento en 3 pasos                    | Público                                 |
-| `/cita/:codigo`    | Consultar, confirmar, reprogramar o cancelar una cita | Público                      |
+| `/cita/:enlace`    | Consultar, confirmar, reprogramar o cancelar una cita con el enlace personal | Público   |
 | `/ingreso`         | Ingreso del personal                       | Público                                 |
 | `/acceso-denegado` | Acceso denegado                            | Público                                 |
 | `/panel`           | Redirige a la pantalla inicial del rol     | Personal autenticado                    |
@@ -93,9 +104,11 @@ Las citas de ejemplo se generan relativas a la semana actual (a partir del lunes
 src/app/
 ├── core/
 │   ├── models/     # Tipos del dominio (cita, odontólogo, procedimiento, usuario, clínica)
-│   ├── data/       # Datos simulados (mock) y estilos por estado de cita
+│   ├── api/        # Cliente HTTP de la API (ClinicApi), tipos de la respuesta y adaptadores al modelo
+│   ├── config/     # Datos fijos de la clínica (nombre, dirección, horario)
+│   ├── data/       # Estilos por estado de cita
 │   ├── domain/     # Reglas de negocio como funciones puras (disponibilidad, teléfono, recordatorios, reportes)
-│   ├── services/   # AppStore (estado con signals) y tokens inyectables (CLOCK, SESSION_STORAGE)
+│   ├── services/   # AppStore (sesión, catálogos y agenda con signals; llama a la API) y tokens inyectables (CLOCK, SESSION_STORAGE)
 │   └── guards/     # Guards de autenticación y rol
 ├── shared/
 │   ├── ui/         # Componentes de presentación reutilizables (botones, badges, stepper, modal, campos)
@@ -115,9 +128,11 @@ src/app/
 - Cada archivo de prueba (`*.spec.ts`) está junto al código que prueba.
 - Las reglas de `core/domain` se prueban como funciones puras; los componentes, con `TestBed` sobre jsdom.
 - La fecha actual se inyecta con el token `CLOCK` (`core/services/tokens.ts`), que las pruebas reemplazan por una fecha fija para obtener resultados deterministas.
+- Ninguna prueba llama a la red. Los componentes usan `createFakeStore()` (`shared/testing/fake-store.ts`), un doble de `AppStore` con el mismo catálogo del perfil `demo`. Las pruebas de integración que usan el `AppStore` real reemplazan la red con `provideHttpClientTesting()`, y `ClinicApi` se prueba así mismo (`core/api/clinic-api.spec.ts`): URL, método y que el token del personal vaya solo a las rutas del personal.
+- **Si una prueba no refleja un cambio reciente**, borrar la caché de módulos de Vitest y volver a ejecutar: `rm -rf node_modules/.vitest-cache`. Esa caché puede quedarse con una versión vieja de un archivo importado cuando el archivo de prueba no cambió.
 
 ---
 
 ## Siguiente paso
 
-Reemplazar el `AppStore` simulado por llamadas HTTP (`HttpClient`) a la API **Spring Boot** (`Desarrollo/backend`). Las reglas de negocio definitivas (disponibilidad, una cita activa por teléfono, concurrencia) vivirán en el backend; el frontend solo las presentará.
+Pruebas de extremo a extremo con Playwright (casos E2E del plan de pruebas) sobre el frontend y el backend reales.

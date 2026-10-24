@@ -1,6 +1,7 @@
-import { SHIFTS, SLOT_INTERVAL_MINUTES } from '../data/mock-data';
+import { SHIFTS } from '../config/clinic';
 import { Appointment, AppointmentStatus } from '../models';
 import { endOf } from './catalog';
+import { SLOT_INTERVAL_MINUTES } from './constants';
 import { fromDateKey, toDateKey } from './dates';
 import { toHhmm, toMinutes } from './time';
 

@@ -3,7 +3,7 @@ export type AppointmentStatus =
   'Pendiente' | 'Confirmada' | 'Cancelada' | 'Reprogramada' | 'Atendida' | 'No asistió';
 
 /** WhatsApp reminder status. Values are the Spanish labels shown in the UI. */
-export type ReminderStatus = 'Programado' | 'Enviado' | 'Falló';
+export type ReminderStatus = 'Programado' | 'Enviado' | 'Falló' | 'Cancelado';
 
 export type AppointmentOrigin = 'Web' | 'Manual';
 
@@ -19,6 +19,10 @@ export interface Appointment {
   time: string;
   patientName: string;
   patientPhone: string;
+  /** Procedure length copied from the API, so no screen needs the catalog to draw a block. */
+  durationMinutes: number;
+  dentistName: string;
+  procedureName: string;
   status: AppointmentStatus;
   reminder: ReminderStatus;
   origin: AppointmentOrigin;
@@ -32,7 +36,7 @@ export type NewAppointmentInput = Pick<
 export type CreateAppointmentResult =
   | { ok: true; appointment: Appointment }
   | { ok: false; reason: 'conflicto' }
-  | { ok: false; reason: 'cita-activa'; activeAppointment: Appointment };
+  | { ok: false; reason: 'cita-activa'; activeAppointment?: Appointment };
 
 export type RescheduleAppointmentResult =
   { ok: true; appointment: Appointment } | { ok: false; reason: 'conflicto' };

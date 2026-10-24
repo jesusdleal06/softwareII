@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { LucideCheckCheck, LucideClock, LucideTriangleAlert } from '@lucide/angular';
+import { LucideCheckCheck, LucideCircleX, LucideClock, LucideTriangleAlert } from '@lucide/angular';
 import { STATUS_STYLES } from '../../core/data/status-styles';
 import { AppointmentStatus, ReminderStatus } from '../../core/models';
 import { cn } from './class-names';
@@ -29,12 +29,13 @@ const REMINDER: Record<ReminderStatus, { className: string; label: string }> = {
   Programado: { className: 'text-muted-foreground', label: 'Recordatorio programado' },
   Enviado: { className: 'text-success', label: 'Recordatorio enviado' },
   Falló: { className: 'text-destructive', label: 'Recordatorio falló' },
+  Cancelado: { className: 'text-muted-foreground', label: 'Recordatorio cancelado' },
 };
 
 /** WhatsApp reminder status with icon and optional detail. */
 @Component({
   selector: 'app-reminder-badge',
-  imports: [LucideClock, LucideCheckCheck, LucideTriangleAlert],
+  imports: [LucideClock, LucideCheckCheck, LucideTriangleAlert, LucideCircleX],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span [class]="'inline-flex items-center gap-2 text-base font-medium ' + info().className">
@@ -44,6 +45,9 @@ const REMINDER: Record<ReminderStatus, { className: string; label: string }> = {
         }
         @case ('Enviado') {
           <svg lucideCheckCheck class="size-5 shrink-0" aria-hidden="true"></svg>
+        }
+        @case ('Cancelado') {
+          <svg lucideCircleX class="size-5" aria-hidden="true"></svg>
         }
         @case ('Falló') {
           <svg lucideTriangleAlert class="size-5 shrink-0" aria-hidden="true"></svg>

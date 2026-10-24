@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { LucideCheckCheck } from '@lucide/angular';
-import { CLINIC } from '../../core/data/mock-data';
-import { dentistById, formatDate, formatTime, procedureById, reminderInfo } from '../../core/domain';
+import { CLINIC } from '../../core/config/clinic';
+import { formatDate, formatTime, reminderInfo } from '../../core/domain';
 import { Appointment } from '../../core/models';
 
 /** Preview of the WhatsApp reminder the patient receives. */
@@ -33,12 +33,12 @@ import { Appointment } from '../../core/models';
       <p class="mt-2">
         <strong>{{ formatDate(appointment().date) }}</strong> a las <strong>{{ formatTime(appointment().time) }}</strong>
         <br />
-        {{ procedure()?.name }} con {{ dentist()?.name }}
+        {{ appointment().procedureName }} con {{ appointment().dentistName }}
       </p>
       <p class="mt-2">
         Por favor confirma tu asistencia o reprograma aquí:
         <br />
-        <span class="break-all">villadent.co/cita/{{ appointment().code }}</span>
+        <span class="break-all">villadent.co/cita/enlace-personal</span>
       </p>
       <p class="mt-2 text-muted-foreground">Si no puedes asistir, cancela con anticipación para liberar el turno. Gracias.</p>
       <span class="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
@@ -54,8 +54,6 @@ export class WhatsappBubble {
   protected readonly clinic = CLINIC;
   protected readonly formatDate = formatDate;
   protected readonly formatTime = formatTime;
-  protected readonly dentist = computed(() => dentistById(this.appointment().dentistId));
-  protected readonly procedure = computed(() => procedureById(this.appointment().procedureId));
   protected readonly reminder = computed(() => reminderInfo(this.appointment()));
   protected readonly firstName = computed(() => this.appointment().patientName.split(' ')[0]);
 }

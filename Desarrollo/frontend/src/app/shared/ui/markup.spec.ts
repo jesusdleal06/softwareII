@@ -5,7 +5,8 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { STATUS_STYLES } from '../../core/data/status-styles';
 import { makeAppointment } from '../../core/testing/appointment.fixture';
-import { text } from '../testing/dom';
+import { settle, text } from '../testing/dom';
+import { createFakeStore, provideFakeStore } from '../testing/fake-store';
 import { AppointmentSummary } from './appointment-summary';
 import { Logo } from './logo';
 import { PublicFooter, PublicHeader } from './public-header';
@@ -30,6 +31,8 @@ class Host {
     patientName: 'Rosa Elvira Jaimes',
     patientPhone: '3135556677',
     procedureId: 'p4',
+    procedureName: 'Exodoncia',
+    durationMinutes: 60,
     date: '2026-10-14',
     time: '14:00',
   });
@@ -37,7 +40,7 @@ class Host {
 
 describe('shared ui markup', () => {
   function render(): HTMLElement {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({ providers: [provideRouter([]), provideFakeStore(createFakeStore())] });
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
@@ -58,6 +61,7 @@ describe('shared ui markup', () => {
     const fixture = TestBed.createComponent(Host);
     await TestBed.inject(Router).navigateByUrl('/ingreso');
     await fixture.whenStable();
+    await settle();
     fixture.detectChanges();
 
     const header = (fixture.nativeElement as HTMLElement).querySelector('header') as HTMLElement;
@@ -79,7 +83,7 @@ describe('shared ui markup', () => {
     expect(content).toContain('Hola Rosa, te recordamos tu cita en Centro Odontológico Villadent:');
     expect(content).toContain('14/10/2026 a las 2:00 PM');
     expect(content).toContain('Exodoncia con Dra. Laura Villamizar');
-    expect(content).toContain('villadent.co/cita/VD-1049');
+    expect(content).toContain('villadent.co/cita/enlace-personal');
     expect(content).toContain('WhatsApp · 14/10/2026 8:00 AM');
   });
 

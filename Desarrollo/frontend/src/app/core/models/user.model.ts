@@ -10,4 +10,14 @@ export interface User {
 }
 
 /** Authenticated user without credentials. */
-export type Session = Omit<User, 'password'>;
+export interface Session {
+  email: string;
+  name: string;
+  role: Role;
+  /** Backend user id. */
+  userId?: string;
+  /** The dentist row linked to an ODONTOLOGO user. */
+  dentistId?: string;
+  /** Bearer token returned by the API. */
+  token?: string;
+}

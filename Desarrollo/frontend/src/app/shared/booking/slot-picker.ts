@@ -1,22 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, input, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { LucideCheck, LucideChevronLeft, LucideChevronRight, LucideClock } from '@lucide/angular';
-import { DENTISTS, PROCEDURES } from '../../core/data/mock-data';
 import {
   addDays,
-  availableSlots,
-  dentistById,
   formatTime,
   fromDateKey,
   isMorning,
   isPastDate,
   mondayOf,
   monthName,
-  procedureById,
   shortDayName,
   toDateKey,
   workWeek,
 } from '../../core/domain';
-import { Appointment } from '../../core/models';
+import { Dentist, Procedure } from '../../core/models';
+import { AppStore } from '../../core/services/app-store.service';
 import { cn } from '../ui/class-names';
 import { SelectField, SelectOption } from '../ui/field';
 
@@ -34,8 +31,8 @@ const EMPTY_HINT =
   'rounded-2xl border border-dashed bg-muted/40 px-4 py-6 text-center text-base text-muted-foreground text-pretty';
 
 /**
- * Dentist, procedure, day and hour picker. Presentational: availability is computed
- * from the `appointments` and `now` inputs; every change is emitted through `valueChange`.
+ * Dentist, procedure, day and hour picker. Catalogs arrive as inputs; free slots come
+ * from the API whenever the selection changes. Every change is emitted through `valueChange`.
  */
 @Component({
   selector: 'app-slot-picker',
@@ -67,19 +64,19 @@ const EMPTY_HINT =
           label="Odontólogo"
           [labelHidden]="true"
           placeholder="Selecciona un odontólogo"
-          [options]="dentistOptions"
+          [options]="dentistOptions()"
           [value]="value().dentistId"
           (valueChange)="patch({ dentistId: $event })"
         />
       } @else {
         <div role="radiogroup" aria-label="Odontólogo" class="grid gap-3 sm:grid-cols-3" (keydown)="onGroupKeydown($event)">
-          @for (d of dentists; track d.id) {
+          @for (d of dentists(); track d.id) {
             @let active = value().dentistId === d.id;
             <button
               type="button"
               role="radio"
               [attr.aria-checked]="active"
-              [tabindex]="radioTabindex(value().dentistId, d.id, dentists[0].id)"
+              [tabindex]="radioTabindex(value().dentistId, d.id, dentists()[0].id)"
               (click)="patch({ dentistId: d.id })"
               [class]="
                 cn(
@@ -130,19 +127,19 @@ const EMPTY_HINT =
           label="Procedimiento"
           [labelHidden]="true"
           placeholder="Selecciona un procedimiento"
-          [options]="procedureOptions"
+          [options]="procedureOptions()"
           [value]="value().procedureId"
           (valueChange)="patch({ procedureId: $event })"
         />
       } @else {
         <div role="radiogroup" aria-label="Procedimiento" class="grid gap-3 sm:grid-cols-2" (keydown)="onGroupKeydown($event)">
-          @for (p of procedures; track p.id) {
+          @for (p of procedures(); track p.id) {
             @let active = value().procedureId === p.id;
             <button
               type="button"
               role="radio"
               [attr.aria-checked]="active"
-              [tabindex]="radioTabindex(value().procedureId, p.id, procedures[0].id)"
+              [tabindex]="radioTabindex(value().procedureId, p.id, procedures()[0].id)"
               (click)="patch({ procedureId: p.id })"
               [class]="
                 cn(
@@ -224,6 +221,10 @@ const EMPTY_HINT =
         <p [class]="emptyHint">
           Selecciona el odontólogo, el procedimiento y el día para ver los horarios disponibles.
         </p>
+      } @else if (loadingSlots()) {
+        <p role="status" [class]="emptyHint">Buscando horarios disponibles…</p>
+      } @else if (slotsError()) {
+        <p role="alert" [class]="emptyHint">No pudimos cargar los horarios. Intenta de nuevo.</p>
       } @else if (slots().length === 0) {
         <p [class]="emptyHint">No hay horarios disponibles este día. Prueba con otro día.</p>
       } @else {
@@ -271,16 +272,14 @@ const EMPTY_HINT =
 })
 export class SlotPicker implements OnInit {
   readonly value = input.required<SlotSelection>();
-  /** All appointments, used to compute free slots. */
-  readonly appointments = input.required<readonly Appointment[]>();
-  /** Current instant (today, past days and already-started times). */
+  readonly dentists = input.required<readonly Dentist[]>();
+  readonly procedures = input.required<readonly Procedure[]>();
+  /** Current instant (today and past days). */
   readonly now = input.required<Date>();
   /** Dentist cannot be changed (rescheduling). */
   readonly fixedDentist = input(false);
   /** Procedure cannot be changed (rescheduling). */
   readonly fixedProcedure = input(false);
-  /** Appointment being rescheduled: its own slot does not count as busy. */
-  readonly excludeAppointmentId = input<string>();
   /** Compact selects instead of cards (staff panel). */
   readonly compact = input(false);
   readonly valueChange = output<SlotSelection>();
@@ -290,22 +289,28 @@ export class SlotPicker implements OnInit {
   protected readonly navButton = NAV_BUTTON;
   protected readonly emptyHint = EMPTY_HINT;
   protected readonly formatTime = formatTime;
-  protected readonly dentists = DENTISTS;
-  protected readonly procedures = PROCEDURES;
-  protected readonly dentistOptions: SelectOption[] = DENTISTS.map((d) => ({
-    value: d.id,
-    label: `${d.name} · ${d.specialty}`,
-  }));
-  protected readonly procedureOptions: SelectOption[] = PROCEDURES.map((p) => ({
-    value: p.id,
-    label: `${p.name} · ${p.durationMinutes} min`,
-  }));
+  private readonly store = inject(AppStore);
+  protected readonly dentistOptions = computed<SelectOption[]>(() =>
+    this.dentists().map((d) => ({ value: d.id, label: `${d.name} · ${d.specialty}` })),
+  );
+  protected readonly procedureOptions = computed<SelectOption[]>(() =>
+    this.procedures().map((p) => ({ value: p.id, label: `${p.name} · ${p.durationMinutes} min` })),
+  );
+  protected readonly loadingSlots = signal(false);
+  protected readonly slotsError = signal(false);
+  private readonly slotsState = signal<string[]>([]);
+  private lastKey = '';
+  private requestSeq = 0;
 
   /** Monday of the week on display; set from the initial value (or today) on init. */
   private readonly weekStart = signal<Date | null>(null);
 
-  protected readonly dentist = computed(() => dentistById(this.value().dentistId));
-  protected readonly procedure = computed(() => procedureById(this.value().procedureId));
+  protected readonly dentist = computed(() =>
+    this.dentists().find((d) => d.id === this.value().dentistId),
+  );
+  protected readonly procedure = computed(() =>
+    this.procedures().find((p) => p.id === this.value().procedureId),
+  );
 
   private readonly week = computed(() => workWeek(this.weekStart() ?? mondayOf(this.now())));
 
@@ -333,19 +338,7 @@ export class SlotPicker implements OnInit {
     return `${first.getDate()} - ${last.getDate()} de ${monthName(last)} de ${last.getFullYear()}`;
   });
 
-  protected readonly slots = computed(() => {
-    const { dentistId, date } = this.value();
-    const procedure = this.procedure();
-    if (!dentistId || !procedure || !date) return [];
-    return availableSlots({
-      dentistId,
-      date,
-      durationMinutes: procedure.durationMinutes,
-      appointments: this.appointments(),
-      now: this.now(),
-      excludeAppointmentId: this.excludeAppointmentId(),
-    });
-  });
+  protected readonly slots = this.slotsState.asReadonly();
 
   protected readonly slotGroups = computed(() => {
     const slots = this.slots();
@@ -354,6 +347,39 @@ export class SlotPicker implements OnInit {
       { title: 'Tarde', slots: slots.filter((s) => !isMorning(s)) },
     ].filter((g) => g.slots.length > 0);
   });
+
+  constructor() {
+    effect(() => {
+      const { dentistId, procedureId, date } = this.value();
+      const key = dentistId && procedureId && date ? `${dentistId}|${procedureId}|${date}` : '';
+      if (!key) {
+        this.lastKey = '';
+        this.slotsState.set([]);
+        this.loadingSlots.set(false);
+        this.slotsError.set(false);
+        return;
+      }
+      if (key === this.lastKey) return;
+      this.lastKey = key;
+      const seq = ++this.requestSeq;
+      this.loadingSlots.set(true);
+      this.slotsError.set(false);
+      this.slotsState.set([]);
+      this.store
+        .availability(dentistId, procedureId, date)
+        .then((slots) => {
+          if (seq !== this.requestSeq) return;
+          this.slotsState.set(slots);
+          this.loadingSlots.set(false);
+        })
+        .catch(() => {
+          if (seq !== this.requestSeq) return;
+          this.slotsState.set([]);
+          this.loadingSlots.set(false);
+          this.slotsError.set(true);
+        });
+    });
+  }
 
   ngOnInit(): void {
     const date = this.value().date;

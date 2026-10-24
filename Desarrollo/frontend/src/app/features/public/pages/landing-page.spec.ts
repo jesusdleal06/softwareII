@@ -1,9 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AppStore } from '../../../core/services/app-store.service';
-import { CLOCK, SESSION_STORAGE } from '../../../core/services/tokens';
-import { addDays, formatTime, toDateKey } from '../../../core/domain';
-import { text } from '../../../shared/testing/dom';
+import { formatTime } from '../../../core/domain';
+import { createFakeStore, FakeStore, provideFakeStore } from '../../../shared/testing/fake-store';
+import { settle, text } from '../../../shared/testing/dom';
 import { LandingPage } from './landing-page';
 
 // Wednesday 2026-10-14 09:10 (the project's fixture instant).
@@ -12,28 +11,27 @@ const NOW = new Date(2026, 9, 14, 9, 10);
 describe('LandingPage', () => {
   let fixture: ComponentFixture<LandingPage>;
   let el: HTMLElement;
-  let store: AppStore;
+  let store: FakeStore;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        { provide: CLOCK, useValue: () => new Date(NOW) },
-        { provide: SESSION_STORAGE, useValue: null },
-      ],
-    });
-    store = TestBed.inject(AppStore);
+  async function render(options: { availability?: string[] } = {}): Promise<void> {
+    store = createFakeStore({ now: NOW, session: null });
+    store.availability.mockResolvedValue(options.availability ?? ['09:00', '10:00', '11:00']);
+    TestBed.configureTestingModule({ providers: [provideRouter([]), provideFakeStore(store)] });
     fixture = TestBed.createComponent(LandingPage);
     fixture.detectChanges();
+    await fixture.whenStable();
+    await settle();
+    fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
-  });
+  }
 
   /** First section of the page: the hero. */
   function hero(): HTMLElement {
     return el.querySelector('main > section') as HTMLElement;
   }
 
-  it('keeps the hero at four text elements: no brand pill and no tagline under the CTA', () => {
+  it('keeps the hero at four text elements: no brand pill and no tagline under the CTA', async () => {
+    await render();
     // The availability panel is a separate object; count only the hero's copy.
     const copy = hero().cloneNode(true) as HTMLElement;
     copy.querySelector('aside')?.remove();
@@ -46,12 +44,14 @@ describe('LandingPage', () => {
     expect(heroText).toContain('Agenda tu cita en Villadent en menos de 2 minutos');
   });
 
-  it('renders no eyebrow or kicker label and no "Paso N" scenario tags', () => {
+  it('renders no eyebrow or kicker label and no "Paso N" scenario tags', async () => {
+    await render();
     expect(el.querySelectorAll('[class*="uppercase"]').length).toBe(0);
     expect(text(el)).not.toContain('Paso ');
   });
 
-  it('differentiates its two content sections instead of repeating the three-card mold', () => {
+  it('differentiates its two content sections instead of repeating the three-card mold', async () => {
+    await render();
     const how = el.querySelector('[aria-labelledby="como-funciona"]') as HTMLElement;
     const team = el.querySelector('[aria-labelledby="equipo"]') as HTMLElement;
     expect(how).not.toBeNull();
@@ -67,35 +67,22 @@ describe('LandingPage', () => {
     expect(how.querySelector('ol')?.className).not.toBe(team.querySelector('ul')?.className);
   });
 
-  it('feeds the hero panel with the real next-available slots from the store', () => {
+  it('feeds the hero panel with the real next-available slots from the store', async () => {
+    await render();
     const panel = hero().querySelector('aside') as HTMLElement;
     expect(panel).not.toBeNull();
     expect(text(panel)).toContain('Próximos horarios');
 
-    // Every time the panel shows must exist in the store's own availability for
-    // one of the next seven days (the window the panel can draw from).
-    const available = new Set<string>();
-    for (let offset = 0; offset < 7; offset++) {
-      const date = toDateKey(addDays(NOW, offset));
-      for (const dentistId of ['d1', 'd2', 'd3']) {
-        for (const slot of store.availableSlots({ dentistId, date, durationMinutes: 30 })) {
-          available.add(formatTime(slot));
-        }
-      }
-    }
     const shownTimes = Array.from(panel.querySelectorAll('span'))
       .map((s) => s.textContent?.trim() ?? '')
       .filter((t) => /^\d{1,2}:\d{2} (AM|PM)$/.test(t));
     expect(shownTimes.length).toBeGreaterThan(0);
-    for (const time of shownTimes) expect(available.has(time)).toBe(true);
+    for (const time of shownTimes) expect([formatTime('09:00'), formatTime('10:00'), formatTime('11:00')]).toContain(time);
   });
 
-  it('shows an honest empty state when the agenda has no free slots', () => {
-    vi.spyOn(store, 'availableSlots').mockReturnValue([]);
-    fixture = TestBed.createComponent(LandingPage);
-    fixture.detectChanges();
-    const panel = (fixture.nativeElement as HTMLElement).querySelector('aside') as HTMLElement;
+  it('shows an honest empty state when the agenda has no free slots', async () => {
+    await render({ availability: [] });
+    const panel = el.querySelector('aside') as HTMLElement;
     expect(text(panel)).toContain('No hay cupos en los próximos días');
-    vi.restoreAllMocks();
   });
 });
