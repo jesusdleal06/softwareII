@@ -43,9 +43,10 @@ class ArchitectureTest {
         .resideInAnyPackage(
             "co.edu.unipamplona.villadent..modules..application..",
             "co.edu.unipamplona.villadent..modules..domain..",
+            "co.edu.unipamplona.villadent.shared.error..",
             "org.springframework.transaction.annotation..",
             "java..")
-        .because("the application layer may only depend on the domain and the transaction annotation")
+        .because("the application layer may only depend on the domain, the shared error contract and the transaction annotation")
         .allowEmptyShould(true);
 
     @ArchTest
