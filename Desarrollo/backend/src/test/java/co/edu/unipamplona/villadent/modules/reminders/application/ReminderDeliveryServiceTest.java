@@ -118,7 +118,9 @@ class ReminderDeliveryServiceTest {
         verify(reminders).save(saved.capture());
         assertThat(saved.getValue().status()).isEqualTo(ReminderStatus.ENVIADO);
         verify(sender).send(org.mockito.ArgumentMatchers.argThat(
-                message -> message.manageUrl().equals("http://localhost:4200/cita/raw-token")));
+                message -> message.manageUrl().equals("http://localhost:4200/cita/raw-token")
+                        // The WhatsApp button only carries the token whose hash was attached above.
+                        && message.manageToken().equals("raw-token")));
     }
 
     @Test

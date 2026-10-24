@@ -5,13 +5,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.edu.unipamplona.villadent.modules.reminders.domain.error.ReminderDeliveryException;
 import co.edu.unipamplona.villadent.modules.reminders.domain.model.ReminderMessage;
+import com.jayway.jsonpath.JsonPath;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class WhatsAppReminderSenderTest {
@@ -40,7 +43,7 @@ class WhatsAppReminderSenderTest {
         return new ReminderMessage(
                 "Ana María Rueda", "3001234567", LocalDate.of(2026, 10, 26),
                 LocalTime.of(10, 0), "Dra. Laura Villamizar", "Limpieza",
-                "http://localhost:4200/cita/token");
+                "https://villadent.example/cita/token-abc", "token-abc");
     }
 
     @Test
@@ -85,8 +88,47 @@ class WhatsAppReminderSenderTest {
         sender.send(message());
 
         assertThat(body.get()).contains("\"messaging_product\":\"whatsapp\"")
-                .contains("\"type\":\"template\"")
-                .contains("http://localhost:4200/cita/token");
+                .contains("\"type\":\"template\"");
+    }
+
+    @Test
+    @DisplayName("CP-RF05-01: the URL button carries only the manage token, not a whole URL")
+    void theUrlButtonCarriesOnlyTheToken() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        var sender = new WhatsAppReminderSender(startServer(body), "token", "123", "reminder");
+
+        sender.send(message());
+
+        // The approved template holds the fixed prefix (https://.../cita/); WhatsApp appends this suffix.
+        List<String> button = JsonPath.read(body.get(), "$.template.components[?(@.type == 'button')].parameters[0].text");
+        assertThat(button).containsExactly("token-abc");
+        assertThat(body.get()).doesNotContain("/cita/");
+    }
+
+    @Test
+    @DisplayName("CP-RF05-01: the body shows the date and time as the in-app WhatsApp preview does")
+    void theBodyUsesThePreviewFormats() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        var sender = new WhatsAppReminderSender(startServer(body), "token", "123", "reminder");
+
+        sender.send(message());
+
+        List<String> texts = JsonPath.read(body.get(), "$.template.components[?(@.type == 'body')].parameters[*].text");
+        assertThat(texts).containsExactly(
+                "Ana María Rueda", "26/10/2026", "10:00 AM", "Dra. Laura Villamizar", "Limpieza");
+    }
+
+    @Test
+    void afternoonTimesUseTheTwelveHourClock() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        var sender = new WhatsAppReminderSender(startServer(body), "token", "123", "reminder");
+
+        sender.send(new ReminderMessage(
+                "Ana María Rueda", "3001234567", LocalDate.of(2026, 10, 26), LocalTime.of(14, 30),
+                "Dra. Laura Villamizar", "Limpieza", "https://villadent.example/cita/t", "t"));
+
+        List<String> texts = JsonPath.read(body.get(), "$.template.components[?(@.type == 'body')].parameters[*].text");
+        assertThat(texts).contains("2:30 PM");
     }
 
     @Test
@@ -97,7 +139,7 @@ class WhatsAppReminderSenderTest {
 
         sender.send(new ReminderMessage(
                 null, "3001234567", LocalDate.of(2026, 10, 26), LocalTime.of(10, 0),
-                null, null, "http://localhost:4200/cita/token"));
+                null, null, "https://villadent.example/cita/token-abc", "token-abc"));
 
         assertThat(body.get()).contains("\"text\":\"\"");
     }

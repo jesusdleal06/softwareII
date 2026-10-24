@@ -154,16 +154,21 @@ La primera migración es `V1__initial_schema.sql`: crea todas las tablas del mod
 
 Al agendar, el backend programa el recordatorio con las reglas del prototipo: una cita de mañana (antes de las 12:00) se recuerda el día anterior a las 18:00; una de tarde, el mismo día a las 08:00. Si esa hora ya pasó al agendar, se envía de inmediato. Un proceso programado consulta cada minuto los recordatorios vencidos; si el envío falla, guarda el error y reintenta a los 5 minutos hasta tres intentos.
 
-El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`ReminderSender`). El token del enlace se genera al enviar (32 bytes aleatorios en base64url); en la base solo se guarda su hash SHA-256, y cada recordatorio nuevo reemplaza el anterior, así que un enlace viejo deja de servir. El enlace apunta a `app.manage-link-base` (por defecto `http://localhost:4200/cita/`).
+El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`ReminderSender`). El token del enlace se genera al enviar (32 bytes aleatorios en base64url); en la base solo se guarda su hash SHA-256, y cada recordatorio nuevo reemplaza el anterior, así que un enlace viejo deja de servir.
 
 | Variable | Uso |
 | --- | --- |
 | `app.whatsapp.token` (`WHATSAPP_TOKEN`) | Token de la API de WhatsApp; sin él los envíos quedan registrados como fallidos |
 | `app.whatsapp.phone-number-id` (`WHATSAPP_PHONE_NUMBER_ID`) | Número emisor |
-| `app.whatsapp.template-name` (`WHATSAPP_TEMPLATE_NAME`) | Plantilla aprobada con cinco parámetros de cuerpo y uno de botón |
+| `app.whatsapp.template-name` (`WHATSAPP_TEMPLATE_NAME`) | Nombre de la plantilla aprobada (ver abajo) |
 | `app.whatsapp.api-url` (`WHATSAPP_API_URL`) | Base de la API; por defecto `https://graph.facebook.com/v21.0` |
-| `app.manage-link-base` (`MANAGE_LINK_BASE`) | Base del enlace de gestión |
+| `app.manage-link-base` (`MANAGE_LINK_BASE`) | Dirección pública de la página de la cita, terminada en `/cita/` (por defecto `http://localhost:4200/cita/`). Debe ser la misma que el prefijo del botón de la plantilla |
 | `app.reminders.scheduler.enabled` (`REMINDERS_SCHEDULER_ENABLED`) | `false` apaga el sondeo (las pruebas de integración lo apagan) |
+
+**La plantilla de WhatsApp** se crea y se aprueba en Meta (categoría *utility*, idioma `es`). El backend le envía:
+
+- **Cuerpo, 5 variables en este orden:** `{{1}}` nombre del paciente, `{{2}}` fecha (`26/10/2026`), `{{3}}` hora (`2:30 PM`), `{{4}}` odontólogo, `{{5}}` procedimiento. Son los mismos formatos de la vista previa del mensaje en la aplicación.
+- **Un botón de enlace dinámico:** en la plantilla se define la parte fija, por ejemplo `https://<dominio-del-frontend>/cita/{{1}}`, y el backend envía solo el código del enlace como `{{1}}`. El prefijo tiene que ser una dirección pública: con `localhost` el celular del paciente no puede abrir el enlace.
 
 ### Reportes administrativos
 

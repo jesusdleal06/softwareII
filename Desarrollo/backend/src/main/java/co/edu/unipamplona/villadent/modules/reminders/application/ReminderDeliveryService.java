@@ -69,7 +69,8 @@ public class ReminderDeliveryService {
                     view.time(),
                     view.dentistName(),
                     view.procedureName(),
-                    manageLinkBase + rawToken));
+                    manageLinkBase + rawToken,
+                    rawToken));
             reminders.save(reminder.sent(now));
         } catch (RuntimeException exception) {
             reminders.save(reminder.failed(errorMessage(exception), now, MAX_ATTEMPTS));

@@ -3,12 +3,18 @@ package co.edu.unipamplona.villadent.modules.reminders.infrastructure.whatsapp;
 import co.edu.unipamplona.villadent.modules.reminders.domain.error.ReminderDeliveryException;
 import co.edu.unipamplona.villadent.modules.reminders.domain.model.ReminderMessage;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivens.ReminderSender;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 
 public class WhatsAppReminderSender implements ReminderSender {
+
+    // Same formats as the in-app WhatsApp preview (frontend formatDate / formatTime): 26/10/2026, 2:30 PM.
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("h:mm a", Locale.US);
 
     private final RestClient restClient;
     private final String token;
@@ -42,12 +48,14 @@ public class WhatsAppReminderSender implements ReminderSender {
                         "components", List.of(
                                 Map.of("type", "body", "parameters", List.of(
                                         text(message.patientName()),
-                                        text(message.date().toString()),
-                                        text(message.time().toString()),
+                                        text(message.date().format(DATE)),
+                                        text(message.time().format(TIME)),
                                         text(message.dentistName()),
                                         text(message.procedureName()))),
+                                // The approved template holds the fixed URL prefix (app.manage-link-base);
+                                // WhatsApp appends this parameter to it, so only the token goes here.
                                 Map.of("type", "button", "sub_type", "url", "index", "0",
-                                        "parameters", List.of(text(message.manageUrl()))))));
+                                        "parameters", List.of(text(message.manageToken()))))));
         restClient.post()
                 .uri("/{phoneNumberId}/messages", phoneNumberId)
                 .header("Authorization", "Bearer " + token)

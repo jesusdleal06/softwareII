@@ -10,5 +10,6 @@ public record ReminderMessage(
         LocalTime time,
         String dentistName,
         String procedureName,
-        String manageUrl) {
+        String manageUrl,
+        String manageToken) {
 }
