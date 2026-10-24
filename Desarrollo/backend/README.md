@@ -22,7 +22,7 @@ cd Desarrollo/backend
 docker compose up -d
 ```
 
-- API en <http://localhost:8080> — responde `401` porque Spring Security exige autenticación y todavía no hay controladores públicos; el solo hecho de responder ya prueba que la API está en pie.
+- API en <http://localhost:8080> — `/actuator/health` y `/api/v1/public/**` responden sin sesión; el resto exige un JWT (`401` sin token, `403` con el rol equivocado).
 - PostgreSQL en `localhost:5434`.
 
 La **primera vez tarda unos minutos**: dentro del contenedor se descargan las dependencias de Spring. Quedan guardadas en el volumen `gradle-cache`, así que los siguientes arranques son de segundos (medido: 16 s desde `docker compose up -d` hasta la aplicación lista). Para seguirlo mientras tanto:
@@ -69,6 +69,40 @@ En este modo la recarga en caliente necesita la segunda terminal (`./gradlew -t 
 
 **No uses las dos formas a la vez**: ambas publican el puerto 8080.
 
+### Primer usuario y JWT
+
+Solo un `AUXILIAR` puede crear usuarios, así que la primera cuenta se crea al arrancar desde variables de entorno:
+
+```bash
+BOOTSTRAP_ADMIN_EMAIL=ana@villadent.co \
+BOOTSTRAP_ADMIN_PASSWORD='una-clave-de-al-menos-12-caracteres' \
+BOOTSTRAP_ADMIN_NAME='Ana María Rueda' \
+./gradlew bootRun
+```
+
+- La cuenta solo se crea si **no existe ningún `AUXILIAR` activo**; si el correo ya existe, nunca se le cambia la contraseña.
+- Sin `BOOTSTRAP_ADMIN_EMAIL` y `BOOTSTRAP_ADMIN_PASSWORD` el arranque no falla: avisa y no crea nada.
+- Una contraseña de menos de 12 caracteres detiene el arranque con un error claro.
+- La contraseña se guarda como hash BCrypt y nunca se escribe en los logs.
+- `app.bootstrap-admin.enabled=false` desactiva el mecanismo (las pruebas de integración lo usan).
+
+El login es `POST /api/v1/auth/login` con `{"email":"...","password":"..."}`. Devuelve un JWT HS256 de 8 horas firmado con `JWT_SECRET` (mínimo 32 bytes). En desarrollo hay un secreto por defecto; en cualquier otro entorno hay que definirlo.
+
+### Datos de demostración
+
+Con el perfil `demo` se cargan los mismos odontólogos, horarios (08:00–12:00 y 14:00–18:00, lunes a sábado), procedimientos y usuarios del prototipo Angular. El sembrado usa los casos de uso, no SQL, y es idempotente: se puede arrancar varias veces sin duplicar datos. Solo existe en este perfil.
+
+```bash
+SPRING_PROFILES_ACTIVE=demo ./gradlew bootRun
+```
+
+Credenciales **solo para la demostración**:
+
+| Correo | Contraseña | Rol |
+| --- | --- | --- |
+| `ana@villadent.co` | `villadent2024` | `AUXILIAR` |
+| `laura@villadent.co` | `villadent2024` | `ODONTOLOGO` |
+
 ### Pruebas
 
 ```bash
@@ -76,6 +110,20 @@ En este modo la recarga en caliente necesita la segunda terminal (`./gradlew -t 
 ```
 
 Las pruebas de integración levantan su **propio** PostgreSQL con Testcontainers (no usan el de `docker-compose.yml`), así que necesitan Docker, pero no tener la base de desarrollo arriba. La versión de PostgreSQL está fijada igual en ambos lados para que desarrollo y pruebas no se separen.
+
+### Endpoints de esta entrega
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| `POST` | `/api/v1/auth/login` | Público |
+| `GET` | `/api/v1/public/dentists` | Público, solo activos |
+| `GET` | `/api/v1/public/procedures` | Público, solo activos |
+| `GET` | `/api/v1/public/availability?dentistId=&date=&procedureId=` | Público; devuelve solo franjas libres |
+| `GET/POST/PATCH` | `/api/v1/users/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
+| `GET/POST/PATCH` | `/api/v1/dentists/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
+| `GET/POST/PATCH` | `/api/v1/procedures/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
+| `GET/POST/PATCH` | `/api/v1/patients/**` | `AUXILIAR`; lectura también para `ODONTOLOGO` |
+| `GET` | `/api/v1/reports/**` | `AUXILIAR` |
 
 ---
 
@@ -92,4 +140,4 @@ src/test/java/co/edu/unipamplona/villadent/   # Pruebas
 
 El esquema lo construye **Flyway** a partir de `src/main/resources/db/migration/`, con nombres `V1__descripcion.sql`, `V2__…`. Hibernate corre con `ddl-auto=validate`: **nunca** altera el esquema por su cuenta, solo comprueba que las entidades coincidan con lo que las migraciones crearon. Si agregas una entidad sin su migración, el arranque falla a propósito: así el esquema siempre queda versionado.
 
-La carpeta está vacía todavía: el primer cambio de esquema del proyecto será `V1`.
+La primera migración es `V1__initial_schema.sql`: crea todas las tablas del modelo, el índice de agenda por odontólogo y fecha, y la restricción `citas_sin_cruce` que impide dobles reservas en PostgreSQL.
