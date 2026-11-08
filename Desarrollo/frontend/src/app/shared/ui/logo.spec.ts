@@ -27,6 +27,12 @@ describe('Logo', () => {
     expect(text(el)).toContain('AgendaPro');
   });
 
+  it('hides the product name on phones so the header controls fit', () => {
+    const name = Array.from(render().querySelectorAll('a span')).find((span) => text(span) === 'AgendaPro') as HTMLElement;
+    expect(name.className).toContain('hidden');
+    expect(name.className).toContain('sm:block');
+  });
+
   it('shows the clinic logo as a decorative image named by the link', () => {
     const img = render().querySelector('a img') as HTMLImageElement;
     expect(img.getAttribute('src')).toBe('brand/villadent-logo.png');

@@ -51,7 +51,7 @@ describe('shared ui markup', () => {
     expect(header.querySelector('a[aria-label="Villadent, ir al inicio"]')?.getAttribute('href')).toBe('/');
     expect(header.querySelector('a[aria-label="Villadent, ir al inicio"] img')?.getAttribute('src')).toBe('brand/villadent-logo.png');
     expect(text(header)).toContain('AgendaPro');
-    const staff = Array.from(header.querySelectorAll('a')).find((a) => text(a) === 'Ingreso del personal');
+    const staff = header.querySelector<HTMLAnchorElement>('a[href="/ingreso"]');
     expect(staff?.getAttribute('href')).toBe('/ingreso');
   });
 
@@ -65,7 +65,7 @@ describe('shared ui markup', () => {
     fixture.detectChanges();
 
     const header = (fixture.nativeElement as HTMLElement).querySelector('header') as HTMLElement;
-    const staff = Array.from(header.querySelectorAll('a')).find((a) => text(a) === 'Ingreso del personal');
+    const staff = header.querySelector<HTMLAnchorElement>('a[href="/ingreso"]');
     expect(staff, 'staff link still rendered on /ingreso').toBeDefined();
     expect(staff?.classList.contains('hidden')).toBe(true);
   });
@@ -113,9 +113,23 @@ describe('shared ui markup', () => {
     expect(text(footer)).toContain('Calle 45 # 27-18, Bucaramanga');
   });
 
+  it('shows the staff link as a compact button on phones and as text from sm up', () => {
+    const header = render().querySelector('header') as HTMLElement;
+    const staff = header.querySelector('a[href="/ingreso"]') as HTMLElement;
+    // A real button on phones: border, 44px touch target, lock icon and a short label.
+    expect(staff.className).toContain('border');
+    expect(staff.className).toContain('min-h-11');
+    expect(staff.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    const labels = Array.from(staff.querySelectorAll('span')).map((span) => [text(span), span.className]);
+    expect(labels).toEqual([
+      ['Personal', 'sm:hidden'],
+      ['Ingreso del personal', 'hidden sm:inline'],
+    ]);
+  });
+
   it('gives the staff link a full-opacity 2px focus ring', () => {
     const header = render().querySelector('header') as HTMLElement;
-    const staff = Array.from(header.querySelectorAll('a')).find((a) => text(a) === 'Ingreso del personal') as HTMLElement;
+    const staff = header.querySelector<HTMLAnchorElement>('a[href="/ingreso"]') as HTMLElement;
     expect(staff.className).toContain('focus-visible:ring-2');
     expect(staff.className).toContain('focus-visible:ring-ring');
     expect(staff.className).not.toContain('ring-4');

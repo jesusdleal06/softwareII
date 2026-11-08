@@ -17,11 +17,12 @@ Aplicación web en **Angular** para el agendamiento de citas del Centro Odontol�
 
 ## Cómo iniciar el entorno de desarrollo
 
-**Primero el backend.** El frontend no trae datos propios: necesita la API en el puerto 8080. Desde `Desarrollo/backend/`, con el perfil de demostración para tener odontólogos, procedimientos y usuarios de prueba:
+**Primero el backend.** El frontend no trae datos propios: necesita la API en el puerto 8080. Desde `Desarrollo/backend/` (levanta la base de datos y la API con los datos de demostración):
 
 ```bash
-docker compose up -d postgres
-SPRING_PROFILES_ACTIVE=demo ./gradlew bootRun
+docker compose up -d
+# Si el puerto 5434 está ocupado por otro proyecto:
+DB_HOST_PORT=5435 docker compose up -d
 ```
 
 Los detalles (base de datos, variables y la primera cuenta de la auxiliar) están en `Desarrollo/backend/README.md`.
@@ -74,7 +75,7 @@ Los carga el backend con el perfil `demo` (ver `Desarrollo/backend/README.md`), 
 
 **Teléfono del paciente:** celular colombiano de 10 dígitos que empieza por `3` (por ejemplo `3001234567`). El paciente debe escribir nombre y apellido.
 
-El perfil `demo` no crea citas: se agendan desde `/agendar` o como cita manual en el panel.
+El perfil `demo` también crea 48 citas de ejemplo en la semana anterior, la actual y la siguiente, para que la agenda y los reportes tengan datos (detalles en `Desarrollo/backend/README.md`).
 
 ---
 

@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { LucideLockKeyhole } from '@lucide/angular';
 import { Logo } from './logo';
 import { ThemeToggle } from './theme-toggle';
 
 @Component({
   selector: 'header[appPublicHeader]',
-  imports: [Logo, RouterLink, RouterLinkActive, ThemeToggle],
+  imports: [Logo, LucideLockKeyhole, RouterLink, RouterLinkActive, ThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'border-b bg-background' },
   template: `
@@ -19,9 +20,12 @@ import { ThemeToggle } from './theme-toggle';
           routerLinkActive
           #staffLink="routerLinkActive"
           [class.hidden]="staffLink.isActive"
-          class="flex min-h-12 min-w-0 items-center rounded-xl px-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
+          class="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold text-foreground hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-12 sm:border-transparent sm:text-base sm:font-medium sm:text-muted-foreground sm:hover:text-foreground"
         >
-          Ingreso del personal
+          <!-- Phones get a real button with a short label; wider screens keep the full text link. -->
+          <svg lucideLockKeyhole class="size-4 shrink-0 sm:hidden" aria-hidden="true"></svg>
+          <span class="sm:hidden">Personal</span>
+          <span class="hidden sm:inline">Ingreso del personal</span>
         </a>
       </div>
     </div>

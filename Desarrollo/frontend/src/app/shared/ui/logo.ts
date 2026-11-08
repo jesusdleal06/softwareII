@@ -27,7 +27,8 @@ import { cn } from './class-names';
         <span class="shrink-0 rounded-lg dark:bg-white dark:px-1.5 dark:py-0.5">
           <img src="brand/villadent-logo.png" alt="" width="374" height="160" class="h-10 w-auto" />
         </span>
-        <span class="min-w-0 truncate border-l pl-2 text-xs font-medium text-muted-foreground">AgendaPro</span>
+        <!-- Hidden on phones: the logo already identifies the site and the controls need the room. -->
+        <span class="hidden min-w-0 truncate border-l pl-2 text-xs font-medium text-muted-foreground sm:block">AgendaPro</span>
       }
     </a>
   `,
