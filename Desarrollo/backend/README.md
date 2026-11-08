@@ -23,7 +23,8 @@ docker compose up -d
 ```
 
 - API en <http://localhost:8080> — `/actuator/health` y `/api/v1/public/**` responden sin sesión; el resto exige un JWT (`401` sin token, `403` con el rol equivocado).
-- PostgreSQL en `localhost:5434`.
+- PostgreSQL en `localhost:5434`. Si ese puerto ya está ocupado por otro proyecto, se cambia al arrancar: `DB_HOST_PORT=5435 docker compose up -d`.
+- La API arranca con el perfil `demo`: trae los odontólogos, procedimientos, horarios y usuarios de prueba (ver «Datos de demostración»). Para arrancarla sin esos datos: `SPRING_PROFILES_ACTIVE=default docker compose up -d`.
 
 La **primera vez tarda unos minutos**: dentro del contenedor se descargan las dependencias de Spring. Quedan guardadas en el volumen `gradle-cache`, así que los siguientes arranques son de segundos (medido: 16 s desde `docker compose up -d` hasta la aplicación lista). Para seguirlo mientras tanto:
 
@@ -91,6 +92,13 @@ El login es `POST /api/v1/auth/login` con `{"email":"...","password":"..."}`. De
 ### Datos de demostración
 
 Con el perfil `demo` se cargan los mismos odontólogos, horarios (08:00–12:00 y 14:00–18:00, lunes a sábado), procedimientos y usuarios del prototipo Angular. El sembrado usa los casos de uso, no SQL, y es idempotente: se puede arrancar varias veces sin duplicar datos. Solo existe en este perfil.
+
+**Citas de ejemplo.** Para que la agenda y los reportes no arranquen vacíos, el perfil también crea 48 citas: la semana de ejemplo del prototipo (16 citas de lunes a sábado), repetida en la semana anterior, la actual y la siguiente, contadas desde el día en que arranca el backend.
+
+- Las pasadas quedan atendidas, salvo las que la semana marca como inasistencia o cancelación. Desde hoy en adelante quedan pendientes, confirmadas, reprogramadas o canceladas.
+- Cada cita tiene su propio paciente ficticio, con un teléfono `3XX 555 XXXX`.
+- **No se programa ningún recordatorio:** nunca se envía nada a un teléfono de demostración.
+- **Solo se crean si la base no tiene ninguna cita.** Para volver a generarlas con fechas actuales, hay que vaciar la base de desarrollo: `docker compose down -v` (borra todos los datos locales) y `docker compose up -d`.
 
 ```bash
 SPRING_PROFILES_ACTIVE=demo ./gradlew bootRun

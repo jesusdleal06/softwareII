@@ -23,5 +23,8 @@ public interface AppointmentRepository {
 
     String nextCode();
 
+    /** Total number of stored appointments, in any status. */
+    long count();
+
     Appointment save(Appointment appointment);
 }

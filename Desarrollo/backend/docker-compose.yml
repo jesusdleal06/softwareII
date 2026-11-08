@@ -1,8 +1,11 @@
 # Dev-only compose for the Villadent backend: the database and the API.
 # `docker compose up -d` starts both, mirroring the frontend compose.
-# PostgreSQL is published on host port 5434 because 5432 and 5433 are already
-# taken by other local projects; inside the compose network it still listens on
-# the default 5432.
+# PostgreSQL is published on host port 5434 by default (5432 and 5433 are often
+# taken by other local projects); set DB_HOST_PORT to use another one, for example
+# `DB_HOST_PORT=5435 docker compose up -d`. Inside the compose network it still
+# listens on the default 5432. The API starts with the `demo` profile, so the
+# prototype dentists, procedures and staff users are there (SPRING_PROFILES_ACTIVE
+# overrides it).
 services:
   postgres:
     # Same major as the tests (see TestcontainersConfiguration): a moving
@@ -15,7 +18,7 @@ services:
       # through DB_URL / DB_USER / DB_PASSWORD (see README).
       POSTGRES_PASSWORD: villadent
     ports:
-      - "5434:5432"
+      - "${DB_HOST_PORT:-5434}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -39,6 +42,8 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/villadent
       DB_USER: villadent
       DB_PASSWORD: villadent
+      # Dev compose only: demo data and demo staff users (see README).
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
     ports:
       # Same port as `./gradlew bootRun` on the host: use one or the other.
       - "8080:8080"

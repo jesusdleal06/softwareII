@@ -71,6 +71,11 @@ public class AppointmentPersistenceAdapter implements AppointmentRepository {
     }
 
     @Override
+    public long count() {
+        return appointments.count();
+    }
+
+    @Override
     public String nextCode() {
         return "VD-%04d".formatted(appointments.nextCodeSequence());
     }
