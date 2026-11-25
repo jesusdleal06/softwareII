@@ -173,6 +173,48 @@ describe('SlotPicker', () => {
     expect(text(tabbable[0])).toContain('Hoy');
   });
 
+  it('CP-RNF02-02: keeps visible dates keyboard reachable when paging away from the selected date', async () => {
+    const el = await render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
+    const days = () => Array.from(el.querySelectorAll<HTMLButtonElement>('[aria-label="Día"] button'));
+    const checked = () => days().find((day) => day.getAttribute('aria-checked') === 'true');
+    const tabStops = () => days().filter((day) => !day.disabled && day.tabIndex === 0);
+    expect(tabStops()).toEqual([checked()]);
+    el.querySelector<HTMLButtonElement>('[aria-label="Semana siguiente"]')!.click();
+    fixture.detectChanges();
+    expect(checked()).toBeUndefined();
+    expect(tabStops()).toEqual([days().find((day) => !day.disabled)]);
+    expect(emitted).toEqual([]);
+    el.querySelector<HTMLButtonElement>('[aria-label="Semana anterior"]')!.click();
+    fixture.detectChanges();
+    expect(checked()).toBeDefined();
+    expect(tabStops()).toEqual([checked()]);
+  });
+
+  it.each(['10:00', '14:00'])('CP-RNF02-02: keeps both time groups reachable with %s selected', async (time) => {
+    const el = await render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time });
+    for (const group of el.querySelectorAll('[aria-label^="Horarios de la"]')) {
+      const buttons = [...group.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+      const checked = buttons.filter((button) => button.getAttribute('aria-checked') === 'true');
+      expect(checked).toHaveLength((time === '10:00') === group.getAttribute('aria-label')!.endsWith('mañana') ? 1 : 0);
+      expect(buttons.filter((button) => button.tabIndex === 0)).toEqual([checked[0] ?? buttons[0]]);
+    }
+    expect(emitted).toEqual([]);
+  });
+
+  it('lets a lone dentist or procedure span the public choice grid', async () => {
+    const el = await render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' }, {
+      dentists: store.dentists().slice(0, 1),
+      procedures: store.procedures().slice(0, 1),
+    });
+    for (const label of ['Odontólogo', 'Procedimiento']) {
+      const group = el.querySelector(`[role="radiogroup"][aria-label="${label}"]`)!;
+      const options = group.querySelectorAll('[role="radio"]');
+      expect(options).toHaveLength(1);
+      expect(options[0].classList.contains('col-span-full')).toBe(true);
+      expect(options[0].getAttribute('aria-checked')).toBe('true');
+    }
+  });
+
   it('labels picker sections with h2 headings', async () => {
     const el = await render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
     expect(el.querySelector('h3')).toBeNull();

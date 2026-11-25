@@ -5,7 +5,7 @@ import { AppStore } from '../../../core/services/app-store.service';
 import { StatusBadge } from '../../../shared/ui/status-badge';
 import { AppointmentDetail } from '../components/appointment-detail';
 import { DateNav } from '../components/date-nav';
-import { DayAgenda } from '../components/day-agenda';
+import { DayAgenda, SINGLETON_FRAME_CONTENT_WIDTH } from '../components/day-agenda';
 
 /** Read-only agenda of the logged-in dentist (prototype `MiAgendaView`, container). */
 @Component({
@@ -26,12 +26,16 @@ import { DayAgenda } from '../components/day-agenda';
       <app-date-nav [date]="date()" [today]="today" (dateChange)="date.set($event)" />
     </div>
 
-    <div class="grid gap-4 lg:grid-cols-[1fr_22rem]">
+    <div
+      class="grid gap-4 lg:items-start lg:grid-cols-[minmax(0,var(--timeline-track,1fr))_22rem]"
+      [style.--timeline-track]="own().length ? singletonTrackWidth : null"
+    >
       <app-day-agenda
         [dentists]="dentists()"
         [appointments]="own()"
         [dateKey]="date()"
         [now]="now"
+        emptyHint="Cambia de fecha."
         (selected)="selectedId.set($event.id)"
       />
 
@@ -78,6 +82,8 @@ export class MyAgendaPage {
   protected readonly formatPhone = formatPhone;
   protected readonly now = this.store.now();
   protected readonly today = toDateKey(this.now);
+  // The shared content-box cap excludes the two 1px borders on the frame.
+  protected readonly singletonTrackWidth = `calc(${SINGLETON_FRAME_CONTENT_WIDTH} + 2px)`;
 
   protected readonly date = signal(this.today);
   protected readonly selectedId = signal<string | null>(null);

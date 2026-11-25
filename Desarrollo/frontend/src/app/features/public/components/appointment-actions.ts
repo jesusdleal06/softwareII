@@ -183,7 +183,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
             }
 
             <section class="flex flex-col gap-3" aria-labelledby="whatsapp-preview">
-              <h2 id="whatsapp-preview" class="text-lg font-bold">Así se ve el recordatorio que recibes</h2>
+              <h2 id="whatsapp-preview" class="text-lg font-bold text-balance">Así se ve el recordatorio que recibes</h2>
               <figure appWhatsappBubble [appointment]="cita"></figure>
             </section>
 

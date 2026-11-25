@@ -35,7 +35,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
   Pendiente: {
     label: 'Pendiente',
     order: 0,
-    badge: 'bg-warning/20 text-warning-foreground border-warning/40',
+    badge: 'bg-warning/20 text-warning-foreground dark:text-warning border-warning/40',
     block: 'bg-warning/15 border-warning text-foreground',
     series: 'bg-warning',
     seriesPattern: stripes(135),

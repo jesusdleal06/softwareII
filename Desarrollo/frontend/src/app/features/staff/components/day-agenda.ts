@@ -21,6 +21,9 @@ const PX_PER_MINUTE = 2.4;
 /** Room so the first and last hour labels are not clipped. */
 const MARGIN = 16;
 const HEIGHT = (DAY_END - DAY_START) * PX_PER_MINUTE + MARGIN * 2;
+const TIME_AXIS_REM = 5;
+const SINGLE_LANE_MAX_REM = 30;
+export const SINGLETON_FRAME_CONTENT_WIDTH = `${TIME_AXIS_REM + SINGLE_LANE_MAX_REM}rem`;
 
 /**
  * The block keeps its proportional height, but spends 6px on each side on an invisible
@@ -92,7 +95,11 @@ interface Block {
       </div>
     }
 
-    <div class="overflow-x-auto rounded-2xl border bg-card">
+    <div
+      class="overflow-x-auto rounded-2xl border bg-card"
+      [class.box-content]="singletonFrameMaxWidth() !== null"
+      [style.max-width]="singletonFrameMaxWidth()"
+    >
       @if (appointments().length === 0) {
         <div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
           <span
@@ -102,7 +109,7 @@ interface Block {
             <svg lucideCalendarX class="size-6"></svg>
           </span>
           <p class="text-lg font-semibold">No hay citas para este día</p>
-          <p class="text-sm text-muted-foreground">Cambia de fecha o registra una cita nueva.</p>
+          <p class="text-sm text-muted-foreground">{{ emptyHint() }}</p>
         </div>
       } @else {
         <div class="grid" [style.grid-template-columns]="gridColumns()">
@@ -211,6 +218,7 @@ export class DayAgenda {
   readonly dateKey = input.required<string>();
   /** Current instant, for the "now" line. */
   readonly now = input.required<Date>();
+  readonly emptyHint = input('Cambia de fecha o registra una cita nueva.');
   readonly selected = output<Appointment>();
 
   protected readonly cn = cn;
@@ -238,10 +246,18 @@ export class DayAgenda {
     this.useTabs() ? this.dentists().filter((d) => d.id === this.mobileDentistId()) : this.dentists(),
   );
 
+  // A content-box cap lets the frame border sit outside the capped tracks.
+  protected readonly singletonFrameMaxWidth = computed(() =>
+    this.appointments().length > 0 && this.visibleDentists().length === 1
+      ? SINGLETON_FRAME_CONTENT_WIDTH
+      : null,
+  );
+
   protected readonly gridColumns = computed(() => {
     const count = this.visibleDentists().length;
-    // A lone column hugs its content instead of stretching across the whole card.
-    return count <= 1 ? '5rem minmax(0, 30rem)' : `5rem repeat(${count}, minmax(0, 1fr))`;
+    return count <= 1
+      ? `${TIME_AXIS_REM}rem minmax(0, ${SINGLE_LANE_MAX_REM}rem)`
+      : `${TIME_AXIS_REM}rem repeat(${count}, minmax(0, 1fr))`;
   });
 
   /** Minutes of the current time when the day on display is today and within hours. */

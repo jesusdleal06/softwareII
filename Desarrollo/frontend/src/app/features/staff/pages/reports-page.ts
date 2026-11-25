@@ -25,6 +25,19 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
   imports: [BigButton, TextField, SelectField, ReportCard, ReportChart, LucideDownload, LucideFileChartColumn],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col gap-6' },
+  styles: `
+    @media (width < 40rem) {
+      .report-metrics {
+        /* At most two columns; each needs 9rem, so larger text can fall back to one. */
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, max(9rem, 40%)), 1fr));
+      }
+
+      .report-metrics > div {
+        overflow-wrap: anywhere;
+        padding-inline: 0.75rem;
+      }
+    }
+  `,
   template: `
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div class="flex flex-col gap-1">
@@ -120,7 +133,7 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
       </div>
     } @else {
       @let m = metrics();
-      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen">
+      <section class="report-metrics grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen">
         <div appReportCard heading="Pacientes atendidos" [value]="m.attended" tone="text-success"></div>
         <div appReportCard heading="Citas canceladas" [value]="m.cancelled" tone="text-destructive"></div>
         <div appReportCard heading="Inasistencias" [value]="m.noShow" tone="text-muted-foreground"></div>

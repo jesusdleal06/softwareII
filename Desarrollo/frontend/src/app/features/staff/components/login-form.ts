@@ -69,7 +69,14 @@ import { TextField } from '../../../shared/ui/field';
           }
         </button>
       </div>
-      <button type="submit" appBigButton size="lg" [full]="true" [disabled]="loading()">
+      <button
+        type="submit"
+        appBigButton
+        size="lg"
+        [full]="true"
+        [attr.aria-disabled]="loading() ? 'true' : null"
+        class="aria-disabled:not-focus-visible:opacity-50 aria-disabled:hover:bg-primary"
+      >
         {{ loading() ? 'Ingresando…' : 'Ingresar' }}
       </button>
     </form>
@@ -88,6 +95,7 @@ export class LoginForm {
 
   protected async submit(event: Event): Promise<void> {
     event.preventDefault();
+    if (this.loading()) return;
     this.error.set(null);
     if (!this.email().trim() || !this.password()) {
       this.error.set('Escribe tu correo y tu contraseña.');

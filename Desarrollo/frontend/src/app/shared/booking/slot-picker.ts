@@ -77,6 +77,7 @@ const EMPTY_HINT =
               role="radio"
               [attr.aria-checked]="active"
               [tabindex]="radioTabindex(value().dentistId, d.id, dentists()[0].id)"
+              [class.col-span-full]="dentists().length === 1"
               (click)="patch({ dentistId: d.id })"
               [class]="
                 cn(
@@ -140,6 +141,7 @@ const EMPTY_HINT =
               role="radio"
               [attr.aria-checked]="active"
               [tabindex]="radioTabindex(value().procedureId, p.id, procedures()[0].id)"
+              [class.col-span-full]="procedures().length === 1"
               (click)="patch({ procedureId: p.id })"
               [class]="
                 cn(
@@ -188,7 +190,7 @@ const EMPTY_HINT =
             type="button"
             role="radio"
             [attr.aria-checked]="active"
-            [tabindex]="radioTabindex(value().date, day.key, firstEnabledDay())"
+            [tabindex]="!day.past && day.key === dayTabStop() ? 0 : -1"
             [disabled]="day.past"
             (click)="patch({ date: day.key })"
             [class]="
@@ -244,7 +246,7 @@ const EMPTY_HINT =
                     type="button"
                     role="radio"
                     [attr.aria-checked]="active"
-                    [tabindex]="radioTabindex(value().time, slot, group.slots[0])"
+                    [tabindex]="slot === timeTabStop(group.slots) ? 0 : -1"
                     (click)="selectTime(slot)"
                     [class]="
                       cn(
@@ -399,8 +401,17 @@ export class SlotPicker implements OnInit {
     this.valueChange.emit({ ...this.value(), time });
   }
 
-  /** First selectable day key (past days are disabled and skipped by keyboard). */
-  protected readonly firstEnabledDay = computed(() => this.days().find((d) => !d.past)?.key ?? '');
+  /** A selection on another week must not remove the displayed week's tab stop. */
+  protected readonly dayTabStop = computed(() => {
+    const enabled = this.days().filter((day) => !day.past);
+    return enabled.find((day) => day.key === this.value().date)?.key ?? enabled[0]?.key;
+  });
+
+  /** Morning and afternoon are separate keyboard groups, but share one selection. */
+  protected timeTabStop(slots: readonly string[]): string | undefined {
+    const selected = this.value().time;
+    return slots.includes(selected) ? selected : slots[0];
+  }
 
   /**
    * Roving tabindex for radiogroups: the checked option — or the first

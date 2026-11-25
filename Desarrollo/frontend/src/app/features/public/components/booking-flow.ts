@@ -106,7 +106,8 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
             }
           </header>
 
-          @if (notice(); as message) {
+          @let message = notice();
+          @if (message && message !== incompleteMessage) {
             <p appAlertMessage>{{ message }}</p>
           }
 
@@ -120,9 +121,13 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                 (valueChange)="onSelectionChange($event)"
               />
               @if (!selectionComplete()) {
-                <p id="booking-continue-hint" class="text-sm text-muted-foreground">
-                  Para continuar, elige odontólogo, procedimiento, día y hora.
-                </p>
+                @if (message === incompleteMessage) {
+                  <p id="booking-continue-hint" appAlertMessage>{{ message }}</p>
+                } @else {
+                  <p id="booking-continue-hint" class="text-sm text-muted-foreground">
+                    Para continuar, elige odontólogo, procedimiento, día y hora.
+                  </p>
+                }
               }
               <button
                 type="button"
@@ -197,6 +202,7 @@ export class BookingFlow implements OnInit {
   protected readonly patient = signal<PatientData>({ name: '', phone: '' });
   protected readonly errors = signal<PatientErrors>({});
   protected readonly notice = signal<string | null>(null);
+  protected readonly incompleteMessage = INCOMPLETE_MESSAGE;
   protected readonly created = signal<Appointment | null>(null);
   protected readonly saving = signal(false);
 

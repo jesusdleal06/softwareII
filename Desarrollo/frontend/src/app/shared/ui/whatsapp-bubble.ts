@@ -38,7 +38,7 @@ import { Appointment } from '../../core/models';
       <p class="mt-2">
         Por favor confirma tu asistencia o reprograma aquí:
         <br />
-        <span class="break-all">villadent.co/cita/enlace-personal</span>
+        <span class="wrap-anywhere">villadent.co/<wbr />cita/<wbr />enlace-<wbr />personal</span>
       </p>
       <p class="mt-2 text-muted-foreground">Si no puedes asistir, cancela con anticipación para liberar el turno. Gracias.</p>
       <span class="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">

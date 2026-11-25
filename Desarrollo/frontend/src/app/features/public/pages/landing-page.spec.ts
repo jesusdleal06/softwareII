@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { Dentist } from '../../../core/models';
 import { formatTime } from '../../../core/domain';
-import { createFakeStore, FakeStore, provideFakeStore } from '../../../shared/testing/fake-store';
+import { createFakeStore, DENTISTS, FakeStore, provideFakeStore } from '../../../shared/testing/fake-store';
 import { settle, text } from '../../../shared/testing/dom';
 import { LandingPage } from './landing-page';
 
@@ -13,16 +14,18 @@ describe('LandingPage', () => {
   let el: HTMLElement;
   let store: FakeStore;
 
-  async function render(options: { availability?: string[] } = {}): Promise<void> {
+  async function render(options: { availability?: string[]; dentists?: Dentist[] } = {}): Promise<void> {
     store = createFakeStore({ now: NOW, session: null });
+    if (options.dentists) store.dentistsState.set(options.dentists);
     store.availability.mockResolvedValue(options.availability ?? ['09:00', '10:00', '11:00']);
     TestBed.configureTestingModule({ providers: [provideRouter([]), provideFakeStore(store)] });
     fixture = TestBed.createComponent(LandingPage);
     fixture.detectChanges();
+    el = fixture.nativeElement as HTMLElement;
+    expect(text(el.querySelector('aside [role="status"]')!)).toBe('Buscando los próximos horarios…');
     await fixture.whenStable();
     await settle();
     fixture.detectChanges();
-    el = fixture.nativeElement as HTMLElement;
   }
 
   /** First section of the page: the hero. */
@@ -65,6 +68,27 @@ describe('LandingPage', () => {
     expect(cardMold(team).length).toBeLessThan(3);
     // The two sections use different layout families (a flow vs. a grid).
     expect(how.querySelector('ol')?.className).not.toBe(team.querySelector('ul')?.className);
+  });
+
+  it('renders each specialty once when the description matches, and keeps a distinct description', async () => {
+    const [first, second] = DENTISTS;
+    const description = 'Atención preventiva para toda la familia.';
+    await render({ dentists: [{ ...first, description: first.specialty }, { ...second, description }] });
+
+    const profiles = [...el.querySelectorAll('[aria-labelledby="equipo"] li')].map((li) =>
+      [...li.querySelectorAll('span:not([aria-hidden])')].map((label) => text(label)),
+    );
+    expect(profiles).toEqual([
+      [first.name, first.specialty],
+      [second.name, second.specialty, description],
+    ]);
+  });
+
+  it('renders the decorative calendar check in the availability panel', async () => {
+    await render();
+    const icon = hero().querySelector('aside svg');
+    expect(icon?.getAttribute('aria-hidden')).toBe('true');
+    expect(icon?.querySelector('path[d]')).not.toBeNull();
   });
 
   it('feeds the hero panel with the real next-available slots from the store', async () => {

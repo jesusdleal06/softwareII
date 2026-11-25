@@ -47,7 +47,7 @@ const PANEL_LOOKAHEAD_DAYS = 14;
 
 @Component({
   selector: 'app-landing-page',
-  imports: [RouterLink, PublicHeader, PublicFooter, BigButton, LucideDynamicIcon, LucideShieldCheck],
+  imports: [RouterLink, PublicHeader, PublicFooter, BigButton, LucideCalendarCheck, LucideDynamicIcon, LucideShieldCheck],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-1 flex-col' },
   template: `
@@ -105,12 +105,12 @@ const PANEL_LOOKAHEAD_DAYS = 14;
         </div>
       </section>
 
-      <section class="border-y bg-muted/40" aria-labelledby="como-funciona">
+      <section class="bg-muted/40" aria-labelledby="como-funciona">
         <div class="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-14 sm:px-6">
           <h2 id="como-funciona" class="text-3xl font-bold tracking-tight">¿Cómo funciona?</h2>
-          <ol class="flex flex-col divide-y">
+          <ol class="flex flex-col gap-12">
             @for (step of howItWorks; track step.title) {
-              <li class="flex items-start gap-5 py-6 first:pt-0 last:pb-0">
+              <li class="flex items-start gap-5">
                 <span
                   class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"
                   aria-hidden="true"
@@ -132,7 +132,7 @@ const PANEL_LOOKAHEAD_DAYS = 14;
           <h2 id="equipo" class="text-3xl font-bold tracking-tight">Nuestro equipo</h2>
           <p class="text-lg text-muted-foreground">Cada odontólogo tiene su propia agenda.</p>
         </div>
-        <ul class="grid gap-6 sm:grid-cols-3">
+        <ul class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-6">
           @for (d of dentists(); track d.id) {
             <li class="flex items-center gap-4">
               <span
@@ -144,7 +144,9 @@ const PANEL_LOOKAHEAD_DAYS = 14;
               <div class="flex flex-col">
                 <span class="text-lg font-bold leading-tight">{{ d.name }}</span>
                 <span class="text-base text-muted-foreground">{{ d.specialty }}</span>
-                <span class="text-sm text-muted-foreground">{{ d.description }}</span>
+                @if (d.description !== d.specialty) {
+                  <span class="text-sm text-muted-foreground">{{ d.description }}</span>
+                }
               </div>
             </li>
           }

@@ -133,6 +133,30 @@ describe('staff pages', () => {
     );
   });
 
+  it('guides the dentist to change dates without suggesting appointment creation', async () => {
+    const el = await open('/panel/mi-agenda', DENTIST_SESSION);
+    const page = el.querySelector('app-my-agenda-page') as HTMLElement;
+    const timeline = page.querySelector('app-day-agenda') as HTMLElement;
+    const list = page.querySelector('[aria-labelledby="lista-pacientes"]') as HTMLElement;
+    expect(list.querySelector('button')).not.toBeNull();
+
+    for (let day = 0; day < 2; day++) {
+      (page.querySelector('[aria-label="Día siguiente"]') as HTMLButtonElement).click();
+      harness.detectChanges();
+      await settle();
+      harness.detectChanges();
+    }
+
+    expect(Array.from(timeline.querySelectorAll('p'), text)).toEqual([
+      'No hay citas para este día',
+      'Cambia de fecha.',
+    ]);
+    expect(timeline.querySelector('button')).toBeNull();
+    expect(text(list)).toBe('Pacientes del día (0 por atender) No tienes citas este día.');
+    expect(list.querySelector('button')).toBeNull();
+    expect(text(page)).not.toContain('Nueva cita manual');
+  });
+
   it('moves the agenda to the next day', async () => {
     const el = await open('/panel/agenda', ASSISTANT_SESSION);
     (el.querySelector('[aria-label="Día siguiente"]') as HTMLButtonElement).click();

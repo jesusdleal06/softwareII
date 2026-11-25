@@ -41,7 +41,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
         <div class="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-6">
           <div class="flex min-w-0 items-center gap-6">
             <app-logo [href]="sections()[0]?.href ?? '/'" />
-            <nav aria-label="Secciones del panel" class="hidden items-center gap-1 md:flex">
+            <nav aria-label="Secciones del panel" class="hidden items-center gap-1 lg:flex">
               @for (s of sections(); track s.href) {
                 <a
                   [routerLink]="s.href"
@@ -89,7 +89,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
             </button>
           </div>
         </div>
-        <nav aria-label="Secciones del panel (móvil)" class="flex border-t md:hidden">
+        <nav aria-label="Secciones del panel (móvil)" class="flex border-t lg:hidden">
           @for (s of sections(); track s.href) {
             <a
               [routerLink]="s.href"
