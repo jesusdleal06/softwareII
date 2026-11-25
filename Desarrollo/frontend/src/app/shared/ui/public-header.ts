@@ -4,13 +4,16 @@ import { LucideLockKeyhole } from '@lucide/angular';
 import { Logo } from './logo';
 import { ThemeToggle } from './theme-toggle';
 
+export const PUBLIC_WHATSAPP_NUMBER = '+57 300 123 4567';
+export const PUBLIC_WHATSAPP_URL = 'https://wa.me/' + PUBLIC_WHATSAPP_NUMBER.replace(/\D/g, '');
+
 @Component({
   selector: 'header[appPublicHeader]',
   imports: [Logo, LucideLockKeyhole, RouterLink, RouterLinkActive, ThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'border-b bg-background' },
+  host: { class: 'bg-background' },
   template: `
-    <div class="mx-auto flex max-w-5xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6">
+    <div class="public-container flex items-center justify-between gap-2 py-3 sm:gap-4">
       <app-logo class="shrink-0" />
       <div class="flex min-w-0 items-center gap-1">
         <app-theme-toggle />
@@ -36,14 +39,27 @@ export class PublicHeader {}
 @Component({
   selector: 'footer[appPublicFooter]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'mt-auto border-t bg-muted/40' },
+  host: { class: 'mt-auto bg-muted' },
   template: `
-    <div class="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-6 text-sm text-muted-foreground sm:px-6">
+    <div class="public-container flex flex-col gap-1 py-6 text-sm text-muted-foreground">
       <p class="font-semibold text-foreground">Centro Odontológico Villadent</p>
       <p>Calle 45 # 27-18, Bucaramanga</p>
-      <p>(607) 645 12 34 · WhatsApp +57 300 123 4567</p>
+      <p>
+        (607) 645 12 34 ·
+        <a
+          [href]="whatsappUrl"
+          target="_blank"
+          rel="noopener"
+          class="rounded-sm underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          WhatsApp {{ whatsappNumber }}
+        </a>
+      </p>
       <p>Lunes a sábado: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</p>
     </div>
   `,
 })
-export class PublicFooter {}
+export class PublicFooter {
+  protected readonly whatsappNumber = PUBLIC_WHATSAPP_NUMBER;
+  protected readonly whatsappUrl = PUBLIC_WHATSAPP_URL;
+}

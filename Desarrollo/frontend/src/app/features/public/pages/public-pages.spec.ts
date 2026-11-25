@@ -48,7 +48,7 @@ describe('public pages', () => {
 
   it('renders the landing page', async () => {
     const el = await open('/');
-    expect(text(el)).toContain('Agenda tu cita en Villadent en menos de 2 minutos');
+    expect(text(el)).toContain('Agenda tu cita en 2 minutos');
     expect(getByText(el, 'a', 'Agendar mi cita').getAttribute('href')).toBe('/agendar');
     expect(text(el)).toContain('Dr. Andrés Peña');
     expect(text(el)).toContain('¿Cómo funciona?');
