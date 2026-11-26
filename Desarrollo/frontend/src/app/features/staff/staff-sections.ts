@@ -1,6 +1,6 @@
 import { Role } from '../../core/models';
 
-export type StaffSectionId = 'agenda' | 'mi-agenda' | 'reportes';
+export type StaffSectionId = 'agenda' | 'mi-agenda' | 'reportes' | 'mi-perfil';
 
 export interface StaffSection {
   id: StaffSectionId;
@@ -14,6 +14,7 @@ export const STAFF_SECTIONS: readonly StaffSection[] = [
   { id: 'agenda', href: '/panel/agenda', label: 'Agenda', roles: ['Auxiliar administrativa'] },
   { id: 'mi-agenda', href: '/panel/mi-agenda', label: 'Mi agenda', roles: ['Odontóloga'] },
   { id: 'reportes', href: '/panel/reportes', label: 'Reportes', roles: ['Auxiliar administrativa'] },
+  { id: 'mi-perfil', href: '/panel/mi-perfil', label: 'Mi perfil', roles: ['Odontóloga'] },
 ];
 
 export function sectionRoles(id: StaffSectionId): readonly Role[] {

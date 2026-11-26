@@ -7,3 +7,4 @@ export * from './patient';
 export * from './reminder';
 export * from './reports';
 export * from './time';
+export * from './dentist-profile';

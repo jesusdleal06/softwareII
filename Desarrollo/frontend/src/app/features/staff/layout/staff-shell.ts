@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { LucideChartColumn, LucideCalendarDays, LucideClipboardList, LucideLogOut } from '@lucide/angular';
+import { LucideChartColumn, LucideCalendarDays, LucideClipboardList, LucideLogOut, LucideUserRound } from '@lucide/angular';
 import { AppStore } from '../../../core/services/app-store.service';
 import { cn } from '../../../shared/ui/class-names';
 import { Logo } from '../../../shared/ui/logo';
@@ -27,6 +27,7 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
     LucideClipboardList,
     LucideChartColumn,
     LucideLogOut,
+    LucideUserRound,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex min-h-dvh flex-col bg-muted/30' },
@@ -59,6 +60,9 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
                     }
                     @case ('reportes') {
                       <svg lucideChartColumn class="size-5" aria-hidden="true"></svg>
+                    }
+                    @case ('mi-perfil') {
+                      <svg lucideUserRound class="size-5" aria-hidden="true"></svg>
                     }
                   }
                   {{ s.label }}
@@ -107,6 +111,9 @@ const MOBILE_LINK = 'flex min-h-12 flex-1 items-center justify-center gap-2 text
                 }
                 @case ('reportes') {
                   <svg lucideChartColumn class="size-5" aria-hidden="true"></svg>
+                }
+                @case ('mi-perfil') {
+                  <svg lucideUserRound class="size-5" aria-hidden="true"></svg>
                 }
               }
               {{ s.label }}

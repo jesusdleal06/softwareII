@@ -6,6 +6,14 @@ import { ClinicApi } from './clinic-api';
 
 const booking = { patientName: 'Ana Pérez', patientPhone: '3009998877', dentistId: 1, procedureId: 1, date: '2026-10-26', time: '10:00' };
 const range = { from: '2026-10-26', to: '2026-10-31' };
+const profile = {
+  firstName: 'Laura',
+  secondName: null,
+  firstSurname: 'Villamizar',
+  secondSurname: null,
+  academicTitles: ['Ortodoncia'],
+  description: 'Odontóloga especialista en ortodoncia.',
+};
 
 describe('ClinicApi', () => {
   let api: ClinicApi;
@@ -29,6 +37,9 @@ describe('ClinicApi', () => {
     ['PATCH', '/api/v1/appointments/7/reschedule', (a) => a.rescheduleStaff('7', '2026-10-27', '09:00')],
     ['GET', '/api/v1/reports', (a) => a.report(range)],
     ['GET', '/api/v1/reports/export', (a) => a.exportReport(range)],
+    ['GET', '/api/v1/dentists/me/profile', (a) => a.dentistProfile()],
+    ['PUT', '/api/v1/dentists/me/profile', (a) => a.saveDentistProfile(profile)],
+    ['PUT', '/api/v1/dentists/me/photo', (a) => a.uploadDentistPhoto(new File(['x'], 'foto.jpg', { type: 'image/jpeg' }))],
   ];
 
   it.each(staffCalls)('sends the staff token on %s %s', async (method, url, call) => {
@@ -58,6 +69,18 @@ describe('ClinicApi', () => {
     const request = http.expectOne((r) => r.url === url);
     expect(request.request.method).toBe(method);
     expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({});
+    await pending;
+  });
+
+  it('uploads the profile photo as multipart with the photo part', async () => {
+    const file = new File(['x'], 'foto.jpg', { type: 'image/jpeg' });
+    const pending = api.uploadDentistPhoto(file);
+    const request = http.expectOne('/api/v1/dentists/me/photo');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toBeInstanceOf(FormData);
+    expect((request.request.body as FormData).get('photo')).toBe(file);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer jwt-staff');
     request.flush({});
     await pending;
   });

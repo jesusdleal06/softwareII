@@ -28,6 +28,33 @@ export interface DentistDto {
   id: number;
   name: string;
   specialty: string;
+  photoUrl: string | null;
+  academicTitles: string[];
+  description: string | null;
+}
+
+/** GET/PUT /api/v1/dentists/me/profile. Absent optional values arrive as null. */
+export interface DentistProfileDto {
+  id: number;
+  firstName: string;
+  secondName: string | null;
+  firstSurname: string;
+  secondSurname: string | null;
+  fullName: string;
+  specialty: string;
+  photoUrl: string | null;
+  academicTitles: string[];
+  description: string;
+}
+
+/** PUT /api/v1/dentists/me/profile body. */
+export interface DentistProfilePayload {
+  firstName: string;
+  secondName: string | null;
+  firstSurname: string;
+  secondSurname: string | null;
+  academicTitles: string[];
+  description: string;
 }
 
 /** GET /api/v1/dentists (staff): adds the linked staff user and the active flag. */

@@ -92,6 +92,9 @@ El perfil `demo` también crea 48 citas de ejemplo en la semana anterior, la act
 | `/panel/agenda`    | Agenda diaria de todos los odontólogos     | Auxiliar administrativa                 |
 | `/panel/mi-agenda` | Agenda propia                              | Odontóloga                              |
 | `/panel/reportes`  | Reportes de citas                          | Auxiliar administrativa                 |
+| `/panel/mi-perfil` | Perfil público del odontólogo (nombres, títulos, descripción y foto) | Odontóloga        |
+
+- En `/panel/mi-perfil` el odontólogo edita los datos que ven los pacientes al elegir su odontólogo en el agendamiento público; la validación vive en `src/app/core/domain/dentist-profile.ts`.
 
 - Sin sesión, cualquier ruta de `/panel` redirige a `/ingreso`.
 - Con un rol no permitido, redirige a `/acceso-denegado?ruta=<ruta>`.

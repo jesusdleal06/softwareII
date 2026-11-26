@@ -103,6 +103,57 @@ export class TextField extends FieldBase {
   }
 }
 
+/**
+ * Large textarea with label, hint, error and an optional live character counter.
+ * Mirrors `TextField` so profile and booking forms share the same semantics.
+ */
+@Component({
+  selector: 'app-textarea-field',
+  imports: [LucideCircleAlert],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'flex flex-col gap-2' },
+  template: `
+    <label [for]="fieldId()" [class]="labelClass()">{{ label() }}</label>
+    <textarea
+      [id]="fieldId()"
+      [value]="value()"
+      [attr.rows]="rows()"
+      [attr.required]="required() || null"
+      [attr.aria-required]="required() ? 'true' : null"
+      [attr.placeholder]="placeholder() ?? null"
+      [attr.maxlength]="maxLength() ?? null"
+      [attr.aria-invalid]="!!error()"
+      [attr.aria-describedby]="describedBy()"
+      [class]="controlClass()"
+      (input)="onInput($event)"
+    ></textarea>
+    @if (counter()) {
+      <p class="text-sm text-muted-foreground" aria-live="polite">{{ counter() }}</p>
+    }
+    ${MESSAGES}
+  `,
+})
+export class TextareaField extends FieldBase {
+  readonly value = input('');
+  readonly placeholder = input<string>();
+  readonly rows = input(4);
+  readonly maxLength = input<number>();
+  /** Visible live text such as `120/500 caracteres`. */
+  readonly counter = input<string>();
+  readonly valueChange = output<string>();
+
+  protected readonly controlClass = computed(() =>
+    mergeClasses(
+      cn(CONTROL_BASE, 'min-h-32 py-3', this.error() ? 'border-destructive' : 'border-input'),
+      this.inputClass(),
+    ),
+  );
+
+  protected onInput(event: Event): void {
+    this.valueChange.emit((event.target as HTMLTextAreaElement).value);
+  }
+}
+
 export interface SelectOption {
   value: string;
   label: string;

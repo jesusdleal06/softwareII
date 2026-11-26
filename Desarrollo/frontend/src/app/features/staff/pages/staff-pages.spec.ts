@@ -69,6 +69,22 @@ describe('staff pages', () => {
     expect(getByText(el, 'a', 'Ir al ingreso del personal').getAttribute('href')).toBe('/ingreso');
   });
 
+  it('CP-RF11-08: sends the assistant away from the dentist profile and hides its link', async () => {
+    const el = await open('/panel/mi-perfil', ASSISTANT_SESSION);
+    expect(text(el)).toContain('Acceso denegado');
+    expect(text(el)).toContain('(/panel/mi-perfil)');
+    const links = Array.from(el.querySelectorAll('nav a')).map((a) => text(a));
+    expect(links).not.toContain('Mi perfil');
+  });
+
+  it('CP-RF11-08: shows «Mi perfil» to the dentist and opens the page', async () => {
+    const el = await open('/panel/mi-perfil', DENTIST_SESSION);
+    expect(getByText(el, 'nav a', 'Mi perfil').getAttribute('href')).toBe('/panel/mi-perfil');
+    expect(text(el)).toContain('Primer nombre');
+    const firstName = el.querySelector('#perfil-primer-nombre') as HTMLInputElement;
+    expect(firstName.value).toBe('Laura');
+  });
+
   it('shows the full agenda with every dentist and the day count', async () => {
     const el = await open('/panel/agenda', ASSISTANT_SESSION);
     expect(text(el)).toContain('Agenda del día');

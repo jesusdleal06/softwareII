@@ -1,12 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { mapDentist, mapManagedAppointment, mapProcedure, mapPublicAppointment, mapRole, mapStaffAppointment } from '../api/adapters';
+import { mapDentist, mapDentistProfile, mapManagedAppointment, mapProcedure, mapPublicAppointment, mapRole, mapStaffAppointment } from '../api/adapters';
 import { ApiError } from '../api/api-error';
 import { ClinicApi } from '../api/clinic-api';
+import { DentistProfilePayload } from '../api/api.types';
 import {
   Appointment,
   AppointmentStatus,
   CreateAppointmentResult,
   Dentist,
+  DentistProfile,
   NewAppointmentInput,
   Procedure,
   RescheduleAppointmentResult,
@@ -60,6 +62,39 @@ export class AppStore {
     // The public endpoints already list active records only, without an `active` flag.
     this.dentistsState.set(dentists.map(mapDentist));
     this.proceduresState.set(procedures.map(mapProcedure));
+  }
+
+  async dentistProfile(): Promise<DentistProfile> {
+    return mapDentistProfile(await this.api.dentistProfile());
+  }
+
+  async saveDentistProfile(payload: DentistProfilePayload): Promise<DentistProfile> {
+    const profile = mapDentistProfile(await this.api.saveDentistProfile(payload));
+    this.syncDentist(profile);
+    return profile;
+  }
+
+  async uploadDentistPhoto(file: File): Promise<DentistProfile> {
+    const profile = mapDentistProfile(await this.api.uploadDentistPhoto(file));
+    this.syncDentist(profile);
+    return profile;
+  }
+
+  /** Keeps the public catalog in sync so the booking site shows the edited profile. */
+  private syncDentist(profile: DentistProfile): void {
+    this.dentistsState.update((list) =>
+      list.map((dentist) =>
+        dentist.id === profile.id
+          ? {
+              ...dentist,
+              name: profile.fullName,
+              description: profile.description,
+              photoUrl: profile.photoUrl,
+              academicTitles: profile.academicTitles,
+            }
+          : dentist,
+      ),
+    );
   }
 
   /** Returns the session, or `null` for rejected credentials. Other failures are thrown. */

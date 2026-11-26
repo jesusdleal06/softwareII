@@ -1,15 +1,39 @@
 import { computed, signal } from '@angular/core';
 import { vi } from 'vitest';
-import { ReportDto } from '../../core/api/api.types';
-import { Appointment, CreateAppointmentResult, Dentist, Procedure, RescheduleAppointmentResult, Session } from '../../core/models';
+import { DentistProfilePayload, ReportDto } from '../../core/api/api.types';
+import { Appointment, CreateAppointmentResult, Dentist, DentistProfile, Procedure, RescheduleAppointmentResult, Session } from '../../core/models';
 import { AppStore } from '../../core/services/app-store.service';
 import { makeAppointment } from '../../core/testing/appointment.fixture';
 import { ASSISTANT_SESSION } from './session';
 
 export const DENTISTS: Dentist[] = [
-  { id: 'd1', name: 'Dra. Laura Villamizar', specialty: 'Odontología general', description: '', initials: 'LV' },
-  { id: 'd2', name: 'Dr. Andrés Peña', specialty: 'Ortodoncia', description: '', initials: 'AP' },
-  { id: 'd3', name: 'Dra. Camila Ortiz', specialty: 'Cirugía oral', description: '', initials: 'CO' },
+  {
+    id: 'd1',
+    name: 'Dra. Laura Villamizar',
+    specialty: 'Odontología general',
+    description: 'Acompaña a sus pacientes con tratamientos de ortodoncia y estética dental.',
+    initials: 'LV',
+    photoUrl: null,
+    academicTitles: ['Ortodoncia', 'Estética dental'],
+  },
+  {
+    id: 'd2',
+    name: 'Dr. Andrés Peña',
+    specialty: 'Ortodoncia',
+    description: 'Especialista en ortodoncia con brackets y alineadores.',
+    initials: 'AP',
+    photoUrl: 'https://example.test/andres.jpg',
+    academicTitles: ['Ortodoncia'],
+  },
+  {
+    id: 'd3',
+    name: 'Dra. Camila Ortiz',
+    specialty: 'Cirugía oral',
+    description: 'Cirugía oral y maxilofacial.',
+    initials: 'CO',
+    photoUrl: null,
+    academicTitles: ['Cirugía oral'],
+  },
 ];
 export const PROCEDURES: Procedure[] = [
   { id: 'p1', name: 'Limpieza', durationMinutes: 30 },
@@ -37,6 +61,19 @@ export function createFakeStore(options: { now?: Date; session?: Session | null;
   const proceduresState = signal<Procedure[]>([...PROCEDURES]);
   const sessionState = signal<Session | null>(options.session === undefined ? ASSISTANT_SESSION : options.session);
 
+  let profile: DentistProfile = {
+    id: 'd1',
+    firstName: 'Laura',
+    secondName: null,
+    firstSurname: 'Villamizar',
+    secondSurname: null,
+    fullName: 'Laura Villamizar',
+    specialty: 'Odontología general',
+    photoUrl: null,
+    academicTitles: ['Ortodoncia', 'Estética dental'],
+    description: 'Acompaña a sus pacientes con tratamientos de ortodoncia y estética dental.',
+  };
+
   const store = {
     appointmentsState,
     dentistsState,
@@ -51,6 +88,26 @@ export function createFakeStore(options: { now?: Date; session?: Session | null;
     dentistById: (id: string) => dentistsState().find((d) => d.id === id),
     procedureById: (id: string) => proceduresState().find((p) => p.id === id),
     ensureCatalogs: vi.fn(async () => undefined),
+    dentistProfile: vi.fn(async (): Promise<DentistProfile> => profile),
+    saveDentistProfile: vi.fn(async (payload: DentistProfilePayload): Promise<DentistProfile> => {
+      profile = {
+        ...profile,
+        firstName: payload.firstName,
+        secondName: payload.secondName,
+        firstSurname: payload.firstSurname,
+        secondSurname: payload.secondSurname,
+        fullName: [payload.firstName, payload.secondName, payload.firstSurname, payload.secondSurname]
+          .filter((part): part is string => Boolean(part && part.trim()))
+          .join(' '),
+        academicTitles: payload.academicTitles,
+        description: payload.description,
+      };
+      return profile;
+    }),
+    uploadDentistPhoto: vi.fn(async (): Promise<DentistProfile> => {
+      profile = { ...profile, photoUrl: 'https://example.test/perfil.jpg' };
+      return profile;
+    }),
     login: vi.fn(async () => sessionState()),
     logout: vi.fn(),
     loadAgenda: vi.fn(async (date: string, dentistId?: string) => {

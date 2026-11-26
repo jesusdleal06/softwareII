@@ -5,6 +5,8 @@ import { toApiError } from './api-error';
 import {
   AvailabilityDto,
   DentistDto,
+  DentistProfileDto,
+  DentistProfilePayload,
   LoginResponseDto,
   ManagedAppointmentDto,
   ProcedureDto,
@@ -52,6 +54,32 @@ export class ClinicApi {
   /** Staff catalog with the linked user ids; needs a staff token. */
   async staffDentists(): Promise<StaffDentistDto[]> {
     return this.request(this.http.get<StaffDentistDto[]>('/api/v1/dentists', { headers: this.auth() }));
+  }
+
+  /** Own profile of the signed-in dentist; the backend resolves it from the JWT. */
+  async dentistProfile(): Promise<DentistProfileDto> {
+    return this.request(
+      this.http.get<DentistProfileDto>('/api/v1/dentists/me/profile', { headers: this.auth() }),
+    );
+  }
+
+  async saveDentistProfile(payload: DentistProfilePayload): Promise<DentistProfileDto> {
+    return this.request(
+      this.http.put<DentistProfileDto>('/api/v1/dentists/me/profile', payload, {
+        headers: this.auth(),
+      }),
+    );
+  }
+
+  /** Uploads the photo as `multipart/form-data`; the browser sets the boundary. */
+  async uploadDentistPhoto(file: File): Promise<DentistProfileDto> {
+    const body = new FormData();
+    body.append('photo', file);
+    return this.request(
+      this.http.put<DentistProfileDto>('/api/v1/dentists/me/photo', body, {
+        headers: this.auth(),
+      }),
+    );
   }
 
   async procedures(): Promise<ProcedureDto[]> {

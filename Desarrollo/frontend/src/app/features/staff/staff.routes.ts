@@ -38,6 +38,12 @@ export const STAFF_ROUTES: Routes = [
         data: { [ROUTE_ROLES_KEY]: sectionRoles('reportes') },
         loadComponent: () => import('./pages/reports-page').then((m) => m.ReportsPage),
       },
+      {
+        path: 'mi-perfil',
+        canActivate: [roleGuard],
+        data: { [ROUTE_ROLES_KEY]: sectionRoles('mi-perfil') },
+        loadComponent: () => import('./pages/dentist-profile-page').then((m) => m.DentistProfilePage),
+      },
     ],
   },
 ];
