@@ -34,7 +34,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
             [description]="cita.patientName + ' · actualmente ' + formatDate(cita.date) + ' ' + formatTime(cita.time)"
             layout="side"
           >
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-5">
               @if (notice(); as text) {
                 <p appAlertMessage>{{ text }}</p>
               }
@@ -48,18 +48,25 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                 [compact]="true"
                 (valueChange)="onSelectionChange($event)"
               />
-              <div class="flex flex-col gap-3">
+              <div class="card-divider flex flex-col gap-2.5">
                 <button
                   type="button"
                   appBigButton
-                  size="lg"
+                  size="md"
                   [full]="true"
                   [disabled]="!selection().date || !selection().time"
                   (click)="confirmReschedule(cita)"
                 >
                   Confirmar nuevo horario
                 </button>
-                <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="mode.set('detail')">
+                <button
+                  type="button"
+                  appBigButton
+                  variant="secondary"
+                  size="md"
+                  [full]="true"
+                  (click)="mode.set('detail')"
+                >
                   <svg lucideArrowLeft></svg> Volver al detalle
                 </button>
               </div>
@@ -82,18 +89,18 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
             "
             size="sm"
           >
-            <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-2.5">
               <button
                 type="button"
                 appBigButton
                 variant="danger"
-                size="lg"
+                size="md"
                 [full]="true"
                 (click)="mark(cita, 'Cancelada', 'La cita fue cancelada y el horario quedó liberado.')"
               >
                 Sí, cancelar la cita
               </button>
-              <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="mode.set('detail')">
+              <button type="button" appBigButton variant="secondary" size="md" [full]="true" (click)="mode.set('detail')">
                 No, volver
               </button>
             </div>

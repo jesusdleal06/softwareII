@@ -15,38 +15,38 @@ import { cn } from '../../../shared/ui/class-names';
   selector: 'section[appReportChart]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:p-6',
+    class: 'card flex flex-col gap-4',
     'aria-labelledby': 'grafico',
   },
   template: `
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 id="grafico" class="text-lg font-bold">Citas por día según estado</h2>
-      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="Leyenda">
+      <h2 id="grafico" class="card-title">Citas por día según estado</h2>
+      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Leyenda">
         @for (item of legend(); track item.status) {
           <li class="flex items-center gap-2">
             <span
-              class="size-3 rounded-sm"
+              class="size-2.5 rounded-sm"
               [class]="cn(item.color)"
               [style.background-image]="item.pattern"
               aria-hidden="true"
             ></span>
             <span>{{ item.label }}</span>
-            <span class="font-semibold tabular-nums">{{ item.total }}</span>
+            <span class="font-semibold text-foreground tabular-nums">{{ item.total }}</span>
           </li>
         }
       </ul>
     </div>
     <div class="overflow-x-auto">
       <ol
-        class="flex h-64 min-w-full items-end gap-2 border-b pb-px"
+        class="flex h-64 min-w-full items-end gap-2 border-b border-border pb-px"
         [style.min-width]="minWidth()"
         aria-label="Gráfico de barras"
       >
         @for (bar of bars(); track bar.date) {
           <li class="flex h-full flex-1 flex-col items-center justify-end gap-2">
-            <span class="text-sm font-semibold tabular-nums" aria-hidden="true">{{ bar.total || '' }}</span>
+            <span class="text-xs font-medium text-muted-foreground tabular-nums" aria-hidden="true">{{ bar.total || '' }}</span>
             <div
-              class="flex w-full max-w-12 flex-col-reverse overflow-hidden rounded-t-md"
+              class="flex w-full max-w-10 flex-col-reverse overflow-hidden rounded-t-sm"
               [style.height.%]="bar.heightPercent"
               role="img"
               [attr.aria-label]="bar.label"
@@ -64,8 +64,8 @@ import { cn } from '../../../shared/ui/class-names';
       </ol>
       <ol class="flex gap-2 pt-2" [style.min-width]="minWidth()" aria-hidden="true">
         @for (bar of bars(); track bar.date) {
-          <li class="flex flex-1 flex-col items-center text-xs leading-tight text-muted-foreground">
-            <span class="font-semibold">{{ bar.dayName }}</span>
+          <li class="flex flex-1 flex-col items-center text-xs leading-tight text-muted-foreground tabular-nums">
+            <span class="font-medium">{{ bar.dayName }}</span>
             <span>{{ bar.dayOfMonth }}</span>
           </li>
         }

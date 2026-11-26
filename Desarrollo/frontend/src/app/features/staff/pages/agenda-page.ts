@@ -18,39 +18,41 @@ import { NewAppointmentPanel } from '../components/new-appointment-panel';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col gap-6' },
   template: `
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div class="flex flex-col gap-1">
-        <h1 class="text-2xl font-bold tracking-tight">Agenda del día</h1>
-        <p class="text-base text-muted-foreground">{{ countText() }}</p>
+    <div class="page-header flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <h1 class="page-title">Agenda del día</h1>
+        <p class="page-subtitle tabular-nums">{{ countText() }}</p>
       </div>
-      <button type="button" appBigButton size="lg" (click)="newOpen.set(true)">
+      <button type="button" appBigButton size="md" (click)="newOpen.set(true)">
         <svg lucidePlus></svg> Nueva cita manual
       </button>
     </div>
 
-    <div class="flex flex-col gap-4 rounded-2xl border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
-      <app-date-nav [date]="date()" [today]="today" (dateChange)="date.set($event)" />
-      <div class="w-full lg:w-72">
-        <app-select-field
-          fieldId="filtro-dentista"
-          label="Odontólogo"
-          placeholder="Todos los odontólogos"
-          [options]="dentistOptions()"
-          [value]="dentistId()"
-          inputClass="min-h-12 text-base"
-          (valueChange)="dentistId.set($event)"
-        />
+    <!-- One band of card for the day controls; the legend is its divided foot (S5). -->
+    <div class="card flex flex-col gap-4">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <app-date-nav [date]="date()" [today]="today" (dateChange)="date.set($event)" />
+        <div class="w-full lg:w-72">
+          <app-select-field
+            fieldId="filtro-dentista"
+            label="Odontólogo"
+            placeholder="Todos los odontólogos"
+            [options]="dentistOptions()"
+            [value]="dentistId()"
+            (valueChange)="dentistId.set($event)"
+          />
+        </div>
       </div>
-    </div>
 
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 text-sm" aria-label="Leyenda de estados">
-      @for (item of legend; track item.status) {
-        <li class="flex items-center gap-2">
-          <span [class]="item.swatch" aria-hidden="true"></span>
-          {{ item.label }}
-        </li>
-      }
-    </ul>
+      <ul class="card-divider flex flex-wrap gap-x-4 gap-y-2" aria-label="Leyenda de estados">
+        @for (item of legend; track item.status) {
+          <li class="flex items-center gap-2 text-xs text-muted-foreground">
+            <span [class]="item.swatch" aria-hidden="true"></span>
+            {{ item.label }}
+          </li>
+        }
+      </ul>
+    </div>
 
     <app-day-agenda
       [dentists]="dentists()"
@@ -75,7 +77,7 @@ export class AgendaPage {
   protected readonly legend = STATUS_ORDER.map((status) => ({
     status,
     label: STATUS_STYLES[status].label,
-    swatch: cn('h-4 w-6 rounded-sm border-l-4', STATUS_STYLES[status].block.replace('line-through', '')),
+    swatch: cn('size-3 shrink-0 rounded-sm', STATUS_STYLES[status].series),
   }));
 
   protected readonly date = signal(this.today);
