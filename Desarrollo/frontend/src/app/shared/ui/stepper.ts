@@ -21,7 +21,7 @@ import { cn } from './class-names';
           <span
             [class]="
               cn(
-                'flex size-10 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold',
+                'flex size-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold tabular-nums',
                 done && 'border-primary bg-primary text-primary-foreground',
                 active && 'border-primary bg-card text-primary',
                 !done && !active && 'border-border bg-card text-muted-foreground'
@@ -30,7 +30,7 @@ import { cn } from './class-names';
             aria-hidden="true"
           >
             @if (done) {
-              <svg lucideCheck class="size-5"></svg>
+              <svg lucideCheck class="size-4"></svg>
             } @else {
               {{ number }}
             }
@@ -42,7 +42,7 @@ import { cn } from './class-names';
         <span
           [class]="
             cn(
-              'text-sm font-semibold leading-tight text-balance',
+              'text-xs font-medium leading-tight text-balance',
               active ? 'text-primary' : done ? 'text-foreground' : 'text-muted-foreground'
             )
           "

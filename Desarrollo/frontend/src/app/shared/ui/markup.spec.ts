@@ -90,7 +90,7 @@ describe('shared ui markup', () => {
   it('renders the appointment summary rows', () => {
     const dl = render().querySelector('dl') as HTMLElement;
     expect(dl.className).toContain('w-full');
-    expect(dl.className).toContain('rounded-2xl');
+    expect(dl.className).toContain('rounded-xl');
     const content = text(dl);
     expect(content).toContain('VD-1049');
     expect(content).toContain('miércoles 14 de octubre de 2026');
@@ -120,11 +120,9 @@ describe('shared ui markup', () => {
     expect(staff.className).toContain('border');
     expect(staff.className).toContain('min-h-11');
     expect(staff.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
-    const labels = Array.from(staff.querySelectorAll('span')).map((span) => [text(span), span.className]);
-    expect(labels).toEqual([
-      ['Personal', 'sm:hidden'],
-      ['Ingreso del personal', 'hidden sm:inline'],
-    ]);
+    // One label at every width: the full copy, not a mobile shorthand.
+    const labels = Array.from(staff.querySelectorAll('span')).map((span) => text(span));
+    expect(labels).toEqual(['Ingreso del personal']);
   });
 
   it('gives the staff link a full-opacity 2px focus ring', () => {

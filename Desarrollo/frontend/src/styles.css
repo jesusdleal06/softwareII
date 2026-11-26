@@ -177,8 +177,22 @@
   * {
     @apply border-border outline-ring;
   }
+  /*
+   * The page background is the canvas every view sits on: `--muted` in the light
+   * theme (a hair below white) and `--background` in the dark one (a hair below the
+   * card). Cards are `bg-card`, so the two surfaces never collapse into one another.
+   */
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-muted text-foreground font-sans dark:bg-background;
+    caret-color: var(--primary);
+  }
+  /* Browser surfaces are themed from the palette: selection, then the scrollbar. */
+  ::selection {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+  html {
+    scrollbar-color: var(--input) transparent;
   }
   /*
    * Browsers paint `<button>` and `<summary>` with the arrow cursor, so every
@@ -216,6 +230,97 @@
 
 @utility public-container {
   @apply mx-auto max-w-6xl px-4 sm:px-6 lg:px-8;
+}
+
+/*
+ * Card-on-canvas surface vocabulary (specs S5-S8 of
+ * `odd/tasks/estilo-referencia-tarjetas.md`). Views compose these names instead of
+ * repeating the recipe, so a card is a card in every screen:
+ *
+ *   canvas      page background (the body already paints it; re-assert on a shell)
+ *   card        one content group; elevation is its border, never plus a shadow
+ *   page-*      heading block outside the card, on the canvas
+ *   card-*      heading block inside the card, body separated by `card-body`
+ *   field-*     label, control and help text of one form field
+ *   btn-*       filled primary and filled quiet button (no outlined button remains)
+ *   row-*       one line of a table or list, plus its header and count footer
+ *   badge       the shape of a status pill; the status map keeps its own tint
+ *
+ * Contrast note: `--input` is the only boundary that reaches 3:1, so an interactive
+ * control keeps `border-input` at full strength and the fill is added on top of it
+ * (deviation L4). `--border` is for decorative separators only.
+ */
+@utility canvas {
+  @apply bg-muted dark:bg-background;
+}
+
+@utility card {
+  @apply rounded-xl border border-border bg-card p-5 sm:p-6;
+}
+
+@utility page-header {
+  @apply py-6 sm:py-8;
+}
+
+@utility page-title {
+  @apply text-2xl font-semibold tracking-tight text-foreground;
+}
+
+@utility page-subtitle {
+  @apply mt-1 text-sm text-muted-foreground;
+}
+
+@utility card-title {
+  @apply text-base font-semibold text-foreground;
+}
+
+@utility card-subtitle {
+  @apply mt-1 text-sm text-muted-foreground;
+}
+
+@utility card-body {
+  @apply mt-5;
+}
+
+@utility card-divider {
+  @apply border-t border-border pt-5;
+}
+
+@utility field-label {
+  @apply mb-1.5 block text-sm font-medium text-foreground;
+}
+
+/* Kept in step with `CONTROL_BASE` in `app/shared/ui/field.ts`. */
+@utility field {
+  @apply h-10 w-full rounded-md border border-input bg-muted px-3 text-sm text-foreground placeholder:text-placeholder-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card focus-visible:border-primary dark:bg-secondary;
+}
+
+@utility field-help {
+  @apply mt-1.5 text-xs text-muted-foreground;
+}
+
+@utility btn-primary {
+  @apply inline-flex h-10 items-center justify-center gap-2 rounded-md border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground outline-none transition-colors select-none hover:bg-primary/90 active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:pointer-events-none disabled:opacity-50;
+}
+
+@utility btn-quiet {
+  @apply inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-secondary px-4 text-sm font-medium text-secondary-foreground outline-none transition-colors select-none hover:bg-secondary/80 active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:pointer-events-none disabled:opacity-50;
+}
+
+@utility row {
+  @apply border-b border-border py-3 last:border-0 hover:bg-muted/60;
+}
+
+@utility row-header {
+  @apply text-xs font-medium text-muted-foreground;
+}
+
+@utility row-foot {
+  @apply text-xs text-muted-foreground;
+}
+
+@utility badge {
+  @apply inline-flex items-center rounded-sm px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide;
 }
 
 @keyframes public-reveal {

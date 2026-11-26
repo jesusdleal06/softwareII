@@ -11,9 +11,10 @@ export const PUBLIC_WHATSAPP_URL = 'https://wa.me/' + PUBLIC_WHATSAPP_NUMBER.rep
   selector: 'header[appPublicHeader]',
   imports: [Logo, LucideLockKeyhole, RouterLink, RouterLinkActive, ThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'bg-background' },
+  // A band of card on the canvas, divided by the same hairline every other block uses.
+  host: { class: 'border-b border-border bg-card' },
   template: `
-    <div class="public-container flex items-center justify-between gap-2 py-3 sm:gap-4">
+    <div class="public-container flex items-center justify-between gap-2 py-2.5 sm:gap-4">
       <app-logo class="shrink-0" />
       <div class="flex min-w-0 items-center gap-1">
         <app-theme-toggle />
@@ -23,12 +24,11 @@ export const PUBLIC_WHATSAPP_URL = 'https://wa.me/' + PUBLIC_WHATSAPP_NUMBER.rep
           routerLinkActive
           #staffLink="routerLinkActive"
           [class.hidden]="staffLink.isActive"
-          class="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold text-foreground hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-12 sm:border-transparent sm:text-base sm:font-medium sm:text-muted-foreground sm:hover:text-foreground"
+          class="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent bg-secondary px-3 text-sm font-medium text-secondary-foreground outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:bg-transparent sm:text-muted-foreground sm:hover:bg-secondary sm:hover:text-foreground"
         >
-          <!-- Phones get a real button with a short label; wider screens keep the full text link. -->
+          <!-- One label at every width: the copy is the client's, not a mobile shorthand. -->
           <svg lucideLockKeyhole class="size-4 shrink-0 sm:hidden" aria-hidden="true"></svg>
-          <span class="sm:hidden">Personal</span>
-          <span class="hidden sm:inline">Ingreso del personal</span>
+          <span>Ingreso del personal</span>
         </a>
       </div>
     </div>
@@ -39,7 +39,8 @@ export class PublicHeader {}
 @Component({
   selector: 'footer[appPublicFooter]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'mt-auto bg-muted' },
+  // The same card band as the header, so canvas, content and footer read as one page.
+  host: { class: 'mt-auto border-t border-border bg-card' },
   template: `
     <div class="public-container flex flex-col gap-1 py-6 text-sm text-muted-foreground">
       <p class="font-semibold text-foreground">Centro Odontológico Villadent</p>
@@ -50,7 +51,7 @@ export class PublicHeader {}
           [href]="whatsappUrl"
           target="_blank"
           rel="noopener"
-          class="rounded-sm underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring"
+          class="rounded-sm underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         >
           WhatsApp {{ whatsappNumber }}
         </a>

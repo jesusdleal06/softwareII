@@ -131,7 +131,7 @@ describe('SlotPicker', () => {
   it('applies the nav button styles through a real class binding', async () => {
     const el = await render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
     const next = el.querySelector<HTMLButtonElement>('[aria-label="Semana siguiente"]') as HTMLButtonElement;
-    expect(next.className).toContain('rounded-xl');
+    expect(next.className).toContain('rounded-md');
     expect(next.className).toContain('size-12');
     expect(next.className).not.toContain('${');
   });
