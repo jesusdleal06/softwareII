@@ -120,8 +120,6 @@
   --chart-reprogramada: oklch(0.62 0.018 240);
   --chart-cancelada: oklch(0.52 0.09 30);
   --chart-no-asistio: oklch(0.56 0.08 75);
-  /* Ink of the chart's legacy non-colour series patterns. */
-  --chart-pattern-ink: oklch(1 0 0 / 0.55);
   --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.22 0.02 230);
@@ -180,8 +178,6 @@
   --chart-reprogramada: oklch(0.8 0.015 240);
   --chart-cancelada: oklch(0.7 0.1 30);
   --chart-no-asistio: oklch(0.76 0.09 75);
-  /* Bars are light in the dark theme, so the pattern ink flips to black. */
-  --chart-pattern-ink: oklch(0 0 0 / 0.45);
   --sidebar: oklch(0.245 0.015 230);
   --sidebar-foreground: oklch(0.95 0.005 220);
   --sidebar-primary: oklch(0.72 0.1 205);

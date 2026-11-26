@@ -17,18 +17,6 @@ export interface StatusStyle {
   readonly block: string;
   /** Solid colour for the chart bar and its legend swatch. */
   readonly series: string;
-  /**
-   * Legacy pattern encoding kept in the canon so the status contract stays stable.
-   * The report chart no longer renders it: bars use solid fills and expose totals,
-   * the legend and the data table as the non-colour alternatives.
-   */
-  readonly seriesPattern: string | null;
-}
-
-const INK = 'var(--chart-pattern-ink)';
-
-function stripes(angle: number, weight = 3): string {
-  return `repeating-linear-gradient(${angle}deg, transparent 0 ${weight}px, ${INK} ${weight}px ${weight * 2}px)`;
 }
 
 const STYLES: Record<AppointmentStatus, StatusStyle> = {
@@ -38,7 +26,6 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     badge: 'bg-warning/20 text-warning-foreground dark:text-warning border-warning/40',
     block: 'bg-warning/15 border-warning text-foreground',
     series: 'var(--chart-pendiente)',
-    seriesPattern: stripes(135),
   },
   Confirmada: {
     label: 'Confirmada',
@@ -46,7 +33,6 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     badge: 'bg-primary/10 text-primary border-primary/30',
     block: 'bg-primary/10 border-primary text-foreground',
     series: 'var(--chart-confirmada)',
-    seriesPattern: stripes(45),
   },
   Reprogramada: {
     label: 'Reprogramada',
@@ -54,7 +40,6 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     badge: 'bg-accent text-accent-foreground border-primary/20',
     block: 'bg-accent border-accent-foreground/50 text-foreground',
     series: 'var(--chart-reprogramada)',
-    seriesPattern: stripes(0),
   },
   Atendida: {
     label: 'Atendida',
@@ -62,7 +47,6 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     badge: 'bg-success/15 text-success border-success/30',
     block: 'bg-success/10 border-success text-foreground',
     series: 'var(--chart-atendida)',
-    seriesPattern: null,
   },
   'No asistió': {
     label: 'No asistió',
@@ -70,7 +54,6 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     badge: 'bg-muted text-muted-foreground border-border',
     block: 'bg-muted border-muted-foreground/60 text-muted-foreground',
     series: 'var(--chart-no-asistio)',
-    seriesPattern: stripes(90),
   },
   Cancelada: {
     label: 'Cancelada',
@@ -78,7 +61,6 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     badge: 'bg-destructive/10 text-destructive border-destructive/30',
     block: 'bg-destructive/5 border-destructive/60 text-muted-foreground line-through',
     series: 'var(--chart-cancelada)',
-    seriesPattern: `${stripes(45, 2)}, ${stripes(135, 2)}`,
   },
 };
 
@@ -94,10 +76,8 @@ export const REPORT_SERIES: readonly {
   status: AppointmentStatus;
   label: string;
   color: string;
-  pattern: string | null;
 }[] = STATUS_ORDER.map((status) => ({
   status,
   label: STYLES[status].label,
   color: STYLES[status].series,
-  pattern: STYLES[status].seriesPattern,
 }));

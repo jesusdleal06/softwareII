@@ -43,23 +43,12 @@ describe('appointment status canon', () => {
     for (const series of REPORT_SERIES) {
       expect(series.label).toBe(STATUS_STYLES[series.status].label);
       expect(series.color).toBe(STATUS_STYLES[series.status].series);
-      expect(series.pattern).toBe(STATUS_STYLES[series.status].seriesPattern);
     }
   });
 
   it('gives every bar a distinguishable colour', () => {
     const colors = REPORT_SERIES.map((series) => series.color);
     expect(new Set(colors).size).toBe(colors.length);
-  });
-
-  it('encodes the chart series without relying on colour alone', () => {
-    // WCAG 1.4.1: a colour-blind reader must still tell the stacked segments apart.
-    const patterned = REPORT_SERIES.filter((series) => series.pattern !== null);
-    expect(patterned.length).toBeGreaterThanOrEqual(REPORT_SERIES.length - 1);
-    for (const series of patterned) {
-      expect(series.pattern).toContain('repeating-linear-gradient');
-      expect(series.pattern).toContain('var(--chart-pattern-ink)');
-    }
   });
 
   it('never prints the raw enum: status text goes through the canon', () => {
