@@ -4,7 +4,8 @@ import { join, resolve } from 'node:path';
 
 /**
  * Surface contract for the staff panel (S4, S5, S6, S7 of
- * `odd/tasks/estilo-referencia-tarjetas.md`).
+ * `odd/tasks/estilo-referencia-tarjetas.md`, and taste's system for the `Operate`
+ * mode the preferences of S12 assign to the panel).
  *
  * The restyle is a rule about which token paints which surface, and jsdom applies no
  * stylesheet: a card that silently lost its radius, a block that grew a shadow next to
@@ -39,6 +40,10 @@ function offenders(pattern: RegExp): string[] {
   return FILES.filter((file) => pattern.test(code(file.source))).map((file) => file.path);
 }
 
+function file(path: string): string {
+  return code(FILES.find((entry) => entry.path.endsWith(path))?.source ?? '');
+}
+
 describe('staff surface contract', () => {
   it('never writes a literal colour: every surface comes from a token', () => {
     expect(offenders(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\boklch\(|\bhsla?\(/)).toEqual([]);
@@ -62,5 +67,41 @@ describe('staff surface contract', () => {
 
   it('keeps the field boundary at full strength: no consumer cancels it', () => {
     expect(offenders(/inputClass="[^"]*\bborder-(?:0|none|transparent)\b/)).toEqual([]);
+  });
+
+  /*
+   * taste's system in the `Operate` mode (S12): one hairline, one radius family,
+   * labels at 13/500 and never tracked capitals, the current section carried by the
+   * ink. These are class assertions only; the behaviour is covered elsewhere.
+   */
+
+  it('draws the current section as the ink pill', () => {
+    const shell = file('layout/staff-shell.ts');
+    const active = /const (?:DESKTOP|MOBILE)_ACTIVE = '[^']*\bbg-primary\b[^']*\btext-primary-foreground\b[^']*'/g;
+    expect(shell.match(active)).toHaveLength(2);
+  });
+
+  it('marks a schedule block with one hairline, never a coloured side bar', () => {
+    // The craft floor refuses a coloured `border-left`/`border-right` above 1px.
+    expect(offenders(/\bborder-[lr]-[2-9]\b/)).toEqual([]);
+  });
+
+  it('never cancels a control boundary, so a quiet fill keeps its hairline', () => {
+    expect(offenders(/\bborder-transparent\b/)).toEqual([]);
+  });
+
+  it('keeps one hairline: a rule is never dashed', () => {
+    expect(offenders(/\bborder-dashed\b/)).toEqual([]);
+  });
+
+  it('never sets a heading in tracked capitals', () => {
+    expect(offenders(/<h[1-6][^>]*\buppercase\b/)).toEqual([]);
+  });
+
+  it('prints a figure at the stat step, tight, with tabular numerals', () => {
+    const card = file('components/report-card.ts');
+    for (const required of ['text-3xl', 'tracking-tight', 'tabular-nums']) {
+      expect(card).toContain(required);
+    }
   });
 });

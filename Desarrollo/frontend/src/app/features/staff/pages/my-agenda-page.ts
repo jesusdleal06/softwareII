@@ -40,9 +40,9 @@ import { DayAgenda, SINGLETON_FRAME_CONTENT_WIDTH } from '../components/day-agen
       />
 
       <aside class="card flex flex-col gap-3 self-start" aria-labelledby="lista-pacientes">
-        <h2 id="lista-pacientes" class="card-title">
+        <h2 id="lista-pacientes" class="card-title tracking-tight">
           Pacientes del día
-          <span class="card-subtitle font-normal tabular-nums">({{ pendingCount() }} por atender)</span>
+          <span class="card-subtitle block font-normal tabular-nums">({{ pendingCount() }} por atender)</span>
         </h2>
         @if (sorted().length === 0) {
           <p class="py-6 text-center text-xs text-muted-foreground">
@@ -55,7 +55,7 @@ import { DayAgenda, SINGLETON_FRAME_CONTENT_WIDTH } from '../components/day-agen
                 <button
                   type="button"
                   (click)="selectedId.set(c.id)"
-                  class="flex w-full items-start justify-between gap-3 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                  class="flex w-full items-start justify-between gap-3 rounded-sm text-left outline-none transition-colors active:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                 >
                   <span class="flex min-w-0 flex-col">
                     <span class="truncate text-sm font-medium text-foreground tabular-nums">

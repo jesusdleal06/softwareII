@@ -35,9 +35,7 @@ import { ReminderBadge } from '../../../shared/ui/status-badge';
     }
     <dl appAppointmentSummary [appointment]="cita"></dl>
     <section class="card-divider flex flex-col gap-2" aria-labelledby="rec-title">
-      <h3 id="rec-title" class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        Recordatorio por WhatsApp
-      </h3>
+      <h3 id="rec-title" class="text-xs font-medium text-muted-foreground">Recordatorio por WhatsApp</h3>
       <app-reminder-badge [status]="cita.reminder" />
       <p class="text-sm text-muted-foreground text-pretty first-letter:uppercase">{{ reminderDetail() }}</p>
     </section>

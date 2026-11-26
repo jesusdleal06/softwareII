@@ -14,7 +14,7 @@ import { PublicFooter, PublicHeader } from '../../../shared/ui/public-header';
   template: `
     <header appPublicHeader></header>
     <main class="flex flex-1 items-center">
-      <div class="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <div class="mx-auto w-full max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
         <div class="mx-auto flex w-full max-w-md flex-col items-center gap-4 text-center">
           <span
             class="flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive"

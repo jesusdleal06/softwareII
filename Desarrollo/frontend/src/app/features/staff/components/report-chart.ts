@@ -20,7 +20,7 @@ import { cn } from '../../../shared/ui/class-names';
   },
   template: `
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 id="grafico" class="card-title">Citas por día según estado</h2>
+      <h2 id="grafico" class="card-title tracking-tight">Citas por día según estado</h2>
       <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Leyenda">
         @for (item of legend(); track item.status) {
           <li class="flex items-center gap-2">

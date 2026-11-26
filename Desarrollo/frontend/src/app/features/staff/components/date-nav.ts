@@ -3,8 +3,12 @@ import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
 import { addDays, formatDate, formatLongDate, fromDateKey, toDateKey } from '../../../core/domain';
 import { cn } from '../../../shared/ui/class-names';
 
+/**
+ * The quiet fill (`--secondary`) is the ground colour, so a hairline — never a
+ * cancelled border — is what draws the control's edge (L5).
+ */
 const ICON_BUTTON =
-  'flex size-10 shrink-0 items-center justify-center rounded-md border border-transparent bg-secondary text-secondary-foreground outline-none transition-colors select-none hover:bg-secondary/80 active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
+  'flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-secondary-foreground outline-none transition-colors select-none hover:bg-secondary/80 active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
 
 /** Previous / today / next day navigation with the long date (presentational). */
 @Component({
@@ -42,7 +46,7 @@ export class DateNav {
       'inline-flex h-10 shrink-0 items-center justify-center rounded-md border px-3 text-sm font-medium outline-none transition-colors select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
       this.date() === this.today()
         ? 'border-primary bg-accent text-accent-foreground'
-        : 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        : 'border-border bg-secondary text-secondary-foreground hover:bg-secondary/80',
     ),
   );
 

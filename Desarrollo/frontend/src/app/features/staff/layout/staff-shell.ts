@@ -7,14 +7,18 @@ import { Logo } from '../../../shared/ui/logo';
 import { ThemeToggle } from '../../../shared/ui/theme-toggle';
 import { STAFF_SECTIONS } from '../staff-sections';
 
-/** Reference filled-light nav item: the muted fill carries the active section. */
+/**
+ * The section switcher is taste's software tab: the current section is the ink pill
+ * with the ground as its label (the accent is the ink), and a quiet item answers the
+ * pointer with a fill step and the press with taste's 1px step down.
+ */
 const DESKTOP_LINK =
-  'flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
-const DESKTOP_ACTIVE = 'bg-muted text-foreground';
-const DESKTOP_INACTIVE = 'text-muted-foreground hover:bg-muted/60 hover:text-foreground';
-const MOBILE_ACTIVE = 'bg-muted text-foreground';
+  'flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium outline-none transition-colors select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
+const DESKTOP_ACTIVE = 'bg-primary text-primary-foreground';
+const DESKTOP_INACTIVE = 'text-muted-foreground hover:bg-secondary hover:text-foreground';
+const MOBILE_ACTIVE = 'bg-primary text-primary-foreground';
 const MOBILE_LINK =
-  'flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
+  'flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md text-sm font-medium outline-none transition-colors select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
 
 /** Staff panel layout (container): header with role-based navigation, user and logout. */
 @Component({
@@ -74,10 +78,10 @@ const MOBILE_LINK =
             <app-theme-toggle />
             <div class="hidden flex-col items-end leading-tight sm:flex">
               <span class="text-sm font-semibold">{{ user.name }}</span>
-              <span class="text-xs text-muted-foreground">{{ user.role }}</span>
+              <span class="text-xs font-medium text-muted-foreground">{{ user.role }}</span>
             </div>
             <span
-              class="flex size-11 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground sm:hidden"
+              class="flex size-11 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground sm:hidden"
               aria-hidden="true"
             >
               {{ initials() }}
@@ -100,7 +104,7 @@ const MOBILE_LINK =
               routerLinkActive=""
               ariaCurrentWhenActive="page"
               #mobile="routerLinkActive"
-              [class]="cn(mobileLink, mobile.isActive ? mobileActive : 'text-muted-foreground')"
+              [class]="cn(mobileLink, mobile.isActive ? mobileActive : 'text-muted-foreground hover:bg-secondary hover:text-foreground')"
             >
               @switch (s.id) {
                 @case ('agenda') {

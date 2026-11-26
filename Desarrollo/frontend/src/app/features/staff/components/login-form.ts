@@ -60,7 +60,7 @@ import { TextField } from '../../../shared/ui/field';
           (click)="showPassword.set(!showPassword())"
           [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           [attr.aria-pressed]="showPassword()"
-          class="absolute right-0 bottom-0 flex size-10 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          class="absolute right-0 bottom-0 flex size-10 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors select-none hover:bg-secondary hover:text-foreground active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         >
           @if (showPassword()) {
             <svg lucideEyeOff class="size-4"></svg>

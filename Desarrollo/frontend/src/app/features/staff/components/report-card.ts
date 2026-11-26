@@ -5,7 +5,7 @@ import { cn } from '../../../shared/ui/class-names';
 @Component({
   selector: 'div[appReportCard]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'card flex flex-col gap-1' },
+  host: { class: 'card flex flex-col gap-2' },
   template: `
     <span class="text-xs font-medium text-muted-foreground">{{ heading() }}</span>
     <span [class]="valueClass()">{{ value() }}</span>

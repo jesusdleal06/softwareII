@@ -98,7 +98,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
 
           @if (showDemoTools()) {
             <label
-              class="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-dashed border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground"
+              class="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground"
             >
               <input
                 type="checkbox"

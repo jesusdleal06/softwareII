@@ -28,10 +28,13 @@ export const SINGLETON_FRAME_CONTENT_WIDTH = `${TIME_AXIS_REM + SINGLE_LANE_MAX_
 /**
  * The block keeps its proportional height, but spends 6px on each side on an invisible
  * pseudo-element so even a 15-minute slot (32px) reaches the 44px touch target without
- * overlapping its neighbours visually. Elevation is the status border alone (S5).
+ * overlapping its neighbours visually. Elevation is the status hairline alone: one rule
+ * on all four sides, never a coloured side bar, and the status fill stays the map's (S5).
+ * Hover and press move the fill a step toward the ink; nothing moves the box, so the
+ * neighbouring blocks never shift.
  */
 const BLOCK_BASE =
-  "absolute inset-x-1.5 rounded-md border-l-4 text-left leading-tight outline-none transition-colors hover:brightness-95 after:absolute after:inset-x-0 after:-top-1.5 after:-bottom-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
+  "absolute inset-x-1.5 rounded-md border text-left leading-tight outline-none transition-colors hover:brightness-95 active:brightness-90 after:absolute after:inset-x-0 after:-top-1.5 after:-bottom-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
 const BLOCK_CONTENT = 'absolute inset-0 flex flex-col gap-0.5 overflow-hidden px-2 sm:px-2.5';
 
 function top(minutes: number): number {
@@ -73,10 +76,10 @@ interface Block {
             (click)="mobileDentistId.set(d.id)"
             [class]="
               cn(
-                'inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md border border-transparent px-3 text-sm font-medium outline-none transition-colors select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                'inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium outline-none transition-colors select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
                 active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-secondary text-secondary-foreground hover:bg-secondary/80'
               )
             "
           >
@@ -84,7 +87,7 @@ interface Block {
               [class]="
                 cn(
                   'flex size-6 items-center justify-center rounded-full text-[11px] font-semibold',
-                  active ? 'bg-primary-foreground/20' : 'bg-muted text-foreground'
+                  active ? 'bg-primary-foreground/20' : 'bg-accent text-accent-foreground'
                 )
               "
               aria-hidden="true"
@@ -162,7 +165,7 @@ interface Block {
             }
             @for (h of halfHours; track h) {
               <div
-                class="absolute inset-x-0 border-t border-dashed border-border/60"
+                class="absolute inset-x-0 border-t border-border/60"
                 [style.top.px]="top(h + 30)"
                 aria-hidden="true"
               ></div>
