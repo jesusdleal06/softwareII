@@ -53,7 +53,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 2,
     badge: 'bg-accent text-accent-foreground border-primary/20',
     block: 'bg-accent border-accent-foreground/50 text-foreground',
-    series: 'bg-accent-foreground',
+    series: 'bg-chart-2',
     seriesPattern: stripes(0),
   },
   Atendida: {
@@ -69,7 +69,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 4,
     badge: 'bg-muted text-muted-foreground border-border',
     block: 'bg-muted border-muted-foreground/60 text-muted-foreground',
-    series: 'bg-muted-foreground',
+    series: 'bg-chart-4',
     seriesPattern: stripes(90),
   },
   Cancelada: {

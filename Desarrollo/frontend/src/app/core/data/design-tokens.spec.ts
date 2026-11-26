@@ -219,8 +219,12 @@ describe('design token contract (WCAG 2.x measured)', () => {
         'bg-muted border-muted-foreground/60 text-muted-foreground',
         'bg-destructive/5 border-destructive/60 text-muted-foreground line-through',
       ]);
+      // The three neutral statuses ride the chart ramp (L10): with the accent inverted to
+      // ink, `Confirmada` (primary) and `Reprogramada` (accent-foreground) were the same
+      // black, so Reprogramada/No asistió moved to the neutral chart steps. The three
+      // semantic statuses keep their hue.
       expect(REPORT_SERIES.map(({ color }) => color)).toEqual([
-        'bg-warning', 'bg-primary', 'bg-accent-foreground', 'bg-success', 'bg-muted-foreground', 'bg-destructive',
+        'bg-warning', 'bg-primary', 'bg-chart-2', 'bg-success', 'bg-chart-4', 'bg-destructive',
       ]);
       const stripe = (angle: number, stops: string) =>
         `repeating-linear-gradient(${angle}deg, transparent 0 ${stops.split(' ')[0]}, var(--chart-pattern-ink) ${stops})`;

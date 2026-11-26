@@ -1,6 +1,16 @@
 /*
- * Global styles and design tokens ported from the v0 prototype (app/globals.css).
- * Omitted on purpose: `tw-animate-css` and `shadcn/tailwind.css` imports (React/shadcn specific).
+ * Global styles and design tokens.
+ *
+ * The colour and type system is taste's (`design-taste-frontend/references/system.md`,
+ * with `assets/system.css` as the token source of truth), emitted for this app by
+ * `start.mjs brand --page service` (specs S10-S14 of
+ * `odd/tasks/estilo-referencia-tarjetas.md`): the palette is monochrome — the brand hue
+ * leaves the design, `--primary` / `--accent` / `--ring` / the chart series and the
+ * sidebar tokens all derive from the ink and greys — while `--success`, `--warning`,
+ * `--destructive` and `--whatsapp` keep their semantic meaning and their hue. Radius is
+ * taste's `--radius soft` set; the type scale is taste's `--t-*` scale, mapped onto the
+ * utilities the views already use. Omitted on purpose: `tw-animate-css` and
+ * `shadcn/tailwind.css` imports (React/shadcn specific).
  *
  * Contrast note: every colour pair below is measured with the WCAG 2.x formula
  * (normal text >= 4.5:1, UI components and the focus ring >= 3:1). The numbers in the
@@ -19,6 +29,35 @@
 
 @theme inline {
   --font-sans: 'Inter', system-ui, sans-serif;
+  /*
+   * Type scale: taste's steps, assigned to the utilities the views already use
+   * (`system.md` "Type", `system.css` `--t-*`). Nothing invents a size between them;
+   * `xs` is taste's 13px floor for labels and help text, `2xl` is the page title, `3xl`
+   * a figure, `4xl` and `5xl` a section heading and the hero h1.
+   * `lg` and `xl` are both 18px (20 from 1024) because taste has one 18px size with two
+   * line heights: `--t-lead` (1.5) for a reading line and `--t-card` (1.3) for a card
+   * title. `text-lg` is the lead, `text-xl` the title.
+   */
+  --text-xs: var(--t-label);
+  --text-xs--line-height: var(--t-label-lh);
+  --text-sm: var(--t-small);
+  --text-sm--line-height: var(--t-small-lh);
+  --text-base: var(--t-body);
+  --text-base--line-height: var(--t-body-lh);
+  --text-lg: var(--t-lead);
+  --text-lg--line-height: var(--t-lead-lh);
+  --text-xl: var(--t-card);
+  --text-xl--line-height: var(--t-card-lh);
+  --text-2xl: var(--t-h3);
+  --text-2xl--line-height: var(--t-h3-lh);
+  --text-3xl: var(--t-stat);
+  --text-3xl--line-height: var(--t-stat-lh);
+  --text-4xl: var(--t-h2);
+  --text-4xl--line-height: var(--t-h2-lh);
+  --text-5xl: var(--t-h1);
+  --text-5xl--line-height: var(--t-h1-lh);
+  /* The dealt pairing's display tracking (-0.03em) replaces Tailwind's -0.025em. */
+  --tracking-tight: var(--display-tracking);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -58,92 +97,221 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /*
+   * Radius: taste's one scale at `--radius soft`, never a second one. `sm` and `md` are
+   * the 8px control/button radius, `lg` the 12px panel, `xl` the 20px card. Taste adds
+   * no step above the card, so `2xl` to `4xl` fall back to it instead of scaling up.
+   */
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-sm);
+  --radius-lg: var(--r-md);
+  --radius-xl: var(--r-lg);
+  --radius-2xl: var(--r-lg);
+  --radius-3xl: var(--r-lg);
+  --radius-4xl: var(--r-lg);
 }
 
+/*
+ * The block `start.mjs brand` printed, emitted in place of `css`, pasted as it came:
+ *
+ *   node /home/diego/.agents/skills/design-taste-frontend/scripts/start.mjs brand \
+ *     --page service --bg "#ffffff" --ink "#171717" --accent "#171717" \
+ *     --surface "#f4f4f4" --muted "#6b6b6b" --type hanken --radius soft \
+ *     --history .taste-skill/history.json
+ *
+ * White ground, the ink near-black (never #000) and the accent is the ink itself, so the
+ * app is monochrome. `--p-inv-*` is the dark twin the same command emits; the `.dark`
+ * block below is built from it. Each app token names the emitted token it comes from and
+ * carries the exact oklch triple `design-tokens.spec.ts` measures.
+ */
 :root {
   color-scheme: light;
+  /* --- pasted from `start.mjs brand`: the brand record of this palette --- */
+  --p-bg: #ffffff;
+  --p-surface: #f4f4f4;
+  --p-ink: #171717;
+  --p-muted: #6b6b6b;
+  --p-accent: #171717;
+  --p-accent-ink: #ffffff;
+  --p-action: #171717;
+  --p-action-ink: #ffffff;
+  --p-inv-bg: #171717;
+  --p-inv-surface: #242424;
+  --p-inv-ink: #ffffff;
+  --p-inv-muted: #9e9e9e;
+  --p-inv-accent: #ffffff;
+  --p-inv-accent-ink: #171717;
+  --p-inv-action: #ffffff;
+  --p-inv-action-ink: #171717;
+
+  /* --- the app's tokens, from the brand record above --- */
+  /* `--p-bg` #ffffff. */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.22 0.02 230);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 230);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 230);
-  /* Deepened from 0.52: primary text on `bg-primary/10` measured 4.51:1 (fragile). Now 6.08:1 on white, 5.30:1 on its own tint. */
-  --primary: oklch(0.48 0.1 205);
+  /* `--p-ink` #171717: 17.93:1 on the ground, 16.30:1 on the card. */
+  --foreground: oklch(0.2046 0 0);
+  /* `--p-surface` #f4f4f4: the card, one neutral step under the white ground. */
+  --card: oklch(0.9672 0 0);
+  --card-foreground: oklch(0.2046 0 0);
+  --popover: oklch(0.9672 0 0);
+  --popover-foreground: oklch(0.2046 0 0);
+  /*
+   * `--p-action` #171717: taste's accent is the ink, so `--primary` is the ink and the
+   * primary button is the ink fill with the ground as its label.
+   * Measured: label on the fill 17.93:1; as text on the ground 17.93:1; on its own
+   * `/10` badge tint over the card 13.32:1.
+   */
+  --primary: oklch(0.2046 0 0);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.012 210);
-  --secondary-foreground: oklch(0.3 0.03 220);
-  --muted: oklch(0.965 0.005 220);
-  /* Body and hint text: 7.40:1 on white. */
-  --muted-foreground: oklch(0.45 0.02 230);
-  /* Dedicated placeholder token: `muted-foreground/70` measured 3.53:1. This measures 5.48:1, still lighter than hint text. */
-  --placeholder-foreground: oklch(0.52 0.02 230);
-  --accent: oklch(0.93 0.035 205);
-  --accent-foreground: oklch(0.32 0.07 210);
+  /*
+   * The quiet fill is the ground again (`--p-bg`), so a control or a secondary button
+   * reads as a white plate on the grey card (1.10:1 separation, label 17.93:1).
+   */
+  --secondary: oklch(1 0 0);
+  --secondary-foreground: oklch(0.2046 0 0);
+  --muted: oklch(1 0 0);
+  /*
+   * `--p-muted` #6b6b6b, carried one neutral step darker (0.52) so the faintest pair it
+   * paints still clears 4.5:1: 5.51:1 on the ground, 5.01:1 on the card and 4.63:1 on
+   * the `destructive/5` row tint the Cancelada agenda block sits on.
+   */
+  --muted-foreground: oklch(0.52 0 0);
+  /* Dedicated placeholder token, still lighter than the hint text: 5.02:1 on the ground, 4.57:1 on the card. */
+  --placeholder-foreground: oklch(0.5417 0 0);
+  /*
+   * The accent is the ink, and the app paints `--accent` as a surface (the Reprogramada
+   * block, `::selection`), so it is the ink's 6% tint over the card. Its own text
+   * measures 14.50:1.
+   */
+  --accent: oklch(0.928 0 0);
+  --accent-foreground: oklch(0.2046 0 0);
   --destructive: oklch(0.53 0.2 25);
   --destructive-foreground: oklch(1 0 0);
-  /* Deepened from 0.55: `text-success` on `bg-success/15` measured 3.75:1. Now 6.08:1 on white, 5.01:1 on its own tint. */
-  --success: oklch(0.48 0.14 150);
+  /*
+   * Semantic, not brand: the hue stays. Deepened from 0.48, because `text-success` on
+   * `bg-success/15` over the grey card measured 4.45:1 there. Now 6.33:1 on the ground
+   * and 4.62:1 on its own tint over the card.
+   */
+  --success: oklch(0.47 0.14 150);
   --success-foreground: oklch(1 0 0);
   --warning: oklch(0.72 0.15 70);
   --warning-foreground: oklch(0.25 0.05 70);
   --whatsapp: oklch(0.65 0.17 150);
   /* White on the WhatsApp green measured 3.01:1; this dark green measures 5.23:1. */
   --whatsapp-foreground: oklch(0.25 0.05 150);
-  /* Decorative separators between surfaces: not required to identify a control, so 3:1 does not apply. */
-  --border: oklch(0.9 0.008 220);
-  /* Input boundary is the only thing identifying a text field on a white card: measured 1.74:1, raised to 3.22:1. */
-  --input: oklch(0.65 0.012 220);
-  /* Focus indicator, always used at full opacity: 6.08:1. Alpha variants (/30, /40, /50) measured 1.54-2.13:1. */
-  --ring: oklch(0.48 0.1 205);
-  --chart-1: oklch(0.48 0.1 205);
-  --chart-2: oklch(0.48 0.14 150);
-  --chart-3: oklch(0.6 0.15 70);
-  --chart-4: oklch(0.53 0.2 25);
-  --chart-5: oklch(0.5 0.02 230);
+  /* Decorative separators between surfaces: not required to identify a control, so 3:1 does not apply. Ink at 12% over the ground. */
+  --border: oklch(0.9158 0 0);
+  /*
+   * Input boundary is the only thing identifying a text field on the card: taste's
+   * `--line` is 11% ink and reaches no threshold, so `--input` keeps a dedicated grey.
+   * Measured 3.45:1 on the ground and 3.14:1 on the card.
+   */
+  --input: oklch(0.6334 0 0);
+  /* Focus indicator, always used at full opacity: 17.93:1 on the ground, 16.30:1 on the card. */
+  --ring: oklch(0.2046 0 0);
+  /*
+   * The chart series is a neutral ramp: taste's palette has one accent and it is the ink.
+   * The report bars do not read these five — they take their colours from the semantic
+   * status map in `core/data/status-styles.ts` — so the ramp only fixes a legible order.
+   */
+  --chart-1: oklch(0.2046 0 0);
+  --chart-2: oklch(0.42 0 0);
+  --chart-3: oklch(0.55 0 0);
+  --chart-4: oklch(0.68 0 0);
+  --chart-5: oklch(0.8 0 0);
   /* Ink of the chart's non-colour series patterns. Bars are mid-dark in the light theme. */
   --chart-pattern-ink: oklch(1 0 0 / 0.55);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.22 0.02 230);
-  --sidebar-primary: oklch(0.48 0.1 205);
+  /* The sidebar tokens are monochrome too: the card grey, the ink and its hairlines. */
+  --sidebar: oklch(0.9672 0 0);
+  --sidebar-foreground: oklch(0.2046 0 0);
+  --sidebar-primary: oklch(0.2046 0 0);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.96 0.012 210);
-  --sidebar-accent-foreground: oklch(0.3 0.03 220);
-  --sidebar-border: oklch(0.9 0.008 220);
-  --sidebar-ring: oklch(0.48 0.1 205);
+  --sidebar-accent: oklch(1 0 0);
+  --sidebar-accent-foreground: oklch(0.2046 0 0);
+  --sidebar-border: oklch(0.9158 0 0);
+  --sidebar-ring: oklch(0.2046 0 0);
+  /*
+   * Type and radius from `system.css`. The family stays Inter: taste's pairing for a
+   * service page (Hanken Grotesk) would be a new webfont in `index.html`, and only the
+   * pairing's display weight and tracking are adopted here.
+   */
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-text: 'Inter', system-ui, sans-serif;
+  --display-weight: 400;
+  --display-tracking: -0.03em;
+  --display-tracking-xl: -0.038em;
+  --t-label: 13px;
+  --t-label-lh: 1.4;
+  --t-small: 14px;
+  --t-small-lh: 1.5;
+  --t-body: 16px;
+  --t-body-lh: 1.55;
+  --t-card: 18px;
+  --t-card-lh: 1.3;
+  --t-lead: 18px;
+  --t-lead-lh: 1.5;
+  --t-h3: 24px;
+  --t-h3-lh: 1.2;
+  --t-h2: clamp(30px, 1.72vw + 23.3px, 48px);
+  --t-h2-lh: 1.1;
+  --t-h1: clamp(38px, 3.24vw + 25.4px, 72px);
+  --t-h1-lh: 1.04;
+  --t-stat: clamp(28px, 0.952vw + 24.29px, 38px);
+  --t-stat-lh: 1;
+  /* taste's radius set for `--radius soft`: controls and buttons 8, panels 12, cards 20. */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-btn: 8px;
+}
+
+/* taste lifts three steps from 1024 up (`system.css`); the utilities read them through the scale. */
+@media (min-width: 1024px) {
+  :root {
+    --t-lead: 20px;
+    --t-card: 20px;
+    --t-h3: 28px;
+  }
 }
 
 /*
- * Dark theme. Applied by the bootstrap in `index.html` from the OS preference or a
- * stored override. Every token the theme exposes is redefined here: a partial block
- * is what made the `dark:` utilities resolve to light values before.
+ * Dark theme: `start.mjs brand` emits no second palette, only the inverse roles
+ * (`--p-inv-*`), so the dark twin is the same neutral ramp with the ground and the ink
+ * swapped: the ground is `--p-inv-bg` #171717, the card is `--p-inv-surface` #242424 (one
+ * step up, as the light card is one step down), and the text is `--p-inv-ink` #ffffff.
+ * Applied by the bootstrap in `index.html` from the OS preference or a stored override.
+ * Every token the theme exposes is redefined here: a partial block is what made the
+ * `dark:` utilities resolve to light values before.
  */
 .dark {
   color-scheme: dark;
-  --background: oklch(0.2 0.015 230);
-  --foreground: oklch(0.95 0.005 220);
-  --card: oklch(0.245 0.015 230);
-  --card-foreground: oklch(0.95 0.005 220);
-  --popover: oklch(0.245 0.015 230);
-  --popover-foreground: oklch(0.95 0.005 220);
-  /* Lightened so it reads as text on a dark surface: 7.57:1 on background. */
-  --primary: oklch(0.72 0.1 205);
-  --primary-foreground: oklch(0.2 0.03 230);
-  --secondary: oklch(0.28 0.012 230);
-  --secondary-foreground: oklch(0.9 0.01 220);
-  --muted: oklch(0.28 0.012 230);
-  --muted-foreground: oklch(0.72 0.02 230);
-  --placeholder-foreground: oklch(0.65 0.02 230);
-  --accent: oklch(0.3 0.03 205);
-  --accent-foreground: oklch(0.85 0.05 205);
+  /* `--p-inv-bg` #171717. */
+  --background: oklch(0.2046 0 0);
+  /* `--p-inv-ink` #ffffff: 17.93:1 on the ground, 15.52:1 on the card. */
+  --foreground: oklch(1 0 0);
+  /* `--p-inv-surface` #242424. */
+  --card: oklch(0.2603 0 0);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.2603 0 0);
+  --popover-foreground: oklch(1 0 0);
+  /*
+   * `--p-inv-action` #ffffff: the ink of the light theme is the light of the dark one, so
+   * the primary button flips to a white fill with the dark ground as its label.
+   * Measured: label on the fill 17.93:1; as text on the ground 17.93:1; on its own `/20`
+   * badge tint over the card 8.09:1.
+   */
+  --primary: oklch(1 0 0);
+  --primary-foreground: oklch(0.2046 0 0);
+  /* The quiet fill is one step above the card (1.18:1 separation) so it still reads as a fill: label 14.11:1. */
+  --secondary: oklch(0.29 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.29 0 0);
+  /* `--p-inv-muted` #9e9e9e: 6.69:1 on the ground, 5.27:1 on the quiet fill. */
+  --muted-foreground: oklch(0.6993 0 0);
+  /* 5.19:1 on the card and 4.72:1 on the field fill it actually sits on, still dimmer than the hint text. */
+  --placeholder-foreground: oklch(0.67 0 0);
+  /* The ink tint flips to a white tint: the Reprogramada block and `::selection` text measure 11.59:1. */
+  --accent: oklch(0.3211 0 0);
+  --accent-foreground: oklch(0.9702 0 0);
   --destructive: oklch(0.72 0.17 25);
   --destructive-foreground: oklch(0.18 0.03 25);
   --success: oklch(0.75 0.14 150);
@@ -152,25 +320,28 @@
   --warning-foreground: oklch(0.22 0.05 70);
   --whatsapp: oklch(0.62 0.17 150);
   --whatsapp-foreground: oklch(0.2 0.05 150);
-  --border: oklch(0.32 0.01 230);
-  /* 3.08:1 against `card`, the lighter dark surface: 0.50 measured only 2.71:1 there. */
-  --input: oklch(0.53 0.012 220);
-  --ring: oklch(0.72 0.1 205);
-  --chart-1: oklch(0.72 0.1 205);
-  --chart-2: oklch(0.75 0.14 150);
-  --chart-3: oklch(0.8 0.15 70);
-  --chart-4: oklch(0.72 0.17 25);
-  --chart-5: oklch(0.7 0.02 230);
+  /* Ink 11% of the light theme, over the dark card. */
+  --border: oklch(0.3562 0 0);
+  /* 3.09:1 against `card`, the surface a field sits on in this theme. */
+  --input: oklch(0.5417 0 0);
+  /* Focus indicator, always used at full opacity: 17.93:1 on the ground, 15.52:1 on the card. */
+  --ring: oklch(1 0 0);
+  /* The same neutral ramp, read from the light end, so a series stays distinguishable. */
+  --chart-1: oklch(1 0 0);
+  --chart-2: oklch(0.84 0 0);
+  --chart-3: oklch(0.72 0 0);
+  --chart-4: oklch(0.58 0 0);
+  --chart-5: oklch(0.45 0 0);
   /* Bars are light in the dark theme, so the pattern ink flips to black. */
   --chart-pattern-ink: oklch(0 0 0 / 0.45);
-  --sidebar: oklch(0.245 0.015 230);
-  --sidebar-foreground: oklch(0.95 0.005 220);
-  --sidebar-primary: oklch(0.72 0.1 205);
-  --sidebar-primary-foreground: oklch(0.2 0.03 230);
-  --sidebar-accent: oklch(0.28 0.012 230);
-  --sidebar-accent-foreground: oklch(0.9 0.01 220);
-  --sidebar-border: oklch(0.32 0.01 230);
-  --sidebar-ring: oklch(0.72 0.1 205);
+  --sidebar: oklch(0.2603 0 0);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(1 0 0);
+  --sidebar-primary-foreground: oklch(0.2046 0 0);
+  --sidebar-accent: oklch(0.29 0 0);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.3562 0 0);
+  --sidebar-ring: oklch(1 0 0);
 }
 
 @layer base {
@@ -263,15 +434,20 @@
 }
 
 @utility page-title {
-  @apply text-2xl font-semibold tracking-tight text-foreground;
+  @apply text-2xl font-normal tracking-tight text-foreground;
 }
-
 @utility page-subtitle {
   @apply mt-1 text-sm text-muted-foreground;
 }
 
+/*
+ * taste's card title is its own step (`--t-card`: 18px, 20 from 1024, line-height 1.3),
+ * one size for every card header on the page. Only the page title takes taste's display
+ * weight (400): a card header and a figure keep 600, so the panel of S12 keeps the
+ * precision of the `Operate` mode below the h1.
+ */
 @utility card-title {
-  @apply text-base font-semibold text-foreground;
+  @apply text-xl font-semibold text-foreground;
 }
 
 @utility card-subtitle {
