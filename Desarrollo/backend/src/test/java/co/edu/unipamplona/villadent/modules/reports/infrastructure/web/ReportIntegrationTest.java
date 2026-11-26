@@ -2,11 +2,13 @@ package co.edu.unipamplona.villadent.modules.reports.infrastructure.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.edu.unipamplona.villadent.TestcontainersConfiguration;
@@ -62,6 +64,9 @@ class ReportIntegrationTest {
 
     private static final ZoneId BOGOTA = ZoneId.of("America/Bogota");
 
+    private static final String SIGNED_DOWNLOAD_URL =
+            "https://api.cloudinary.com/v1_1/test-cloud/raw/download?public_id=report.pdf&signature=fake-signature";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -100,6 +105,7 @@ class ReportIntegrationTest {
 
     static class FakeReportStorage implements ReportStorage {
         private final Map<String, byte[]> files = new ConcurrentHashMap<>();
+        private final Map<String, RuntimeException> downloadFailures = new ConcurrentHashMap<>();
         private final AtomicBoolean failNextUpload = new AtomicBoolean();
 
         @Override
@@ -114,6 +120,10 @@ class ReportIntegrationTest {
 
         @Override
         public void download(String publicId, OutputStream target) {
+            var failure = downloadFailures.remove(publicId);
+            if (failure != null) {
+                throw failure;
+            }
             try {
                 target.write(files.get(publicId));
             } catch (IOException exception) {
@@ -307,10 +317,11 @@ class ReportIntegrationTest {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(csv).contains("Total de citas,6", "Pacientes atendidos,2",
                 "Citas canceladas,1", "Inasistencias,1", "Índice de inasistencia,33%");
-        assertThat(pdfText(pdf(from, to, null, token))).contains(
+        byte[] reportPdf = pdf(from, to, null, token);
+        assertPdfSummary(reportPdf, List.of("6", "2", "1", "1", "33%"));
+        assertThat(pdfText(reportPdf)).contains(
                 "Centro Odontológico Villadent", from.toString(), to.toString(), "Todos",
-                "Total de citas 6", "Pacientes atendidos 2", "Citas canceladas 1",
-                "Inasistencias 1", "Índice de inasistencia 33%", "Generado:",
+                "Generado:",
                 "Fecha Total Pendiente Confirmada Reprogramada Cancelada Atendida No asistió",
                 "2025-04-01 6 1 1 0 1 2 1", "Página 1 de")
                 .doesNotContain("Paciente de prueba");
@@ -325,8 +336,10 @@ class ReportIntegrationTest {
         var procedure = procedure();
         appointment(selected, procedure, date, LocalTime.of(8, 0), AppointmentStatus.ATENDIDA);
         appointment(other, procedure, date, LocalTime.of(8, 0), AppointmentStatus.CANCELADA);
-        assertThat(pdfText(pdf(date, date, selected.id(), tokenFor(Role.AUXILIAR))))
-                .contains("Laura Peña", "Total de citas 1", "Pacientes atendidos 1", "Citas canceladas 0")
+        byte[] reportPdf = pdf(date, date, selected.id(), tokenFor(Role.AUXILIAR));
+        assertPdfSummary(reportPdf, List.of("1", "1", "0", "0", "0%"));
+        assertThat(pdfText(reportPdf))
+                .contains("Laura Peña")
                 .doesNotContain("Camilo Ortiz");
     }
 
@@ -419,6 +432,30 @@ class ReportIntegrationTest {
     }
 
     @Test
+    @DisplayName("CP-RF10-11: a Cloudinary download failure answers 502 problem+json without leaking the signed URL")
+    void doesNotLeakSignedUrlWhenDownloadFails() throws Exception {
+        var date = LocalDate.of(2025, 9, 2);
+        var token = tokenFor(Role.AUXILIAR);
+        pdf(date, date, null, token);
+        var report = jdbc.queryForMap(
+                "SELECT id, cloudinary_public_id FROM reportes_generados WHERE desde = ? AND hasta = ?", date, date);
+        storage.downloadFailures.put((String) report.get("cloudinary_public_id"),
+                new IllegalStateException("Simulated download failure: " + SIGNED_DOWNLOAD_URL));
+
+        var download = mockMvc.perform(get("/api/v1/reports/history/{id}/pdf", report.get("id"))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+        mockMvc.perform(asyncDispatch(download))
+                .andExpect(status().isBadGateway())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("No se pudo descargar el reporte."))
+                .andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString())
+                        .doesNotContain(SIGNED_DOWNLOAD_URL, "signature"));
+    }
+
+    @Test
     void keepsDefaultCsvAndRejectsUnknownFormat() throws Exception {
         var day = LocalDate.of(2025, 10, 1);
         var token = tokenFor(Role.AUXILIAR);
@@ -459,6 +496,19 @@ class ReportIntegrationTest {
                 .andReturn().getResponse();
         assertThat((System.nanoTime() - start) / 1_000_000).isLessThan(5000);
         return response.getContentAsByteArray();
+    }
+
+    private static void assertPdfSummary(byte[] bytes, List<String> values) throws Exception {
+        try (var document = org.apache.pdfbox.Loader.loadPDF(bytes)) {
+            var lines = new org.apache.pdfbox.text.PDFTextStripper().getText(document).lines()
+                    .map(String::strip).toList();
+            assertThat(lines).containsSubsequence(
+                    values.get(0), "Total de citas",
+                    values.get(1), "Pacientes atendidos",
+                    values.get(2), "Citas canceladas",
+                    values.get(3), "Inasistencias",
+                    values.get(4), "Índice de inasistencia");
+        }
     }
 
     private static String pdfText(byte[] bytes) throws Exception {
