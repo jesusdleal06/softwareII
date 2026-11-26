@@ -47,9 +47,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class DemoAppointmentSeeder implements ApplicationRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(DemoAppointmentSeeder.class);
-    private static final String LAURA = "Dra. Laura Villamizar";
-    private static final String ANDRES = "Dr. Andrés Peña";
-    private static final String CAMILA = "Dra. Camila Ortiz";
+    private static final String LAURA = "Laura Villamizar";
+    private static final String ANDRES = "Andrés Peña";
+    private static final String CAMILA = "Camila Ortiz";
     private static final String CLEANING = "Limpieza";
     private static final String FILLING = "Calza (resina)";
     private static final String CHECKUP = "Valoración";
