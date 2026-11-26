@@ -20,31 +20,42 @@ import co.edu.unipamplona.villadent.modules.patients.domain.model.Patient;
 import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivens.PatientRepository;
 import co.edu.unipamplona.villadent.modules.procedures.domain.model.Procedure;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivens.ProcedureRepository;
+import co.edu.unipamplona.villadent.modules.reports.domain.ports.drivens.ReportStorage;
 import co.edu.unipamplona.villadent.modules.users.domain.model.Role;
 import co.edu.unipamplona.villadent.modules.users.domain.model.User;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.PasswordHasher;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.UserRepository;
 import com.jayway.jsonpath.JsonPath;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, ReportIntegrationTest.StorageConfig.class})
 @SpringBootTest(properties = "app.bootstrap-admin.enabled=false")
 @AutoConfigureMockMvc
 class ReportIntegrationTest {
@@ -71,6 +82,45 @@ class ReportIntegrationTest {
 
     @Autowired
     private PasswordHasher passwordHasher;
+
+    @Autowired
+    private FakeReportStorage storage;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @TestConfiguration
+    static class StorageConfig {
+        @Bean
+        @Primary
+        FakeReportStorage fakeReportStorage() {
+            return new FakeReportStorage();
+        }
+    }
+
+    static class FakeReportStorage implements ReportStorage {
+        private final Map<String, byte[]> files = new ConcurrentHashMap<>();
+        private final AtomicBoolean failNextUpload = new AtomicBoolean();
+
+        @Override
+        public String upload(byte[] pdf) {
+            if (failNextUpload.getAndSet(false)) {
+                throw new IllegalStateException("Simulated upload failure");
+            }
+            String publicId = UUID.randomUUID().toString();
+            files.put(publicId, pdf.clone());
+            return publicId;
+        }
+
+        @Override
+        public void download(String publicId, OutputStream target) {
+            try {
+                target.write(files.get(publicId));
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+        }
+    }
 
     private String uniqueEmail(String prefix) {
         return prefix + "-" + UUID.randomUUID() + "@villadent.co";
@@ -244,5 +294,176 @@ class ReportIntegrationTest {
         mockMvc.perform(get("/api/v1/reports?" + range(date, date))
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + dentistToken))
                 .andExpect(status().isForbidden());
+    }
+    @Test
+    @DisplayName("CP-RF10-05: PDF has the CSV totals and clinic name within five seconds")
+    void exportsMonthAsPdf() throws Exception {
+        var from = LocalDate.of(2025, 4, 1);
+        var to = from.plusMonths(1).minusDays(1);
+        createMonthExample(dentist("Laura Peña"), procedure(), from);
+        var token = tokenFor(Role.AUXILIAR);
+        String url = "/api/v1/reports/export?" + range(from, to);
+        String csv = mockMvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(csv).contains("Total de citas,6", "Pacientes atendidos,2",
+                "Citas canceladas,1", "Inasistencias,1", "Índice de inasistencia,33%");
+        assertThat(pdfText(pdf(from, to, null, token))).contains(
+                "Centro Odontológico Villadent", from.toString(), to.toString(), "Todos",
+                "Total de citas 6", "Pacientes atendidos 2", "Citas canceladas 1",
+                "Inasistencias 1", "Índice de inasistencia 33%", "Generado:",
+                "Fecha Total Pendiente Confirmada Reprogramada Cancelada Atendida No asistió",
+                "2025-04-01 6 1 1 0 1 2 1", "Página 1 de")
+                .doesNotContain("Paciente de prueba");
+    }
+
+    @Test
+    @DisplayName("CP-RF10-06: PDF includes only the selected dentist and shows their name")
+    void exportsFilteredPdf() throws Exception {
+        var date = LocalDate.of(2025, 5, 1);
+        var selected = dentist("Laura Peña");
+        var other = dentist("Camilo Ortiz");
+        var procedure = procedure();
+        appointment(selected, procedure, date, LocalTime.of(8, 0), AppointmentStatus.ATENDIDA);
+        appointment(other, procedure, date, LocalTime.of(8, 0), AppointmentStatus.CANCELADA);
+        assertThat(pdfText(pdf(date, date, selected.id(), tokenFor(Role.AUXILIAR))))
+                .contains("Laura Peña", "Total de citas 1", "Pacientes atendidos 1", "Citas canceladas 0")
+                .doesNotContain("Camilo Ortiz");
+    }
+
+    @Test
+    @DisplayName("CP-RF10-07: empty PDF contains the no-data message")
+    void exportsEmptyPdf() throws Exception {
+        var date = LocalDate.of(2025, 6, 1);
+        assertThat(pdfText(pdf(date, date, null, tokenFor(Role.AUXILIAR))))
+                .contains("No hay datos para el periodo seleccionado", date.toString(), "Todos");
+    }
+
+    @Test
+    @DisplayName("CP-RF10-09: each successful PDF appears newest first with metadata")
+    void recordsSuccessfulExports() throws Exception {
+        var date = LocalDate.of(2025, 7, 1);
+        var selected = dentist("Laura Peña");
+        var token = tokenFor(Role.AUXILIAR);
+        int before = storage.files.size();
+        pdf(date, date, null, token);
+        pdf(date.plusDays(1), date.plusDays(2), selected.id(), token);
+        assertThat(storage.files).hasSize(before + 2);
+        jdbc.update("""
+                INSERT INTO reportes_generados (desde, hasta, id_usuario, generado_en, cloudinary_public_id)
+                SELECT DATE '2024-01-01', DATE '2024-01-01', recent.id_usuario,
+                       TIMESTAMPTZ '2024-01-01 00:00:00+00', 'older-test-report-' || fixture.n
+                FROM (SELECT id_usuario FROM reportes_generados WHERE desde = ?) recent
+                CROSS JOIN generate_series(1, 51) fixture(n)
+                """, date);
+        mockMvc.perform(get("/api/v1/reports/history").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(50))
+                .andExpect(jsonPath("$[0].id").isNumber())
+                .andExpect(jsonPath("$[0].from").value(date.plusDays(1).toString()))
+                .andExpect(jsonPath("$[0].to").value(date.plusDays(2).toString()))
+                .andExpect(jsonPath("$[0].dentistId").value(selected.id()))
+                .andExpect(jsonPath("$[0].dentistName").value("Laura Peña"))
+                .andExpect(jsonPath("$[0].generatedBy").value("Usuario de prueba"))
+                .andExpect(jsonPath("$[0].cloudinaryPublicId").doesNotExist())
+                .andExpect(jsonPath("$[1].from").value(date.toString()))
+                .andExpect(jsonPath("$[1].dentistName").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(result -> java.time.Instant.parse(
+                        JsonPath.read(result.getResponse().getContentAsString(), "$[0].generatedAt")));
+    }
+
+    @Test
+    @DisplayName("CP-RF10-10: an upload failure still delivers the PDF without recording history")
+    void deliversPdfWhenUploadFails() throws Exception {
+        var date = LocalDate.of(2025, 8, 1);
+        var token = tokenFor(Role.AUXILIAR);
+        storage.failNextUpload.set(true);
+        try {
+            assertThat(pdf(date, date, null, token)).isNotEmpty();
+        } finally {
+            storage.failNextUpload.set(false);
+        }
+        mockMvc.perform(get("/api/v1/reports/history").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.from == '2025-08-01')]").isEmpty());
+    }
+
+    @Test
+    @DisplayName("CP-RF10-11: an auxiliary user can re-download the PDF but other callers cannot")
+    void downloadsPrivatePdf() throws Exception {
+        var date = LocalDate.of(2025, 9, 1);
+        var token = tokenFor(Role.AUXILIAR);
+        byte[] expected = pdf(date, date, null, token);
+        var history = mockMvc.perform(get("/api/v1/reports/history")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andReturn();
+        Number id = JsonPath.read(history.getResponse().getContentAsString(), "$[0].id");
+        String url = "/api/v1/reports/history/" + id + "/pdf";
+        var download = mockMvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().asyncStarted())
+                .andReturn();
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch(download))
+                .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_PDF))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"reporte-%s-%s.pdf\"".formatted(date, date)))
+                .andExpect(content().bytes(expected));
+        mockMvc.perform(get("/api/v1/reports/history/{id}/pdf", Long.MAX_VALUE)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get(url)).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/reports/history")).andExpect(status().isUnauthorized());
+        String dentistToken = tokenFor(Role.ODONTOLOGO);
+        mockMvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, "Bearer " + dentistToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/reports/history").header(HttpHeaders.AUTHORIZATION, "Bearer " + dentistToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void keepsDefaultCsvAndRejectsUnknownFormat() throws Exception {
+        var day = LocalDate.of(2025, 10, 1);
+        var token = tokenFor(Role.AUXILIAR);
+        String url = "/api/v1/reports/export?" + range(day, day);
+        String authorization = "Bearer " + token;
+        var baseline = mockMvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, authorization))
+                .andExpect(status().isOk()).andExpect(content().contentType("text/csv;charset=UTF-8"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"reporte-2025-10-01-2025-10-01.csv\""))
+                .andExpect(content().string("""
+                        Reporte de citas
+                        Desde,2025-10-01
+                        Hasta,2025-10-01
+                        Odontólogo,Todos
+                        Total de citas,0
+                        Pacientes atendidos,0
+                        Citas canceladas,0
+                        Inasistencias,0
+                        Índice de inasistencia,0%
+                        Fecha,Total,Pendiente,Confirmada,Reprogramada,Cancelada,Atendida,No asistió
+                        2025-10-01,0,0,0,0,0,0,0
+                        """)).andReturn();
+        mockMvc.perform(get(url + "&format=csv").header(HttpHeaders.AUTHORIZATION, authorization))
+                .andExpect(status().isOk()).andExpect(content().bytes(baseline.getResponse().getContentAsByteArray()));
+        mockMvc.perform(get(url + "&format=xls").header(HttpHeaders.AUTHORIZATION, authorization))
+                .andExpect(status().isBadRequest());
+    }
+
+    private byte[] pdf(LocalDate from, LocalDate to, Long dentistId, String token) throws Exception {
+        String url = "/api/v1/reports/export?" + range(from, to) + "&format=pdf"
+                + (dentistId == null ? "" : "&dentistId=" + dentistId);
+        long start = System.nanoTime();
+        var response = mockMvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"reporte-%s-%s.pdf\"".formatted(from, to)))
+                .andReturn().getResponse();
+        assertThat((System.nanoTime() - start) / 1_000_000).isLessThan(5000);
+        return response.getContentAsByteArray();
+    }
+
+    private static String pdfText(byte[] bytes) throws Exception {
+        try (var document = org.apache.pdfbox.Loader.loadPDF(bytes)) {
+            return new org.apache.pdfbox.text.PDFTextStripper().getText(document).replaceAll("\\s+", " ");
+        }
     }
 }
