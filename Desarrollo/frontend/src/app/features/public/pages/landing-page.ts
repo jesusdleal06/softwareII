@@ -53,11 +53,12 @@ const PANEL_LOOKAHEAD_DAYS = 14;
     <header appPublicHeader></header>
     <!-- The body already paints the canvas; each page shell re-asserts it so a card is a card here. -->
     <main class="canvas flex-1">
-      <section class="public-container py-20 lg:py-28">
-        <div class="grid items-center gap-10 lg:grid-cols-5">
+      <section class="public-container py-16 sm:py-20 lg:py-24">
+        <div class="grid items-center gap-8 lg:grid-cols-5 lg:gap-12">
           <div class="flex flex-col items-start gap-6 lg:col-span-3">
+            <!-- Taste's display step: the h1 clamp at the display weight, never bold. -->
             <h1
-              class="reveal max-w-2xl text-4xl font-semibold leading-[1.05] tracking-tight text-balance text-foreground sm:text-5xl"
+              class="reveal max-w-2xl text-5xl font-normal tracking-tight text-balance text-foreground"
             >
               Agenda tu cita en 2 minutos
             </h1>
@@ -72,13 +73,16 @@ const PANEL_LOOKAHEAD_DAYS = 14;
               style="--reveal-delay: 140ms"
               class="reveal flex w-full flex-col gap-3 sm:flex-row"
             >
-              <a appBigButton size="lg" [full]="true" routerLink="/agendar">Agendar mi cita</a>
+              <!-- Full width on a phone, content width from 640 up: a button never stretches. -->
+              <a appBigButton size="lg" [full]="true" class="sm:w-auto" routerLink="/agendar"
+                >Agendar mi cita</a
+              >
             </div>
           </div>
 
           <aside
             style="--reveal-delay: 210ms"
-            class="reveal card flex flex-col gap-5 lg:col-span-2"
+            class="reveal card flex flex-col gap-6 lg:col-span-2"
             aria-labelledby="proximos-horarios"
           >
             <div class="flex items-center gap-2">
@@ -98,7 +102,7 @@ const PANEL_LOOKAHEAD_DAYS = 14;
                     <div class="flex flex-wrap gap-2">
                       @for (time of day.times; track time) {
                         <span
-                          class="rounded-md border border-border bg-muted px-2.5 py-1 text-sm font-medium tabular-nums text-foreground"
+                          class="rounded-md border border-border bg-muted px-3 py-1 text-sm font-medium tabular-nums text-foreground"
                         >
                           {{ formatTime(time) }}
                         </span>
@@ -111,16 +115,16 @@ const PANEL_LOOKAHEAD_DAYS = 14;
                 Ver todos los horarios
               </a>
             } @else if (availabilityStatus() === 'error') {
-              <p class="text-sm leading-relaxed text-muted-foreground text-pretty">
+              <p class="text-base leading-relaxed text-muted-foreground text-pretty">
                 No pudimos cargar los horarios en este momento. Puedes agendar igual y elegir tu
                 horario en el siguiente paso.
               </p>
-              <p class="text-sm"><ng-container [ngTemplateOutlet]="whatsappLink" /></p>
+              <p class="text-base"><ng-container [ngTemplateOutlet]="whatsappLink" /></p>
               <a appBigButton variant="secondary" size="md" [full]="true" routerLink="/agendar">
                 Ver todos los horarios
               </a>
             } @else {
-              <p class="text-sm leading-relaxed text-muted-foreground text-pretty">
+              <p class="text-base leading-relaxed text-muted-foreground text-pretty">
                 No hay cupos en los próximos días.
                 <ng-container [ngTemplateOutlet]="whatsappLink" /> y te ayudamos a encontrar un
                 horario.
@@ -131,7 +135,7 @@ const PANEL_LOOKAHEAD_DAYS = 14;
                 [href]="whatsappUrl"
                 target="_blank"
                 rel="noopener"
-                class="rounded-sm font-semibold text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                class="rounded-sm font-medium text-foreground underline decoration-1 underline-offset-4 outline-none transition-[text-decoration-thickness] hover:decoration-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                 >Escríbenos por WhatsApp</a
               >
             </ng-template>
@@ -139,16 +143,21 @@ const PANEL_LOOKAHEAD_DAYS = 14;
         </div>
       </section>
 
-      <!-- One card with an internal hairline between the three steps: the sequence lives
-           inside a single group, so it does not repeat the three-card grid. -->
+      <!-- The section heading is the page's second display step and sits on the ground;
+           the three steps are one group, so they share a single card instead of three. -->
       <section class="public-container pb-16 sm:pb-20" aria-labelledby="como-funciona">
-        <div class="card">
-          <h2 id="como-funciona" class="card-title">¿Cómo funciona?</h2>
-          <ol class="card-body grid gap-6 sm:grid-cols-3" role="list">
+        <h2
+          id="como-funciona"
+          class="text-4xl font-normal tracking-tight text-balance text-foreground"
+        >
+          ¿Cómo funciona?
+        </h2>
+        <div class="card mt-8 lg:mt-12">
+          <ol class="grid gap-6 sm:grid-cols-3" role="list">
             @for (step of howItWorks; track step.title) {
-              <li class="flex flex-col gap-1">
-                <h3 class="text-sm font-semibold text-foreground">{{ step.title }}</h3>
-                <p class="text-sm leading-relaxed text-muted-foreground text-pretty">
+              <li class="flex flex-col gap-2">
+                <h3 class="text-base font-medium text-foreground">{{ step.title }}</h3>
+                <p class="text-base leading-relaxed text-muted-foreground text-pretty">
                   {{ step.text }}
                 </p>
               </li>
@@ -158,34 +167,37 @@ const PANEL_LOOKAHEAD_DAYS = 14;
       </section>
 
       @if (dentists().length > 0) {
-        <section class="public-container pb-16 sm:pb-24" aria-labelledby="equipo">
-          <div class="card">
-            <div class="flex flex-col gap-1">
-              <h2 id="equipo" class="card-title">Nuestro equipo</h2>
-              <p class="card-subtitle">Cada odontólogo tiene su propia agenda.</p>
-            </div>
-            <ul
-              class="card-body grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4"
-            >
+        <section class="public-container pb-16 sm:pb-20 lg:pb-24" aria-labelledby="equipo">
+          <div class="flex flex-col gap-2">
+            <h2 id="equipo" class="text-4xl font-normal tracking-tight text-balance text-foreground">
+              Nuestro equipo
+            </h2>
+            <p class="text-lg text-muted-foreground text-pretty">
+              Cada odontólogo tiene su propia agenda.
+            </p>
+          </div>
+          <div class="card mt-8 lg:mt-12">
+            <ul class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
               @for (d of dentists(); track d.id) {
                 <li class="flex items-center gap-3">
+                  <!-- The ink plate, not the 6% accent tint: a tint of the card is invisible on the card. -->
                   <span
-                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground"
+                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
                     aria-hidden="true"
                   >
                     {{ d.initials }}
                   </span>
                   <div class="flex min-w-0 flex-col">
-                    <span class="text-sm font-semibold leading-tight text-foreground">{{ d.name }}</span>
-                    <span class="text-xs text-muted-foreground">{{ d.specialty }}</span>
+                    <span class="text-base font-medium leading-tight text-foreground">{{ d.name }}</span>
+                    <span class="text-sm text-muted-foreground">{{ d.specialty }}</span>
                     @if (d.description !== d.specialty) {
-                      <span class="text-xs text-muted-foreground text-pretty">{{ d.description }}</span>
+                      <span class="text-sm text-muted-foreground text-pretty">{{ d.description }}</span>
                     }
                   </div>
                 </li>
               }
             </ul>
-            <div class="card-divider mt-5 flex items-center gap-2 text-xs text-muted-foreground">
+            <div class="card-divider mt-6 flex items-center gap-2 text-xs text-muted-foreground">
               <svg lucideShieldCheck class="size-4 shrink-0 text-primary" aria-hidden="true"></svg>
               <span>Tus datos solo se usan para gestionar tu cita.</span>
             </div>

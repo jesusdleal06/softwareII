@@ -73,7 +73,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
           <app-result-panel tone="muted" heading="Tu cita fue cancelada" text="Gracias por avisarnos con tiempo.">
             <svg icon lucideCircleX class="size-8" aria-hidden="true"></svg>
             @if (releasedSlot(); as slot) {
-              <p class="rounded-xl border border-border bg-muted px-5 py-4 text-sm leading-relaxed text-pretty">
+              <p class="rounded-xl border border-border bg-muted px-6 py-4 text-base leading-relaxed text-pretty">
                 El horario del <strong>{{ formatDate(slot.date) }}</strong> a las
                 <strong>{{ formatTime(slot.time) }}</strong> quedó liberado para otro paciente.
               </p>
@@ -95,8 +95,8 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
         }
         @case ('reschedule') {
           <div class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-              <h1 class="page-title text-balance">Elige tu nuevo horario</h1>
+            <header class="flex flex-col gap-2">
+              <h1 class="text-2xl font-normal tracking-tight text-balance text-foreground">Elige tu nuevo horario</h1>
               <p class="page-subtitle text-pretty">
                 Estás reprogramando la cita
                 <span class="font-mono font-semibold text-foreground">{{ cita.code }}</span>, que hoy está agendada el
@@ -135,8 +135,8 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
         @default {
           @let active = isActive();
           <div class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-              <h1 class="page-title text-balance">Hola, {{ firstName() }}</h1>
+            <header class="flex flex-col gap-2">
+              <h1 class="text-2xl font-normal tracking-tight text-balance text-foreground">Hola, {{ firstName() }}</h1>
               <p class="page-subtitle text-pretty">
                 {{ active ? 'Estos son los detalles de tu cita. ¿Qué deseas hacer?' : 'Estos son los detalles de tu cita.' }}
               </p>
@@ -175,8 +175,8 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                 </button>
               </div>
             } @else {
-              <div class="flex flex-col gap-3 rounded-xl border border-border bg-muted px-5 py-4">
-                <p class="text-sm text-pretty">
+              <div class="flex flex-col gap-3 rounded-xl border border-border bg-muted px-6 py-4">
+                <p class="text-base text-pretty">
                   Esta cita ya no admite cambios (estado: <strong>{{ statusLabel(cita.status) }}</strong>).
                 </p>
                 <a appBigButton size="lg" routerLink="/agendar">Agendar mi cita</a>
@@ -184,7 +184,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
             }
 
             <section class="flex flex-col gap-3" aria-labelledby="whatsapp-preview">
-              <h2 id="whatsapp-preview" class="card-title text-balance">Así se ve el recordatorio que recibes</h2>
+              <h2 id="whatsapp-preview" class="text-xl font-normal tracking-tight text-balance text-foreground">Así se ve el recordatorio que recibes</h2>
               <figure appWhatsappBubble [appointment]="cita"></figure>
             </section>
 
@@ -214,12 +214,12 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
         }
       }
     } @else {
-      <div class="card flex flex-col items-center gap-5 text-center">
-        <span class="flex size-16 items-center justify-center rounded-xl bg-muted text-muted-foreground" aria-hidden="true">
+      <div class="card flex flex-col items-center gap-6 text-center">
+        <span class="flex size-16 items-center justify-center rounded-xl border border-border bg-muted text-muted-foreground" aria-hidden="true">
           <svg lucideSearchX class="size-8" aria-hidden="true"></svg>
         </span>
-        <h1 class="page-title text-balance">No encontramos esta cita</h1>
-        <p class="max-w-md text-sm text-muted-foreground text-pretty">
+        <h1 class="text-2xl font-normal tracking-tight text-balance text-foreground">No encontramos esta cita</h1>
+        <p class="max-w-md text-base text-muted-foreground text-pretty">
           El enlace no corresponde a una cita activa. Revisa el mensaje de WhatsApp o comunícate con la clínica.
         </p>
         <a appBigButton size="lg" routerLink="/agendar">Agendar mi cita</a>

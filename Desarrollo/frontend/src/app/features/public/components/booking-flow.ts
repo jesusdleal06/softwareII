@@ -45,21 +45,21 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
       @case ('success') {
         @if (created(); as appointment) {
           <div class="flex flex-col gap-6">
-            <div class="card flex flex-col items-center gap-4 text-center">
+            <div class="card flex flex-col items-center gap-6 text-center">
               <span class="flex size-16 items-center justify-center rounded-xl bg-success/15 text-success dark:bg-success/20" aria-hidden="true">
                 <svg lucideCircleCheck class="size-8"></svg>
               </span>
-              <div class="flex flex-col gap-1">
-                <h1 tabindex="-1" class="page-title text-balance">¡Tu cita quedó agendada!</h1>
+              <div class="flex flex-col gap-2">
+                <h1 tabindex="-1" class="text-2xl font-normal tracking-tight text-balance text-foreground">¡Tu cita quedó agendada!</h1>
                 <p class="page-subtitle">
                   Guarda este código: <span class="font-mono font-semibold text-foreground">{{ appointment.code }}</span>
                 </p>
               </div>
             </div>
             <dl appAppointmentSummary [appointment]="appointment" class="w-full text-left"></dl>
-            <div class="flex w-full items-start gap-3 rounded-xl border border-success/30 bg-success/10 p-5 text-left dark:bg-success/20">
+            <div class="flex w-full items-start gap-3 rounded-xl border border-success/30 bg-success/10 p-6 text-left dark:bg-success/20">
               <svg lucideMessageCircle class="mt-0.5 size-5 shrink-0 text-whatsapp" aria-hidden="true"></svg>
-              <p class="text-sm leading-relaxed text-pretty">
+              <p class="text-base leading-relaxed text-pretty">
                 Te enviaremos un recordatorio por WhatsApp al <strong>{{ formatPhone(appointment.patientPhone) }}</strong>
                 {{ ' ' }}<strong>{{ reminderText(appointment) }}</strong>. Desde ese mensaje podrás confirmar, reprogramar o
                 cancelar.
@@ -72,12 +72,12 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
         }
       }
       @case ('blocked') {
-        <div class="card flex flex-col items-center gap-5 text-center">
+        <div class="card flex flex-col items-center gap-6 text-center">
           <span class="flex size-16 items-center justify-center rounded-xl bg-warning/20 text-warning-foreground" aria-hidden="true">
             <svg lucideCalendarX2 class="size-8"></svg>
           </span>
-          <h1 tabindex="-1" class="page-title text-balance">Ya tienes una cita programada</h1>
-          <p class="max-w-xl text-sm leading-relaxed text-muted-foreground text-pretty">
+          <h1 tabindex="-1" class="text-2xl font-normal tracking-tight text-balance text-foreground">Ya tienes una cita programada</h1>
+          <p class="max-w-xl text-base leading-relaxed text-muted-foreground text-pretty">
             Con el celular <strong class="text-foreground">{{ formatPhone(patient().phone) }}</strong> ya existe una cita
             activa. Para cuidar el tiempo de todos, cada paciente puede tener una sola cita pendiente a la vez. Usa el
             enlace personal de tu recordatorio para reprogramarla o cancelarla.
@@ -92,9 +92,9 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
         <div class="flex flex-col gap-6">
           <ol appStepper [steps]="steps" [current]="current"></ol>
 
-          <header class="flex flex-col gap-1">
+          <header class="flex flex-col gap-2">
             <p role="status" class="sr-only">{{ stepAnnouncement() }}</p>
-            <h1 tabindex="-1" class="page-title text-balance">{{ steps[current - 1] }}</h1>
+            <h1 tabindex="-1" class="text-2xl font-normal tracking-tight text-balance text-foreground">{{ steps[current - 1] }}</h1>
             @switch (current) {
               @case (1) {
                 <p class="page-subtitle">Cada odontólogo tiene su propia agenda.</p>
@@ -158,7 +158,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
             @case (3) {
               <div class="flex flex-col gap-6">
                 <dl appAppointmentSummary [appointment]="draft()"></dl>
-                <p class="flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 p-5 text-sm leading-relaxed text-pretty dark:bg-success/20">
+                <p class="flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 p-6 text-base leading-relaxed text-pretty dark:bg-success/20">
                   <svg lucideMessageCircle class="mt-0.5 size-5 shrink-0 text-whatsapp" aria-hidden="true"></svg>
                   <span>
                     Recibirás un recordatorio por WhatsApp <strong>{{ reminderText(selection()) }}</strong>.
@@ -176,7 +176,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                   ¿Necesitas ayuda? Escríbenos al WhatsApp +57 300 123 4567 o
                   <a
                     routerLink="/"
-                    class="rounded-sm font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                    class="rounded-sm font-medium text-primary underline decoration-1 underline-offset-4 outline-none transition-[text-decoration-thickness] hover:decoration-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                     >vuelve al inicio</a
                   >.
                 </p>

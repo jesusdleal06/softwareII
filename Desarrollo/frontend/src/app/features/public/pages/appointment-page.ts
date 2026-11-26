@@ -11,7 +11,7 @@ import { AppointmentActions } from '../components/appointment-actions';
   template: `
     <header appPublicHeader></header>
     <!-- The body paints the canvas; the shell re-asserts it so the summary card sits on it. -->
-    <main class="canvas flex-1">
+    <main class="canvas flex-1 pb-12 sm:pb-16">
       <!-- Same padding as the page-header utility; the management view keeps its narrower measure. -->
       <div class="page-header mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8">
         <app-appointment-actions [token]="token()" [initialAction]="accion()" />
