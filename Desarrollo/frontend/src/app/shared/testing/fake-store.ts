@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { vi } from 'vitest';
-import { DentistProfilePayload, ReportDto } from '../../core/api/api.types';
+import { DentistProfilePayload, ReportDto, ReportHistoryDto } from '../../core/api/api.types';
 import { Appointment, CreateAppointmentResult, Dentist, DentistProfile, Procedure, RescheduleAppointmentResult, Session } from '../../core/models';
 import { AppStore } from '../../core/services/app-store.service';
 import { makeAppointment } from '../../core/testing/appointment.fixture';
@@ -155,6 +155,12 @@ export function createFakeStore(options: { now?: Date; session?: Session | null;
       daily: [],
     })),
     exportReport: vi.fn(async () => ({ blob: new Blob(['']), filename: 'reporte.csv' })),
+    exportReportPdf: vi.fn(async () => ({ blob: new Blob(['']), filename: 'reporte.pdf' })),
+    reportHistory: vi.fn(async (): Promise<ReportHistoryDto[]> => []),
+    downloadReportPdf: vi.fn(async (_id: number, from: string, to: string) => ({
+      blob: new Blob(['']),
+      filename: `reporte-${from}-${to}.pdf`,
+    })),
   };
   return store;
 }
