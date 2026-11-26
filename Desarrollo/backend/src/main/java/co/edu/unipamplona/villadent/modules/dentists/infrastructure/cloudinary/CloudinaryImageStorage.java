@@ -8,11 +8,15 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestClient;
 
 @Component
@@ -25,10 +29,15 @@ public class CloudinaryImageStorage implements ImageStorage {
     private final String apiKey;
     private final String apiSecret;
 
+    @Autowired
     public CloudinaryImageStorage(Clock clock,
                                  @Value("${app.cloudinary.cloud-name}") String cloudName,
                                  @Value("${app.cloudinary.api-key}") String apiKey,
                                  @Value("${app.cloudinary.api-secret}") String apiSecret) {
+        this(clock, cloudName, apiKey, apiSecret, "https://api.cloudinary.com");
+    }
+
+    CloudinaryImageStorage(Clock clock, String cloudName, String apiKey, String apiSecret, String baseUrl) {
         this.clock = clock;
         this.cloudName = cloudName;
         this.apiKey = apiKey;
@@ -36,7 +45,7 @@ public class CloudinaryImageStorage implements ImageStorage {
         var factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
         factory.setReadTimeout(Duration.ofSeconds(15));
-        this.client = RestClient.builder().baseUrl("https://api.cloudinary.com").requestFactory(factory).build();
+        this.client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
     }
 
     @Override
@@ -46,14 +55,23 @@ public class CloudinaryImageStorage implements ImageStorage {
         }
 
         long timestamp = clock.instant().getEpochSecond();
-        var form = new MultipartBodyBuilder();
-        form.part("file", bytes).filename("profile-photo").contentType(MediaType.parseMediaType(contentType));
-        form.part("folder", FOLDER);
-        form.part("timestamp", Long.toString(timestamp));
-        form.part("api_key", apiKey);
-        form.part("signature", sign(timestamp));
+        var file = new ByteArrayResource(bytes) {
+            @Override
+            public String getFilename() {
+                return "profile-photo";
+            }
+        };
+        var fileHeaders = new HttpHeaders();
+        fileHeaders.setContentType(MediaType.parseMediaType(contentType));
+
+        var form = new LinkedMultiValueMap<String, Object>();
+        form.add("file", new HttpEntity<>(file, fileHeaders));
+        form.add("folder", FOLDER);
+        form.add("timestamp", Long.toString(timestamp));
+        form.add("api_key", apiKey);
+        form.add("signature", sign(timestamp));
         Map<?, ?> body = client.post().uri("/v1_1/{cloud}/image/upload", cloudName)
-                .contentType(MediaType.MULTIPART_FORM_DATA).body(form.build())
+                .contentType(MediaType.MULTIPART_FORM_DATA).body(form)
                 .retrieve().body(Map.class);
         if (body == null || !(body.get("secure_url") instanceof String url) || url.isBlank()
                 || !(body.get("public_id") instanceof String publicId) || publicId.isBlank()) {
