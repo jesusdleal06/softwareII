@@ -18,9 +18,9 @@ export interface StatusStyle {
   /** Solid colour for the chart bar and its legend swatch. */
   readonly series: string;
   /**
-   * CSS `background-image` drawn over `series` so segments stay distinguishable
-   * without colour (WCAG 1.4.1). `null` means the series is the solid one. This is a
-   * data encoding, not decoration: do not remove it as "unnecessary texture".
+   * Legacy pattern encoding kept in the canon so the status contract stays stable.
+   * The report chart no longer renders it: bars use solid fills and expose totals,
+   * the legend and the data table as the non-colour alternatives.
    */
   readonly seriesPattern: string | null;
 }
@@ -37,7 +37,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 0,
     badge: 'bg-warning/20 text-warning-foreground dark:text-warning border-warning/40',
     block: 'bg-warning/15 border-warning text-foreground',
-    series: 'bg-warning',
+    series: 'var(--chart-pendiente)',
     seriesPattern: stripes(135),
   },
   Confirmada: {
@@ -45,7 +45,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 1,
     badge: 'bg-primary/10 text-primary border-primary/30',
     block: 'bg-primary/10 border-primary text-foreground',
-    series: 'bg-primary',
+    series: 'var(--chart-confirmada)',
     seriesPattern: stripes(45),
   },
   Reprogramada: {
@@ -53,7 +53,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 2,
     badge: 'bg-accent text-accent-foreground border-primary/20',
     block: 'bg-accent border-accent-foreground/50 text-foreground',
-    series: 'bg-accent-foreground',
+    series: 'var(--chart-reprogramada)',
     seriesPattern: stripes(0),
   },
   Atendida: {
@@ -61,7 +61,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 3,
     badge: 'bg-success/15 text-success border-success/30',
     block: 'bg-success/10 border-success text-foreground',
-    series: 'bg-success',
+    series: 'var(--chart-atendida)',
     seriesPattern: null,
   },
   'No asistió': {
@@ -69,7 +69,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 4,
     badge: 'bg-muted text-muted-foreground border-border',
     block: 'bg-muted border-muted-foreground/60 text-muted-foreground',
-    series: 'bg-muted-foreground',
+    series: 'var(--chart-no-asistio)',
     seriesPattern: stripes(90),
   },
   Cancelada: {
@@ -77,7 +77,7 @@ const STYLES: Record<AppointmentStatus, StatusStyle> = {
     order: 5,
     badge: 'bg-destructive/10 text-destructive border-destructive/30',
     block: 'bg-destructive/5 border-destructive/60 text-muted-foreground line-through',
-    series: 'bg-destructive',
+    series: 'var(--chart-cancelada)',
     seriesPattern: `${stripes(45, 2)}, ${stripes(135, 2)}`,
   },
 };

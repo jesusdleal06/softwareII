@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import '../components/unovis-jsdom';
 import { ReportDto, ReportHistoryDto } from '../../../core/api/api.types';
 import { reportDays, reportRange } from '../../../core/domain';
 import { CLOCK } from '../../../core/services/tokens';
@@ -75,8 +76,13 @@ describe('ReportsPage', () => {
     typeInto(el.querySelector(id) as HTMLInputElement, value);
   }
 
-  function bars(): HTMLElement[] {
-    return Array.from(el.querySelectorAll<HTMLElement>('[aria-label="Gráfico de barras"] [role="img"]'));
+  /** The chart's accessible data table: one row per day. */
+  function chartRows(): HTMLTableRowElement[] {
+    return Array.from(el.querySelectorAll<HTMLTableRowElement>('table.chart-table tbody tr'));
+  }
+
+  function chartCells(row: HTMLTableRowElement): string[] {
+    return Array.from(row.querySelectorAll('th, td')).map((cell) => text(cell));
   }
 
   function makeHistory(overrides: Partial<ReportHistoryDto> = {}): ReportHistoryDto {
@@ -109,7 +115,7 @@ describe('ReportsPage', () => {
     expect(getByText(el, 'button', 'Esta semana').getAttribute('aria-pressed')).toBe('true');
     expect(store.report).toHaveBeenCalledWith(from, to, undefined);
     expectMetrics({ attended: 10, cancelled: 2, noShow: 2, noShowRate: 17 });
-    expect(bars()).toHaveLength(reportDays(from, to).length);
+    expect(chartRows()).toHaveLength(reportDays(from, to).length);
   });
 
   it('computes the metrics for "Hoy"', async () => {
@@ -135,10 +141,17 @@ describe('ReportsPage', () => {
     await refresh();
     expect(text(el)).toContain('Periodo del 14/10/2026 al 14/10/2026');
     expectMetrics({ attended: 2, cancelled: 1, noShow: 0, noShowRate: 0 });
-    expect(bars()).toHaveLength(1);
-    expect(bars()[0].getAttribute('aria-label')).toBe(
-      '14/10/2026: 4 citas. Pendiente: 1, Confirmada: 2, Reprogramada: 1',
-    );
+    expect(chartRows()).toHaveLength(1);
+    expect(chartCells(chartRows()[0])).toEqual([
+      '14/10/2026',
+      '1',
+      '2',
+      '1',
+      '0',
+      '0',
+      '0',
+      '4',
+    ]);
   });
 
   it('computes the metrics for "Este mes" and filters by dentist', async () => {
@@ -236,7 +249,7 @@ describe('ReportsPage', () => {
     });
     await renderWithHistory([older, newer]);
 
-    const rows = Array.from(el.querySelectorAll<HTMLTableRowElement>('table tbody tr'));
+    const rows = Array.from(el.querySelectorAll<HTMLTableRowElement>('[aria-labelledby="reportes-generados"] tbody tr'));
     expect(rows).toHaveLength(2);
     expect(text(rows[0])).toContain('01/10/2026 al 31/10/2026');
     expect(text(rows[0])).toContain('Dra. Laura Villamizar');
@@ -250,7 +263,7 @@ describe('ReportsPage', () => {
 
   it('CP-RF10-12: downloads a generated report from its row', async () => {
     await renderWithHistory([makeHistory({ id: 2, from: '2026-10-01', to: '2026-10-31' })]);
-    const row = el.querySelector<HTMLTableRowElement>('table tbody tr');
+    const row = el.querySelector<HTMLTableRowElement>('[aria-labelledby="reportes-generados"] tbody tr');
     expect(row).not.toBeNull();
     const button = row!.querySelector<HTMLButtonElement>('button');
     expect(button?.getAttribute('aria-label')).toBe('Descargar reporte del 01/10/2026 al 31/10/2026');
@@ -262,6 +275,6 @@ describe('ReportsPage', () => {
   it('CP-RF10-12: shows the empty state when no reports were generated', async () => {
     await renderWithHistory([]);
     expect(text(el)).toContain('Aún no hay reportes generados.');
-    expect(el.querySelector('table')).toBeNull();
+    expect(el.querySelector('[aria-labelledby="reportes-generados"] table')).toBeNull();
   });
 });
