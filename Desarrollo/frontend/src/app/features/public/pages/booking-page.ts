@@ -9,8 +9,10 @@ import { BookingFlow } from '../components/booking-flow';
   host: { class: 'flex flex-1 flex-col' },
   template: `
     <header appPublicHeader></header>
-    <main class="flex-1">
-      <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+    <!-- The body paints the canvas; the shell re-asserts it so the card groups sit on it. -->
+    <main class="canvas flex-1">
+      <!-- Same padding as the page-header utility; the flow keeps its own narrower measure. -->
+      <div class="page-header mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8">
         <app-booking-flow />
       </div>
     </main>
