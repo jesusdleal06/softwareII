@@ -111,6 +111,7 @@ public class SecurityConfig {
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                     .requestMatchers("/api/v1/public/**", "/api/v1/auth/login", "/actuator/health").permitAll()
                     .requestMatchers("/api/v1/reports/**").hasRole("AUXILIAR")
+                    .requestMatchers("/api/v1/staff/**").hasRole("AUXILIAR")
                     .requestMatchers("/api/v1/dentists/me/profile", "/api/v1/dentists/me/photo").hasRole("ODONTOLOGO")
                     .requestMatchers(HttpMethod.GET, CATALOGS, "/api/v1/dentists/**", "/api/v1/procedures/**",
                             "/api/v1/patients/**").hasAnyRole("AUXILIAR", "ODONTOLOGO")

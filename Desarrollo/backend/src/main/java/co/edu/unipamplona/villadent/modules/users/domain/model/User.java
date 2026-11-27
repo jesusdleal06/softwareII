@@ -31,6 +31,10 @@ public final class User {
         return new User(id, name, email, passwordHash, role, active);
     }
 
+    public User changeIdentity(String name, String email) {
+        return new User(id, name, email, passwordHash, role, active);
+    }
+
     public static String normalizeEmail(String email) {
         if (email == null || email.isBlank() || !email.contains("@")) {
             throw new InvalidUserDataException("El correo del usuario no es válido.");
