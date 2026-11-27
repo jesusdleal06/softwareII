@@ -4,7 +4,7 @@ import { LucideLockKeyhole } from '@lucide/angular';
 import { Logo } from './logo';
 import { ThemeToggle } from './theme-toggle';
 
-export const PUBLIC_WHATSAPP_NUMBER = '+57 300 123 4567';
+export const PUBLIC_WHATSAPP_NUMBER = '+57 314 4223133';
 export const PUBLIC_WHATSAPP_URL = 'https://wa.me/' + PUBLIC_WHATSAPP_NUMBER.replace(/\D/g, '');
 
 @Component({
@@ -44,9 +44,8 @@ export class PublicHeader {}
   template: `
     <div class="public-container flex flex-col gap-1 py-6 text-sm text-muted-foreground">
       <p class="font-semibold text-foreground">Centro Odontológico Villadent</p>
-      <p>Calle 45 # 27-18, Bucaramanga</p>
+      <p>Cra. 10 #21-14, Villa Del Rosario, Norte de Santander, Colombia</p>
       <p>
-        (607) 645 12 34 ·
         <a
           [href]="whatsappUrl"
           target="_blank"
@@ -56,7 +55,8 @@ export class PublicHeader {}
           WhatsApp {{ whatsappNumber }}
         </a>
       </p>
-      <p>Lunes a sábado: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</p>
+      <p>Lunes a viernes: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</p>
+      <p>Domingo: 8:00 AM - 1:00 PM</p>
     </div>
   `,
 })
