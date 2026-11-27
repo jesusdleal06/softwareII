@@ -28,11 +28,14 @@ export const SINGLETON_FRAME_CONTENT_WIDTH = `${TIME_AXIS_REM + SINGLE_LANE_MAX_
 /**
  * The block keeps its proportional height, but spends 6px on each side on an invisible
  * pseudo-element so even a 15-minute slot (32px) reaches the 44px touch target without
- * overlapping its neighbours visually.
+ * overlapping its neighbours visually. Elevation is the status hairline alone: one rule
+ * on all four sides, never a coloured side bar, and the status fill stays the map's (S5).
+ * Hover and press move the fill a step toward the ink; nothing moves the box, so the
+ * neighbouring blocks never shift.
  */
 const BLOCK_BASE =
-  "absolute inset-x-1.5 rounded-lg border-l-4 text-left leading-tight shadow-sm outline-none transition-shadow after:absolute after:inset-x-0 after:-top-1.5 after:-bottom-1.5 after:content-[''] hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring";
-const BLOCK_CONTENT = 'absolute inset-0 flex flex-col gap-0.5 overflow-hidden px-2.5 sm:px-3';
+  "absolute inset-x-1.5 rounded-md border text-left leading-tight outline-none transition-colors hover:brightness-95 active:brightness-90 after:absolute after:inset-x-0 after:-top-1.5 after:-bottom-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
+const BLOCK_CONTENT = 'absolute inset-0 flex flex-col gap-0.5 overflow-hidden px-2 sm:px-2.5';
 
 function top(minutes: number): number {
   return (minutes - DAY_START) * PX_PER_MINUTE + MARGIN;
@@ -73,15 +76,17 @@ interface Block {
             (click)="mobileDentistId.set(d.id)"
             [class]="
               cn(
-                'flex min-h-12 shrink-0 items-center gap-2 rounded-full border px-4 text-base font-semibold transition-colors',
-                active ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-accent'
+                'inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium outline-none transition-colors select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                active
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-secondary text-secondary-foreground hover:bg-secondary/80'
               )
             "
           >
             <span
               [class]="
                 cn(
-                  'flex size-7 items-center justify-center rounded-full text-xs font-bold',
+                  'flex size-6 items-center justify-center rounded-full text-[11px] font-semibold',
                   active ? 'bg-primary-foreground/20' : 'bg-accent text-accent-foreground'
                 )
               "
@@ -95,37 +100,42 @@ interface Block {
       </div>
     }
 
+    <!--
+      The schedule is the one block where the reference's row/divider language is
+      adapted instead of copied: a flush card (the padding of the card utility would
+      break the lane geometry the two agendas rely on), hairline grid, tabular hours.
+    -->
     <div
-      class="overflow-x-auto rounded-2xl border bg-card"
+      class="overflow-x-auto rounded-xl border border-border bg-card"
       [class.box-content]="singletonFrameMaxWidth() !== null"
       [style.max-width]="singletonFrameMaxWidth()"
     >
       @if (appointments().length === 0) {
-        <div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
+        <div class="flex flex-col items-center gap-3 px-6 py-14 text-center">
           <span
-            class="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
+            class="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground"
             aria-hidden="true"
           >
-            <svg lucideCalendarX class="size-6"></svg>
+            <svg lucideCalendarX class="size-5"></svg>
           </span>
-          <p class="text-lg font-semibold">No hay citas para este día</p>
-          <p class="text-sm text-muted-foreground">{{ emptyHint() }}</p>
+          <p class="text-sm font-semibold">No hay citas para este día</p>
+          <p class="text-xs text-muted-foreground">{{ emptyHint() }}</p>
         </div>
       } @else {
         <div class="grid" [style.grid-template-columns]="gridColumns()">
         <!-- Headers -->
-        <div class="border-b bg-card" aria-hidden="true"></div>
+        <div class="border-b border-border bg-card" aria-hidden="true"></div>
         @for (d of visibleDentists(); track d.id) {
-          <div class="flex min-w-0 items-center gap-3 border-b border-l bg-card px-3 py-3 sm:px-4">
+          <div class="flex min-w-0 items-center gap-2.5 border-b border-l border-border bg-card px-3 py-2.5">
             <span
-              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
+              class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground"
               aria-hidden="true"
             >
               {{ d.initials }}
             </span>
             <div class="flex min-w-0 flex-col leading-tight">
-              <span class="truncate font-semibold">{{ d.name }}</span>
-              <span class="truncate text-sm text-muted-foreground">{{ d.specialty }}</span>
+              <span class="truncate text-sm font-semibold">{{ d.name }}</span>
+              <span class="truncate text-xs text-muted-foreground">{{ d.specialty }}</span>
             </div>
           </div>
         }
@@ -134,7 +144,7 @@ interface Block {
         <div class="relative" [style.height.px]="height">
           @for (h of hours; track h) {
             <span
-              class="absolute right-2 -translate-y-1/2 whitespace-nowrap text-sm font-medium text-muted-foreground"
+              class="absolute right-2 -translate-y-1/2 text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap"
               [style.top.px]="top(h)"
             >
               {{ formatTimeFromMinutes(h) }}
@@ -145,28 +155,28 @@ interface Block {
         <!-- Columns -->
         @for (column of columns(); track column.dentist.id) {
           <div
-            class="relative min-w-0 border-l"
+            class="relative min-w-0 border-l border-border"
             role="group"
             [style.height.px]="height"
             [attr.aria-label]="'Agenda de ' + column.dentist.name"
           >
             @for (h of hours; track h) {
-              <div class="absolute inset-x-0 border-t border-border/70" [style.top.px]="top(h)" aria-hidden="true"></div>
+              <div class="absolute inset-x-0 border-t border-border" [style.top.px]="top(h)" aria-hidden="true"></div>
             }
             @for (h of halfHours; track h) {
               <div
-                class="absolute inset-x-0 border-t border-dashed border-border/50"
+                class="absolute inset-x-0 border-t border-border/60"
                 [style.top.px]="top(h + 30)"
                 aria-hidden="true"
               ></div>
             }
             <div
-              class="absolute inset-x-0 flex items-center justify-center bg-[repeating-linear-gradient(135deg,transparent,transparent_8px,var(--color-muted)_8px,var(--color-muted)_16px)] text-sm font-medium text-muted-foreground"
+              class="absolute inset-x-0 flex items-center justify-center bg-muted/60"
               [style.top.px]="top(breakStart)"
               [style.height.px]="breakHeight"
               aria-hidden="true"
             >
-              <span class="rounded-full bg-card px-3 py-1">Descanso</span>
+              <span class="rounded-sm bg-card px-2 py-0.5 text-xs font-medium text-muted-foreground">Descanso</span>
             </div>
             @if (nowMinutes(); as minutes) {
               <div class="absolute inset-x-0 z-10 flex items-center" [style.top.px]="top(minutes)" aria-hidden="true">
@@ -186,18 +196,22 @@ interface Block {
                 <span [class]="b.contentClass">
                   @if (b.compact) {
                     <span class="flex items-center gap-2">
-                      <span class="truncate text-sm font-bold">{{ b.appointment.patientName }}</span>
-                      <span class="truncate text-xs">{{ b.procedureName }} · {{ b.range }}</span>
-                      <span class="ml-auto shrink-0 text-xs font-semibold opacity-80">{{ b.statusLabel }}</span>
+                      <span class="truncate text-sm font-semibold">{{ b.appointment.patientName }}</span>
+                      <span class="truncate text-[11px] tabular-nums">{{ b.procedureName }} · {{ b.range }}</span>
+                      <span class="ml-auto shrink-0 text-[11px] font-semibold tracking-wide uppercase opacity-80">{{
+                        b.statusLabel
+                      }}</span>
                     </span>
                   } @else {
                     <span class="flex items-center justify-between gap-2">
-                      <span class="truncate text-sm font-bold">{{ b.appointment.patientName }}</span>
-                      <span class="hidden shrink-0 text-xs font-semibold opacity-80 sm:inline">{{ b.statusLabel }}</span>
+                      <span class="truncate text-sm font-semibold">{{ b.appointment.patientName }}</span>
+                      <span class="hidden shrink-0 text-[11px] font-semibold tracking-wide uppercase opacity-80 sm:inline">{{
+                        b.statusLabel
+                      }}</span>
                     </span>
-                    <span class="truncate text-sm">{{ b.procedureName }} · {{ b.range }}</span>
+                    <span class="truncate text-xs tabular-nums">{{ b.procedureName }} · {{ b.range }}</span>
                     @if (b.tall) {
-                      <span class="truncate text-xs opacity-80">{{ b.phone }}</span>
+                      <span class="truncate text-[11px] tabular-nums opacity-80">{{ b.phone }}</span>
                     }
                   }
                 </span>

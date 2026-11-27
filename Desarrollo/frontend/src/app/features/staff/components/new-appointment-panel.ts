@@ -45,32 +45,32 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
       layout="side"
     >
       @if (created(); as cita) {
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-5">
           <p
             role="status"
-            class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-success"
+            class="flex items-start gap-2.5 rounded-md border border-success/40 bg-success/15 px-4 py-3 text-sm font-medium text-success"
           >
-            <svg lucideCircleCheck class="mt-0.5 size-5 shrink-0" aria-hidden="true"></svg>
+            <svg lucideCircleCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true"></svg>
             Cita {{ cita.code }} registrada. El recordatorio por WhatsApp quedó programado.
           </p>
           <dl appAppointmentSummary [appointment]="cita"></dl>
-          <div class="flex flex-col gap-3">
-            <button type="button" appBigButton size="lg" [full]="true" (click)="close()">Listo</button>
-            <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="reset()">
+          <div class="card-divider flex flex-col gap-2.5">
+            <button type="button" appBigButton size="md" [full]="true" (click)="close()">Listo</button>
+            <button type="button" appBigButton variant="secondary" size="md" [full]="true" (click)="reset()">
               Registrar otra cita
             </button>
           </div>
         </div>
       } @else {
-        <form class="flex flex-col gap-8" novalidate (submit)="save($event)">
+        <form class="flex flex-col gap-6" novalidate (submit)="save($event)">
           @if (notice(); as text) {
             <p appAlertMessage>{{ text }}</p>
           }
 
           @if (activeMessage(); as message) {
-            <div role="alert" class="flex flex-col gap-3 rounded-2xl border border-warning/50 bg-warning/15 p-4">
-              <p class="flex items-start gap-3 text-base font-medium">
-                <svg lucideTriangleAlert class="mt-0.5 size-5 shrink-0 text-warning-foreground" aria-hidden="true"></svg>
+            <div role="alert" class="flex flex-col gap-3 rounded-md border border-warning/50 bg-warning/15 p-4">
+              <p class="flex items-start gap-2.5 text-sm font-medium">
+                <svg lucideTriangleAlert class="mt-0.5 size-4 shrink-0 text-warning-foreground" aria-hidden="true"></svg>
                 {{ message }}
               </p>
             </div>
@@ -85,8 +85,8 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
             (valueChange)="onSelectionChange($event)"
           />
 
-          <section class="flex flex-col gap-4" aria-labelledby="nc-paciente">
-            <h3 id="nc-paciente" class="text-lg font-bold">Datos del paciente</h3>
+          <section class="card-divider flex flex-col gap-4" aria-labelledby="nc-paciente">
+            <h3 id="nc-paciente" class="text-sm font-semibold text-foreground">Datos del paciente</h3>
             <app-patient-form
               [data]="patient()"
               [errors]="errors()"
@@ -98,11 +98,11 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
 
           @if (showDemoTools()) {
             <label
-              class="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-dashed bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
+              class="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground"
             >
               <input
                 type="checkbox"
-                class="size-5 accent-primary"
+                class="size-4 accent-primary"
                 [checked]="simulateConflict()"
                 (change)="onSimulateChange($event)"
               />
@@ -112,11 +112,11 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado, elige otro.';
             </label>
           }
 
-          <div class="flex flex-col gap-3">
-            <button type="submit" appBigButton size="lg" [full]="true" [disabled]="saving()">
+          <div class="card-divider flex flex-col gap-2.5">
+            <button type="submit" appBigButton size="md" [full]="true" [disabled]="saving()">
               {{ saving() ? 'Guardando…' : 'Guardar cita' }}
             </button>
-            <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="close()">
+            <button type="button" appBigButton variant="secondary" size="md" [full]="true" (click)="close()">
               Cancelar
             </button>
           </div>

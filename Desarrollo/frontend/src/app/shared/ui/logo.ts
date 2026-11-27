@@ -23,12 +23,14 @@ import { cn } from './class-names';
       @if (compact()) {
         <img src="brand/icon-192.png" alt="" width="192" height="192" class="size-10 shrink-0 rounded-full" />
       } @else {
-        <!-- The logo's navy and grey text needs a light backdrop: a white plate in dark mode. -->
-        <span class="shrink-0 rounded-lg dark:bg-white dark:px-1.5 dark:py-0.5">
+        <!-- The logo's navy and grey text needs a light backdrop: a white plate in dark mode.
+             The white plate is the brand asset's own backing, not a palette choice: no
+             token stays white in the dark theme. -->
+        <span class="shrink-0 rounded-md dark:bg-white dark:px-1.5 dark:py-0.5">
           <img src="brand/villadent-logo.png" alt="" width="374" height="160" class="h-10 w-auto" />
         </span>
         <!-- Hidden on phones: the logo already identifies the site and the controls need the room. -->
-        <span class="hidden min-w-0 truncate border-l pl-2 text-xs font-medium text-muted-foreground sm:block">AgendaPro</span>
+        <span class="hidden min-w-0 truncate border-l border-border pl-2 text-xs font-medium text-muted-foreground sm:block">AgendaPro</span>
       }
     </a>
   `,
@@ -41,7 +43,7 @@ export class Logo {
 
   protected linkClass(): string {
     return cn(
-      'flex min-w-0 items-center gap-2 rounded-lg focus-visible:ring-2 focus-visible:ring-ring outline-none',
+      'flex min-w-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
       this.extraClass(),
     );
   }

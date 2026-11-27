@@ -3,8 +3,12 @@ import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
 import { addDays, formatDate, formatLongDate, fromDateKey, toDateKey } from '../../../core/domain';
 import { cn } from '../../../shared/ui/class-names';
 
+/**
+ * The quiet fill (`--secondary`) is the ground colour, so a hairline — never a
+ * cancelled border — is what draws the control's edge (L5).
+ */
 const ICON_BUTTON =
-  'flex size-12 items-center justify-center rounded-xl border bg-card hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-secondary-foreground outline-none transition-colors select-none hover:bg-secondary/80 active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
 
 /** Previous / today / next day navigation with the long date (presentational). */
 @Component({
@@ -15,16 +19,16 @@ const ICON_BUTTON =
   template: `
     <div class="flex items-center gap-2">
       <button type="button" (click)="move(-1)" aria-label="Día anterior" class="${ICON_BUTTON}">
-        <svg lucideChevronLeft class="size-6"></svg>
+        <svg lucideChevronLeft class="size-4"></svg>
       </button>
       <button type="button" (click)="dateChange.emit(today())" [class]="todayClass()">Hoy</button>
       <button type="button" (click)="move(1)" aria-label="Día siguiente" class="${ICON_BUTTON}">
-        <svg lucideChevronRight class="size-6"></svg>
+        <svg lucideChevronRight class="size-4"></svg>
       </button>
     </div>
     <div class="flex flex-col leading-tight">
-      <span class="text-xl font-bold first-letter:uppercase">{{ longDate() }}</span>
-      <span class="text-sm text-muted-foreground">{{ shortDate() }}</span>
+      <span class="text-sm font-semibold text-foreground first-letter:uppercase tabular-nums">{{ longDate() }}</span>
+      <span class="text-xs text-muted-foreground tabular-nums">{{ shortDate() }}</span>
     </div>
   `,
 })
@@ -39,8 +43,10 @@ export class DateNav {
   protected readonly shortDate = computed(() => formatDate(this.date()));
   protected readonly todayClass = computed(() =>
     cn(
-      'min-h-12 rounded-xl border px-4 text-base font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring',
-      this.date() === this.today() ? 'border-primary bg-accent text-accent-foreground' : 'bg-card hover:bg-muted',
+      'inline-flex h-10 shrink-0 items-center justify-center rounded-md border px-3 text-sm font-medium outline-none transition-colors select-none active:translate-y-px focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+      this.date() === this.today()
+        ? 'border-primary bg-accent text-accent-foreground'
+        : 'border-border bg-secondary text-secondary-foreground hover:bg-secondary/80',
     ),
   );
 

@@ -1,24 +1,28 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Outcome screen with a round icon, title and text (prototype `Resultado`). Icon via `[icon]` slot. */
+/** Outcome screen with a tinted icon tile, title and text (prototype `Resultado`). Icon via `[icon]` slot. */
 @Component({
   selector: 'app-result-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col gap-6' },
   template: `
-    <div class="flex flex-col items-center gap-4 text-center">
+    <!-- A terminal state is one group on the canvas; the card the host projects (the
+         appointment summary) stays a sibling, never a card inside a card. -->
+    <div class="card flex flex-col items-center gap-6 text-center">
       <span
         [class]="
           tone() === 'success'
-            ? 'flex size-20 items-center justify-center rounded-full bg-success/15 text-success'
-            : 'flex size-20 items-center justify-center rounded-full bg-muted text-muted-foreground'
+            ? 'flex size-16 items-center justify-center rounded-xl bg-success/15 text-success dark:bg-success/20'
+            : 'flex size-16 items-center justify-center rounded-xl border border-border bg-muted text-muted-foreground'
         "
         aria-hidden="true"
       >
         <ng-content select="[icon]" />
       </span>
-      <h1 class="text-3xl font-bold tracking-tight text-balance">{{ heading() }}</h1>
-      <p class="max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty">{{ text() }}</p>
+      <div class="flex flex-col gap-2">
+        <h1 class="text-2xl font-normal tracking-tight text-balance text-foreground">{{ heading() }}</h1>
+        <p class="max-w-xl text-base leading-relaxed text-muted-foreground text-pretty">{{ text() }}</p>
+      </div>
     </div>
     <ng-content />
   `,

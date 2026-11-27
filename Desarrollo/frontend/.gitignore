@@ -46,5 +46,7 @@ __screenshots__/
 Thumbs.db
 # Local Pi runtime state
 .atl/
+# taste skill history and finish-gate state (S14: the kit itself is never copied in)
+.taste-skill/
 # pnpm store accidentally created on host by container runs
 .pnpm-store/

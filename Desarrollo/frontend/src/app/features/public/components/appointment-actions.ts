@@ -47,7 +47,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
   template: `
     <p role="status" class="sr-only">{{ viewAnnouncement() }}</p>
     @if (loading()) {
-      <p role="status" class="rounded-2xl border bg-card px-5 py-10 text-center text-lg text-muted-foreground">
+      <p role="status" class="card text-center text-sm text-muted-foreground">
         Cargando tu cita…
       </p>
     } @else if (appointment(); as cita) {
@@ -64,22 +64,22 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
               '. Si algo cambia, puedes reprogramar o cancelar desde este mismo enlace.'
             "
           >
-            <svg icon lucideCircleCheck class="size-12" aria-hidden="true"></svg>
+            <svg icon lucideCircleCheck class="size-8" aria-hidden="true"></svg>
             <dl appAppointmentSummary [appointment]="cita" [showPatient]="false"></dl>
-            <a appBigButton variant="outline" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
+            <a appBigButton variant="secondary" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
           </app-result-panel>
         }
         @case ('cancelled') {
           <app-result-panel tone="muted" heading="Tu cita fue cancelada" text="Gracias por avisarnos con tiempo.">
-            <svg icon lucideCircleX class="size-12" aria-hidden="true"></svg>
+            <svg icon lucideCircleX class="size-8" aria-hidden="true"></svg>
             @if (releasedSlot(); as slot) {
-              <p class="rounded-2xl border bg-muted/50 px-5 py-4 text-base leading-relaxed text-pretty">
+              <p class="rounded-xl border border-border bg-muted px-6 py-4 text-base leading-relaxed text-pretty">
                 El horario del <strong>{{ formatDate(slot.date) }}</strong> a las
                 <strong>{{ formatTime(slot.time) }}</strong> quedó liberado para otro paciente.
               </p>
             }
             <a appBigButton size="lg" [full]="true" routerLink="/agendar">Agendar mi cita</a>
-            <a appBigButton variant="outline" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
+            <a appBigButton variant="secondary" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
           </app-result-panel>
         }
         @case ('rescheduled') {
@@ -88,16 +88,16 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
             heading="¡Tu cita fue reprogramada!"
             [text]="'Te enviaremos un nuevo recordatorio por WhatsApp ' + reminderText(cita) + '.'"
           >
-            <svg icon lucideCalendarClock class="size-12" aria-hidden="true"></svg>
+            <svg icon lucideCalendarClock class="size-8" aria-hidden="true"></svg>
             <dl appAppointmentSummary [appointment]="cita" [showPatient]="false"></dl>
-            <a appBigButton variant="outline" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
+            <a appBigButton variant="secondary" size="lg" [full]="true" routerLink="/">Volver al inicio</a>
           </app-result-panel>
         }
         @case ('reschedule') {
-          <div class="flex flex-col gap-8">
-            <header class="flex flex-col gap-1">
-              <h1 class="text-3xl font-bold tracking-tight text-balance">Elige tu nuevo horario</h1>
-              <p class="text-lg text-muted-foreground text-pretty">
+          <div class="flex flex-col gap-6">
+            <header class="flex flex-col gap-2">
+              <h1 class="text-2xl font-normal tracking-tight text-balance text-foreground">Elige tu nuevo horario</h1>
+              <p class="page-subtitle text-pretty">
                 Estás reprogramando la cita
                 <span class="font-mono font-semibold text-foreground">{{ cita.code }}</span>, que hoy está agendada el
                 {{ formatDate(cita.date) }} a las {{ formatTime(cita.time) }}. La nueva cita será con el mismo odontólogo.
@@ -126,7 +126,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
               >
                 Confirmar nuevo horario
               </button>
-              <button type="button" appBigButton variant="outline" size="xl" class="sm:w-auto" (click)="goTo('summary')">
+              <button type="button" appBigButton variant="secondary" size="xl" class="sm:w-auto" (click)="goTo('summary')">
                 <svg lucideArrowLeft aria-hidden="true"></svg> Volver
               </button>
             </div>
@@ -134,10 +134,10 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
         }
         @default {
           @let active = isActive();
-          <div class="flex flex-col gap-8">
-            <header class="flex flex-col gap-1">
-              <h1 class="text-3xl font-bold tracking-tight text-balance">Hola, {{ firstName() }}</h1>
-              <p class="text-lg text-muted-foreground text-pretty">
+          <div class="flex flex-col gap-6">
+            <header class="flex flex-col gap-2">
+              <h1 class="text-2xl font-normal tracking-tight text-balance text-foreground">Hola, {{ firstName() }}</h1>
+              <p class="page-subtitle text-pretty">
                 {{ active ? 'Estos son los detalles de tu cita. ¿Qué deseas hacer?' : 'Estos son los detalles de tu cita.' }}
               </p>
             </header>
@@ -149,7 +149,6 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                 <button
                   type="button"
                   appBigButton
-                  variant="success"
                   size="xl"
                   [full]="true"
                   [disabled]="cita.status === 'Confirmada'"
@@ -158,13 +157,15 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                   <svg lucideCircleCheck aria-hidden="true"></svg>
                   {{ cita.status === 'Confirmada' ? 'Asistencia confirmada' : 'Confirmar asistencia' }}
                 </button>
-                <button type="button" appBigButton variant="outline" size="xl" [full]="true" (click)="goTo('reschedule')">
+                <button type="button" appBigButton variant="secondary" size="xl" [full]="true" (click)="goTo('reschedule')">
                   <svg lucideCalendarClock aria-hidden="true"></svg> Reprogramar
                 </button>
+                <!-- The secondary fill owns the surface; the important flag is the only way to
+                     repaint just this action's text, because the variant sets its colour. -->
                 <button
                   type="button"
                   appBigButton
-                  variant="outline"
+                  variant="secondary"
                   size="xl"
                   [full]="true"
                   class="text-destructive!"
@@ -174,7 +175,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                 </button>
               </div>
             } @else {
-              <div class="flex flex-col gap-3 rounded-2xl border bg-muted/50 px-5 py-4">
+              <div class="flex flex-col gap-3 rounded-xl border border-border bg-muted px-6 py-4">
                 <p class="text-base text-pretty">
                   Esta cita ya no admite cambios (estado: <strong>{{ statusLabel(cita.status) }}</strong>).
                 </p>
@@ -183,7 +184,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
             }
 
             <section class="flex flex-col gap-3" aria-labelledby="whatsapp-preview">
-              <h2 id="whatsapp-preview" class="text-lg font-bold text-balance">Así se ve el recordatorio que recibes</h2>
+              <h2 id="whatsapp-preview" class="text-xl font-normal tracking-tight text-balance text-foreground">Así se ve el recordatorio que recibes</h2>
               <figure appWhatsappBubble [appointment]="cita"></figure>
             </section>
 
@@ -204,7 +205,7 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
                 <button type="button" appBigButton variant="danger" size="lg" [full]="true" (click)="cancel()">
                   Sí, cancelar mi cita
                 </button>
-                <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="confirmCancel.set(false)">
+                <button type="button" appBigButton variant="secondary" size="lg" [full]="true" (click)="confirmCancel.set(false)">
                   No, conservar mi cita
                 </button>
               </div>
@@ -213,12 +214,12 @@ const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otr
         }
       }
     } @else {
-      <div class="flex flex-col items-center gap-6 text-center">
-        <span class="flex size-20 items-center justify-center rounded-full bg-muted text-muted-foreground" aria-hidden="true">
-          <svg lucideSearchX class="size-12" aria-hidden="true"></svg>
+      <div class="card flex flex-col items-center gap-6 text-center">
+        <span class="flex size-16 items-center justify-center rounded-xl border border-border bg-muted text-muted-foreground" aria-hidden="true">
+          <svg lucideSearchX class="size-8" aria-hidden="true"></svg>
         </span>
-        <h1 class="text-3xl font-bold tracking-tight">No encontramos esta cita</h1>
-        <p class="max-w-md text-lg text-muted-foreground text-pretty">
+        <h1 class="text-2xl font-normal tracking-tight text-balance text-foreground">No encontramos esta cita</h1>
+        <p class="max-w-md text-base text-muted-foreground text-pretty">
           El enlace no corresponde a una cita activa. Revisa el mensaje de WhatsApp o comunícate con la clínica.
         </p>
         <a appBigButton size="lg" routerLink="/agendar">Agendar mi cita</a>

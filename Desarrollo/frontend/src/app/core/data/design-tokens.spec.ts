@@ -235,6 +235,9 @@ describe('design token contract (WCAG 2.x measured)', () => {
         'bg-muted border-muted-foreground/60 text-muted-foreground',
         'bg-destructive/5 border-destructive/60 text-muted-foreground line-through',
       ]);
+      // Pending statuses ride taste's neutral ramp and the outcomes keep its semantic
+      // hues, so the bars stay distinguishable on the monochrome card. Each colour is
+      // the `--chart-<status>` token measured by the contrast pairs above.
       expect(REPORT_SERIES.map(({ color }) => color)).toEqual([
         'var(--chart-pendiente)',
         'var(--chart-confirmada)',

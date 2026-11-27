@@ -19,7 +19,8 @@ export class StatusBadge {
 
   protected readonly classes = computed(() =>
     cn(
-      'inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold whitespace-nowrap',
+      // Shape and type come from the shared `badge` utility; the tint stays the status map's.
+      'badge border whitespace-nowrap',
       STATUS_STYLES[this.status()].badge,
     ),
   );
@@ -38,19 +39,19 @@ const REMINDER: Record<ReminderStatus, { className: string; label: string }> = {
   imports: [LucideClock, LucideCheckCheck, LucideTriangleAlert, LucideCircleX],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span [class]="'inline-flex items-center gap-2 text-base font-medium ' + info().className">
+    <span [class]="'inline-flex items-center gap-2 text-sm font-medium ' + info().className">
       @switch (status()) {
         @case ('Programado') {
-          <svg lucideClock class="size-5 shrink-0" aria-hidden="true"></svg>
+          <svg lucideClock class="size-4 shrink-0" aria-hidden="true"></svg>
         }
         @case ('Enviado') {
-          <svg lucideCheckCheck class="size-5 shrink-0" aria-hidden="true"></svg>
+          <svg lucideCheckCheck class="size-4 shrink-0" aria-hidden="true"></svg>
         }
         @case ('Cancelado') {
-          <svg lucideCircleX class="size-5" aria-hidden="true"></svg>
+          <svg lucideCircleX class="size-4 shrink-0" aria-hidden="true"></svg>
         }
         @case ('Falló') {
-          <svg lucideTriangleAlert class="size-5 shrink-0" aria-hidden="true"></svg>
+          <svg lucideTriangleAlert class="size-4 shrink-0" aria-hidden="true"></svg>
         }
       }
       <span>

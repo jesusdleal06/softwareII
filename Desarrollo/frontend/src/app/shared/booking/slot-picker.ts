@@ -24,11 +24,19 @@ export interface SlotSelection {
   time: string;
 }
 
-const CARD_FOCUS = 'transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const CARD_FOCUS =
+  'transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
+/**
+ * Every option the visitor can pick carries the `border-input` boundary at full
+ * strength (the only one that reaches 3:1) and swaps it for `--primary` when it is
+ * the chosen one; `border-border` is reserved for separators (deviation L4).
+ */
+const OPTION_IDLE = 'border-input hover:border-primary/40';
+const OPTION_ACTIVE = 'border-primary bg-accent/60';
 const NAV_BUTTON =
-  'flex size-12 items-center justify-center rounded-xl border bg-card hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'flex size-12 items-center justify-center rounded-md border border-input bg-card outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card';
 const EMPTY_HINT =
-  'rounded-2xl border border-dashed bg-muted/40 px-4 py-6 text-center text-base text-muted-foreground text-pretty';
+  'rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground text-pretty';
 
 /**
  * Dentist, procedure, day and hour picker. Catalogs arrive as inputs; free slots come
@@ -38,24 +46,24 @@ const EMPTY_HINT =
   selector: 'app-slot-picker',
   imports: [SelectField, LucideCheck, LucideClock, LucideChevronLeft, LucideChevronRight],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-8' },
+  host: { class: 'flex flex-col gap-6' },
   template: `
     <!-- Dentist -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-dentista">
-      <h2 id="sp-dentista" class="text-lg font-bold">
+      <h2 id="sp-dentista" class="card-title">
         {{ fixedDentist() || compact() ? 'Odontólogo' : '1. ¿Con quién deseas tu cita?' }}
       </h2>
       @if (fixedDentist() && dentist(); as d) {
-        <div class="flex items-center gap-3 rounded-2xl border bg-muted/50 px-4 py-3">
+        <div class="flex items-center gap-3 rounded-md border border-border bg-muted px-4 py-3 dark:bg-secondary">
           <span
-            class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground"
+            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
             aria-hidden="true"
           >
             {{ d.initials }}
           </span>
-          <span class="flex flex-col">
-            <span class="font-semibold leading-tight">{{ d.name }}</span>
-            <span class="text-sm text-muted-foreground">{{ d.specialty }}</span>
+          <span class="flex min-w-0 flex-col">
+            <span class="text-sm font-medium leading-tight">{{ d.name }}</span>
+            <span class="text-xs text-muted-foreground">{{ d.specialty }}</span>
           </span>
         </div>
       } @else if (compact()) {
@@ -81,18 +89,18 @@ const EMPTY_HINT =
               (click)="patch({ dentistId: d.id })"
               [class]="
                 cn(
-                  'flex min-h-14 items-center gap-3 rounded-2xl border-2 bg-card p-4 text-left ' + cardFocus,
-                  active ? 'border-primary bg-accent/60' : 'border-border hover:border-primary/50'
+                  'flex min-h-14 items-center gap-3 rounded-md border bg-card p-4 text-left ' + cardFocus,
+                  active ? optionActive : optionIdle
                 )
               "
             >
               @if (d.photoUrl) {
-                <img [src]="d.photoUrl" alt="" class="size-12 shrink-0 rounded-full object-cover" />
+                <img [src]="d.photoUrl" alt="" class="size-11 shrink-0 rounded-full object-cover" />
               } @else {
                 <span
                   [class]="
                     cn(
-                      'flex size-12 shrink-0 items-center justify-center rounded-full text-base font-bold',
+                      'flex size-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
                       active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
                     )
                   "
@@ -102,15 +110,15 @@ const EMPTY_HINT =
                 </span>
               }
               <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span class="font-semibold leading-tight">{{ d.name }}</span>
-                <span class="text-sm text-muted-foreground">{{ d.specialty }}</span>
+                <span class="text-sm font-medium leading-tight">{{ d.name }}</span>
+                <span class="text-xs text-muted-foreground">{{ d.specialty }}</span>
                 @if (d.academicTitles?.length) {
-                  <span class="text-sm font-medium text-foreground/80">
+                  <span class="text-xs font-medium text-foreground/80">
                     {{ d.academicTitles?.join(' · ') }}
                   </span>
                 }
                 @if (d.description) {
-                  <span class="text-sm text-pretty text-muted-foreground">{{ d.description }}</span>
+                  <span class="text-xs text-pretty text-muted-foreground">{{ d.description }}</span>
                 }
               </span>
               @if (active) {
@@ -124,14 +132,14 @@ const EMPTY_HINT =
 
     <!-- Procedure -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-proc">
-      <h2 id="sp-proc" class="text-lg font-bold">
+      <h2 id="sp-proc" class="card-title">
         {{ fixedProcedure() || compact() ? 'Procedimiento' : '2. ¿Qué procedimiento necesitas?' }}
       </h2>
       @if (fixedProcedure() && procedure(); as p) {
-        <div class="flex items-center justify-between rounded-2xl border bg-muted/50 px-4 py-3">
-          <span class="font-semibold">{{ p.name }}</span>
-          <span class="flex items-center gap-1 text-base text-muted-foreground">
-            <svg lucideClock class="size-5" aria-hidden="true"></svg> {{ p.durationMinutes }} min
+        <div class="flex items-center justify-between rounded-md border border-border bg-muted px-4 py-3 dark:bg-secondary">
+          <span class="text-sm font-medium">{{ p.name }}</span>
+          <span class="flex items-center gap-1 text-xs tabular-nums text-muted-foreground">
+            <svg lucideClock class="size-4" aria-hidden="true"></svg> {{ p.durationMinutes }} min
           </span>
         </div>
       } @else if (compact()) {
@@ -157,15 +165,15 @@ const EMPTY_HINT =
               (click)="patch({ procedureId: p.id })"
               [class]="
                 cn(
-                  'flex min-h-14 items-center justify-between gap-3 rounded-2xl border-2 bg-card px-4 py-3 text-left ' +
+                  'flex min-h-14 items-center justify-between gap-3 rounded-md border bg-card px-4 py-3 text-left ' +
                     cardFocus,
-                  active ? 'border-primary bg-accent/60' : 'border-border hover:border-primary/50'
+                  active ? optionActive : optionIdle
                 )
               "
             >
-              <span class="font-semibold">{{ p.name }}</span>
-              <span class="flex items-center gap-1 text-base text-muted-foreground">
-                <svg lucideClock class="size-5" aria-hidden="true"></svg> {{ p.durationMinutes }} min
+              <span class="text-sm font-medium">{{ p.name }}</span>
+              <span class="flex items-center gap-1 text-xs tabular-nums text-muted-foreground">
+                <svg lucideClock class="size-4" aria-hidden="true"></svg> {{ p.durationMinutes }} min
               </span>
             </button>
           }
@@ -176,7 +184,7 @@ const EMPTY_HINT =
     <!-- Day -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-fecha">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="sp-fecha" class="text-lg font-bold">
+        <h2 id="sp-fecha" class="card-title">
           {{ fixedProcedure() || compact() ? 'Día' : '3. Elige el día' }}
         </h2>
         <div class="flex w-full items-center gap-2 sm:w-auto">
@@ -189,7 +197,7 @@ const EMPTY_HINT =
           >
             <svg lucideChevronLeft class="size-6"></svg>
           </button>
-          <span class="min-w-0 flex-1 text-center text-base font-medium tabular-nums text-muted-foreground sm:min-w-44 sm:flex-none">{{ weekRange() }}</span>
+          <span class="min-w-0 flex-1 text-center text-sm font-medium tabular-nums text-muted-foreground sm:min-w-44 sm:flex-none">{{ weekRange() }}</span>
           <button type="button" (click)="shiftWeek(7)" aria-label="Semana siguiente" [class]="navButton">
             <svg lucideChevronRight class="size-6"></svg>
           </button>
@@ -207,17 +215,17 @@ const EMPTY_HINT =
             (click)="patch({ date: day.key })"
             [class]="
               cn(
-                'flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 bg-card ' +
+                'flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-md border bg-card ' +
                   cardFocus +
                   ' disabled:cursor-not-allowed disabled:opacity-40',
-                active ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:border-primary/50'
+                active ? 'border-primary bg-primary text-primary-foreground' : optionIdle
               )
             "
           >
-            <span [class]="cn('text-sm font-medium', active ? 'text-primary-foreground/80' : 'text-muted-foreground')">
+            <span [class]="cn('text-xs font-medium', active ? 'text-primary-foreground/80' : 'text-muted-foreground')">
               {{ day.shortName }}
             </span>
-            <span class="text-2xl font-bold leading-none">{{ day.dayOfMonth }}</span>
+            <span class="text-xl font-semibold leading-none tabular-nums">{{ day.dayOfMonth }}</span>
             @if (day.today) {
               <span [class]="cn('text-xs font-semibold', active ? 'text-primary-foreground/80' : 'text-primary')">Hoy</span>
             }
@@ -228,7 +236,7 @@ const EMPTY_HINT =
 
     <!-- Hours -->
     <section class="flex flex-col gap-3" aria-labelledby="sp-hora" aria-live="polite">
-      <h2 id="sp-hora" class="text-lg font-bold">
+      <h2 id="sp-hora" class="card-title">
         {{ fixedProcedure() || compact() ? 'Hora disponible' : '4. Elige la hora' }}
       </h2>
       @if (!value().dentistId || !value().procedureId || !value().date) {
@@ -245,7 +253,7 @@ const EMPTY_HINT =
         <div class="flex flex-col gap-4">
           @for (group of slotGroups(); track group.title) {
             <div class="flex flex-col gap-2">
-              <p class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ group.title }}</p>
+              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ group.title }}</p>
               <div
                 role="radiogroup"
                 [attr.aria-label]="'Horarios de la ' + group.title.toLowerCase()"
@@ -262,8 +270,8 @@ const EMPTY_HINT =
                     (click)="selectTime(slot)"
                     [class]="
                       cn(
-                        'min-h-12 rounded-xl border-2 bg-card px-2 text-base font-semibold ' + cardFocus,
-                        active ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:border-primary/50'
+                        'min-h-10 rounded-md border bg-card px-2 text-sm font-medium tabular-nums ' + cardFocus,
+                        active ? 'border-primary bg-primary text-primary-foreground' : optionIdle
                       )
                     "
                   >
@@ -274,7 +282,7 @@ const EMPTY_HINT =
             </div>
           }
           @if (procedure(); as p) {
-            <p class="text-sm text-muted-foreground">
+            <p class="text-xs text-muted-foreground">
               Solo se muestran horarios donde caben los {{ p.durationMinutes }} minutos del procedimiento dentro de la
               jornada.
             </p>
@@ -301,6 +309,8 @@ export class SlotPicker implements OnInit {
   protected readonly cn = cn;
   protected readonly cardFocus = CARD_FOCUS;
   protected readonly navButton = NAV_BUTTON;
+  protected readonly optionIdle = OPTION_IDLE;
+  protected readonly optionActive = OPTION_ACTIVE;
   protected readonly emptyHint = EMPTY_HINT;
   protected readonly formatTime = formatTime;
   private readonly store = inject(AppStore);
