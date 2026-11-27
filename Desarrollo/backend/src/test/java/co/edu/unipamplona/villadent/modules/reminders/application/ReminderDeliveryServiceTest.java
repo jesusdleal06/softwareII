@@ -55,8 +55,9 @@ class ReminderDeliveryServiceTest {
     @BeforeEach
     void setUp() {
         service = new ReminderDeliveryService(
-                reminders, appointments, attachManageToken, tokenGenerator, sender,
-                CLOCK, "http://localhost:4200/cita/");
+                reminders, appointments,
+                new ManageLinkIssuer(attachManageToken, tokenGenerator, "http://localhost:4200/cita/"),
+                sender, CLOCK);
     }
 
     private Reminder programmed() {
