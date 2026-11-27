@@ -60,7 +60,7 @@ export function mapDentistProfile(dto: DentistProfileDto): DentistProfile {
     specialty: dto.specialty,
     photoUrl: dto.photoUrl,
     academicTitles: dto.academicTitles ?? [],
-    description: dto.description,
+    description: dto.description ?? '',
   };
 }
 
