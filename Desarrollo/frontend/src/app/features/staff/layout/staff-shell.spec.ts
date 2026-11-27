@@ -91,8 +91,10 @@ describe('StaffShell', () => {
     // `min-w-0` or `shrink-0` brings the overflow back.
     expect(brand.className).toContain('min-w-0');
     expect(actions.className).toContain('shrink-0');
-    // The logo image keeps its size; the product name is what truncates.
-    expect(brand.querySelector('img[src="brand/villadent-logo.png"]')?.parentElement?.className).toContain('shrink-0');
+    // The logo keeps its size; the product name is what truncates. Both theme variants
+    // carry `shrink-0` themselves now that neither sits on a plate.
+    const logos = Array.from(brand.querySelectorAll('img[src^="brand/villadent-logo"]'));
+    expect(logos.map((logo) => logo.className.includes('shrink-0'))).toEqual([true, true]);
     const wordmark = Array.from(brand.querySelectorAll('span.truncate')).map((span) => text(span));
     expect(wordmark).toEqual(['AgendaPro']);
   });

@@ -34,16 +34,22 @@ describe('Logo', () => {
   });
 
   it('shows the clinic logo as a decorative image named by the link', () => {
-    const img = render().querySelector('a img') as HTMLImageElement;
-    expect(img.getAttribute('src')).toBe('brand/villadent-logo.png');
+    const images = Array.from(render().querySelectorAll('a img'));
     // The link's aria-label already names it; an alt text would be read twice.
-    expect(img.getAttribute('alt')).toBe('');
-    expect(img.getAttribute('width')).toBe('374');
-    expect(img.getAttribute('height')).toBe('160');
+    expect(images.map((img) => img.getAttribute('alt'))).toEqual(['', '']);
+    expect(images.map((img) => img.getAttribute('height'))).toEqual(['160', '160']);
+    expect(images[0].getAttribute('src')).toBe('brand/villadent-logo.png');
+    expect(images[0].getAttribute('width')).toBe('371');
   });
 
-  it('puts the logo on a white plate in dark mode so its dark text stays readable', () => {
-    const plate = render().querySelector('a img')?.parentElement as HTMLElement;
-    expect(plate.className).toContain('dark:bg-white');
+  it('swaps to the logo drawn for the dark ground instead of plating the light one', () => {
+    const [light, dark] = Array.from(render().querySelectorAll('a img'));
+    expect(light.className).toContain('dark:hidden');
+    expect(dark.getAttribute('src')).toBe('brand/villadent-logo-dark.png');
+    expect(dark.getAttribute('width')).toBe('377');
+    expect(dark.className).toContain('hidden');
+    expect(dark.className).toContain('dark:block');
+    // One logo per theme: no white plate behind either of them.
+    expect(light.parentElement?.className).not.toContain('dark:bg-white');
   });
 });
