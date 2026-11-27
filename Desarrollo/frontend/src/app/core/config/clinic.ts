@@ -4,9 +4,9 @@ import { Clinic, Shift } from '../models';
 export const CLINIC: Clinic = {
   name: 'Centro Odontológico Villadent',
   shortName: 'Villadent',
-  address: 'Calle 45 # 27-18, Bucaramanga',
-  phone: '(607) 645 12 34',
-  whatsapp: '+57 300 123 4567',
+  address: 'Cra. 10 #21-14, Villa del Rosario, Norte de Santander',
+  phone: '314 422 3133',
+  whatsapp: '+57 314 422 3133',
 };
 
 /** UI working shifts. Availability itself is always owned by the API. */

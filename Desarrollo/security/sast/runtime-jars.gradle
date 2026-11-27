@@ -1,0 +1,10 @@
+gradle.projectsEvaluated {
+    def project = gradle.rootProject
+    project.tasks.register('copyScanRuntimeJars', Copy) {
+        from(project.configurations.runtimeClasspath) {
+            include '*.jar'
+        }
+        into '/work/runtime-jars'
+        duplicatesStrategy = DuplicatesStrategy.FAIL
+    }
+}

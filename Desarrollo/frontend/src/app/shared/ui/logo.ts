@@ -18,7 +18,7 @@ import { cn } from './class-names';
     <a
       [routerLink]="href()"
       [class]="linkClass()"
-      aria-label="Villadent, ir al inicio"
+      aria-label="Villadent AgendaPro, ir al inicio"
     >
       @if (compact()) {
         <img src="brand/icon-192.png" alt="" width="192" height="192" class="size-10 shrink-0 rounded-full" />

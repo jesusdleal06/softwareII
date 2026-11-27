@@ -104,6 +104,48 @@ El perfil `demo` también crea 48 citas de ejemplo en la semana anterior, la act
 
 ---
 
+## Encabezados de seguridad
+
+`vercel.json` aplica los encabezados a **todas** las respuestas (archivos estáticos, la caída a `index.html` y los 404) con una regla `headers` de `source: "/(.*)"`. Los `rewrites` de `/api/*` no cambian: el navegador sigue hablando con el mismo origen.
+
+| Encabezado | Valor | Para qué sirve |
+| --- | --- | --- |
+| `Content-Security-Policy` | ver abajo | Limita de dónde puede cargar el navegador scripts, estilos, imágenes, fuentes y conexiones. |
+| `X-Frame-Options` | `DENY` | Impide incrustar la aplicación en un `iframe` (clickjacking). |
+| `X-Content-Type-Options` | `nosniff` | Evita que el navegador adivine un tipo MIME distinto al declarado. |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Envía la URL completa solo al mismo origen; a otros, solo el origen. |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` | La aplicación no usa esas capacidades, así que las niega. |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Aísla la ventana de otros orígenes. |
+| `Cross-Origin-Resource-Policy` | `same-origin` | Impide que otros orígenes lean recursos de la aplicación. |
+
+La CSP es `default-src 'self'`; `script-src 'self'` con el `sha256` de cada script en línea; `style-src 'self' 'unsafe-inline'`; `img-src 'self' data: blob: https://res.cloudinary.com`; `font-src 'self'`; `connect-src 'self'`; `frame-ancestors 'none'`; `base-uri 'self'`; `form-action 'self'`; `object-src 'none'`; `upgrade-insecure-requests`.
+
+- **`style-src 'unsafe-inline'`:** Angular inyecta los estilos de cada componente como `<style>` en tiempo de ejecución y Unovis hace lo mismo con el gráfico de reportes. Sin esa directiva la interfaz perdería estilos; los scripts, en cambio, sí quedan restringidos a hashes.
+- **Inter propio (CP-RNF03-04):** las fuentes viven en `public/fonts/` y se declaran con `@font-face` en `src/styles.css`; ya no se piden a Google Fonts, así que `font-src 'self'` se cumple y no hay dominios externos de tipografía.
+- **Hash de los scripts en línea:** el `index.html` de producción tiene dos scripts en línea (el tema y el que aplica `data-beasties-media`). Su hash se calcula sobre el archivo construido. Si el script cambia sin actualizar `vercel.json`, `pnpm verify:csp` falla. Para recalcularlo:
+
+  ```bash
+  pnpm build
+  node scripts/check-csp-hash.mjs --update   # reescribe script-src en vercel.json
+  pnpm verify:csp                            # comprueba que los hashes coinciden
+  ```
+
+- **Comprobar la CSP contra la compilación de producción:**
+
+  ```bash
+  # 1) API aislada de e2e (puertos 8091/5446/4291)
+  (cd ../e2e && docker compose -p villadent-e2e up -d --build --wait)
+  # 2) construir y servir con los encabezados de vercel.json
+  pnpm build
+  node scripts/serve-dist.mjs --port 4391
+  # 3) en otra terminal
+  E2E_PROD_URL=http://localhost:4391 pnpm e2e e2e/security-headers.spec.ts --project=chromium-desktop
+  ```
+
+  `scripts/serve-dist.mjs` sirve `dist/villadent-frontend/browser`, aplica los encabezados de `vercel.json` a cada respuesta, implementa la caída a `index.html` y reenvía `/api/*` a `API_TARGET` (por omisión `http://localhost:8091`). La prueba escucha `securitypolicyviolation` en cada pantalla y falla si aparece una violación o un error de CSP en la consola.
+
+---
+
 ## Estructura
 
 ```

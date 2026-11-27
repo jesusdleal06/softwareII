@@ -1,0 +1,205 @@
+# Evidencias de pruebas no funcionales
+
+**Fecha:** 26 de noviembre de 2026 (America/Bogota). **Entorno:** equipo de
+desarrollo, stack Docker aislado `villadent-perf` (frontend 4292, API 8092,
+PostgreSQL 5447). Backend en modo de desarrollo (`bootRun`, perfiles
+`demo,e2e`), frontend de desarrollo y PostgreSQL 17 en memoria. Solo se usaron
+datos ficticios. Las cifras no representan un despliegue ni un SLA.
+
+## Rendimiento — S1
+
+Comandos ejecutados desde la raíz del repositorio, con el stack ya iniciado.
+
+| Caso | Comando | Resultado observado | Veredicto |
+| --- | --- | --- | --- |
+| CP-RNF04-02 | `Desarrollo/perf/run.sh steady` | 20 usuarios, 10 min; p95 **19,94 ms**, 0 solicitudes fallidas de 11.922 (incluidas dos de preparación); 5.960 reservas nuevas. | **PASS** |
+| CP-RNF04-03 | `Desarrollo/perf/run.sh ramp` | 20→200 usuarios en 5 min; p95 máximo por ventana de 10 s **87,01 ms**, sin cruce de 2 s ni errores. Al minuto de terminar la carga: **4,15 ms** (HTTP 200); 16.450 respuestas 201, 16.450 citas persistidas y 0 turnos duplicados. | **Sin degradación hasta 200 usuarios: el límite está por encima del rango del caso** (ver la rampa exploratoria) |
+| CP-RNF04-04 | `Desarrollo/perf/run.sh burst` | 1→45 usuarios en 10 s; p95 de la ráfaga **7,63 ms**, 0 fallos en 135 solicitudes medidas, 45 confirmaciones. La preparación no se incluye en el percentil. | **PASS** |
+| CP-RNF04-05 | `Desarrollo/perf/run.sh volume` | 4.000 citas ficticias en 2025, hasta 15 por fecha poblada. Agenda: HTTP 200, 15 registros, **76,59 ms**; informe anual: HTTP 200, 4.000 registros, **65,02 ms**. | **PASS** |
+| CP-RNF04-06 | `SOAK_DURATION=2h Desarrollo/perf/run.sh soak` | 5 usuarios, **2 h** (stack recién creado). p95 por intervalo de 10 min: 6,3 · 3,9 · 3,7 · 3,1 · 3,3 · 3,3 · 3,1 · 3,0 · 5,1 · 5,4 · 5,4 · 5,3 ms; último/primero = **0,83** (el máximo permitido es 1,20). **0 fallos en 17.967 solicitudes.** Memoria del contenedor de la API (incluye la compilación continua de Gradle del modo de desarrollo): 1,348 GiB al inicio, 1,363 GiB tras el calentamiento, un único escalón de +32 MiB entre los minutos 63 y 76 y estable en 1,399–1,401 GiB durante los 44 minutos finales; sin crecimiento sostenido. Prueba de humo previa de 3 min en `rnf04-06-soak-smoke-3m.*`. | **PASS** |
+
+Datos: [carga estable](rnf04-02-steady.json),
+[rampa](rnf04-03-ramp.json), [integridad](rnf04-03-ramp-integrity.txt),
+[ráfaga](rnf04-04-reminder-burst.json), [volumen](rnf04-05-volume.txt),
+[prueba de 2 h](rnf04-06-soak.json) y su [memoria por minuto](rnf04-06-soak-memory.csv).
+
+### Rampa exploratoria (complemento de CP-RNF04-03)
+
+Como la rampa del plan no cruzó los 2 s, se repitió la misma carga (consulta de
+disponibilidad y agendamiento, ventanas de 10 s) subiendo de 20 a **1.000
+usuarios en 10 minutos**: `Desarrollo/perf/rnf04-03-ramp-explore.js`, ejecutado
+con `grafana/k6` contra el mismo stack aislado.
+
+- p95 por ventana de 10 s entre **6 y 16 ms** durante toda la rampa (la primera
+  ventana, de calentamiento, 109 ms); ninguna ventana cruzó los 2 s.
+- **305.325 solicitudes, 0 fallidas**; 152.655 citas creadas (201) y la misma
+  cantidad persistida en PostgreSQL, con **0 turnos duplicados**.
+- Un minuto después de la carga, la disponibilidad respondió en **6,23 ms**.
+
+Conclusión: en este ambiente el límite está por encima de 1.000 usuarios
+simultáneos. Más allá de esa carga, el generador de k6 comparte la máquina con el
+sistema y deja de medir al sistema de forma confiable; el límite real debe
+medirse en el ambiente de pruebas desplegado. Datos:
+[rampa exploratoria](rnf04-03-ramp-explore.json).
+
+La rampa y la ráfaga se repitieron con una base limpia tras corregir un
+solapamiento de fechas que había generado 45 conflictos controlados en el
+primer ensayo de rampa. Los valores de la tabla corresponden a la repetición.
+
+## Seguridad — S2 / CP-RNF03-03
+
+**Sin alertas de riesgo alto.** Con ZAP 2.17.0 se ejecutaron el escaneo base
+(`Desarrollo/security/zap/run.sh`) y el **escaneo activo**
+(`Desarrollo/security/zap/active.sh`, `zap-full-scan.py`) contra el frontend
+(4292) y la API (8092) del stack aislado. En la API, el escaneo activo usó la
+sesión de la auxiliar de la base demo, de modo que también atacó las rutas del
+personal (agenda, reportes, historial, odontólogos), además de las públicas
+(disponibilidad, catálogos, enlace de gestión).
+
+| Escaneo | Objetivo | Alto | Medio | Bajo | Informativo | Reglas superadas |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Base | Frontend | 0 | 4 | 5 | 4 | — |
+| Base | API | 0 | 0 | 1 | 1 | — |
+| Activo | Frontend | 0 | 4 | 5 | 6 | 135 |
+| Activo | API (con sesión) | 0 | 1 | 1 | 2 | 140 |
+
+Las reglas activas superadas incluyen inyección SQL, NoSQL y de comandos del
+sistema, inyección de plantillas del servidor, XSS reflejado y persistente y
+recorrido de rutas. Se cuentan las entradas de alerta por riesgo, no el número
+de URLs afectadas. Registro de las alertas medias, sin cambios en la aplicación:
+
+| ID de ZAP | Alerta | Justificación o corrección propuesta |
+| --- | --- | --- |
+| 10055 | Directivas CSP sin alternativa | Aparece en las respuestas 404 de `robots.txt` y `sitemap.xml` del servidor de desarrollo; validar una política explícita para documentos HTML y páginas de error en el servidor de entrega. |
+| 10038 | Falta el encabezado CSP | Probar una política en modo de reporte y, tras validarla, aplicarla a la página principal (encabezados de Vercel). |
+| 10020 | Falta protección contra clickjacking | Establecer `frame-ancestors 'none'` si el sitio no necesita permitir incrustaciones. |
+| 90003 | Falta integridad de subrecursos | La entrada observada corresponde al servidor de desarrollo; verificar los recursos de la compilación de entrega y aplicar SRI a scripts estáticos externos cuando corresponda. |
+| 40042 | Fuga de información de Spring Actuator (API) | Justificada: solo se expone `/actuator/health` y responde `{"status":"UP"}`, a propósito, para la verificación de salud del hosting; ningún otro endpoint de Actuator está publicado. |
+
+Informes: escaneo base del frontend [HTML](rnf03-03-baseline-frontend.html) y
+[JSON](rnf03-03-baseline-frontend.json), de la API
+[HTML](rnf03-03-baseline-api.html) y [JSON](rnf03-03-baseline-api.json);
+escaneo activo del frontend [HTML](rnf03-03-active-frontend.html) y
+[JSON](rnf03-03-active-frontend.json), de la API
+[HTML](rnf03-03-active-api.html) y [JSON](rnf03-03-active-api.json).
+
+### Encabezados de seguridad en Vercel (corrección de las alertas medias)
+
+Los encabezados de `Desarrollo/frontend/vercel.json` (CSP con el script en línea
+permitido por hash, `frame-ancestors 'none'`, `X-Frame-Options`,
+`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP y CORP)
+y la fuente Inter alojada en el propio sitio se verificaron sobre la
+**compilación de producción** servida localmente con esos mismos encabezados
+(`scripts/serve-dist.mjs`): la prueba `e2e/security-headers.spec.ts` recorrió
+la página principal, el agendamiento, el ingreso del personal, «Mi perfil» y
+los reportes sin ninguna violación de CSP (6 de 6). Escaneo base de ZAP sobre
+esa compilación ([HTML](rnf03-03-baseline-frontend-prod-headers.html),
+[JSON](rnf03-03-baseline-frontend-prod-headers.json)): **0 altas**.
+
+| Alerta | Antes | Después |
+| --- | --- | --- |
+| 10038 Falta el encabezado CSP | Media | Corregida |
+| 10020 Falta protección contra clickjacking | Media | Corregida |
+| 90003 Falta integridad de subrecursos | Media | Corregida (sin CSS externo) |
+| 10063 Falta Permissions-Policy | Baja | Corregida |
+| 10055 CSP: `style-src 'unsafe-inline'` | Media | Justificada: Angular y Unovis insertan estilos en tiempo de ejecución; los scripts no permiten código en línea sin hash. |
+| 90004 Falta Cross-Origin-Embedder-Policy | Baja | Justificada: `require-corp` bloquearía las fotos de Cloudinary y la aplicación no usa `SharedArrayBuffer`. |
+
+## Compatibilidad y accesibilidad — S4
+
+- **CP-RNF01-02:** el agendamiento del paciente y el ingreso del personal se
+  completan sin desbordamiento horizontal en **Chromium, Firefox y WebKit**, en
+  escritorio (1366 × 768) y celular (360 × 640): 6 de 6. Chromium representa a
+  Chrome y Edge. WebKit no arranca directamente en el equipo de desarrollo (Arch
+  Linux con ICU 78; el WebKit de Playwright pide `libicui18n.so.74`), así que se
+  ejecutó dentro de la imagen oficial `mcr.microsoft.com/playwright:v1.65.1-noble`
+  con `Desarrollo/e2e/webkit.sh`: 2 de 2 (escritorio 13,7 s, celular 8,5 s).
+  Chromium y Firefox: `Desarrollo/e2e/run.sh`.
+- **CP-RNF02-02:** axe-core (`@axe-core/playwright` 4.14.1, WCAG 2.0, 2.1 y 2.2
+  A y AA) sobre la página principal, los tres pasos del agendamiento, la página
+  de gestión por enlace y el ingreso del personal, más un agendamiento completo
+  solo con teclado y foco visible: pasa. axe encontró y se corrigió una violación
+  seria (WCAG 2.5.3): el nombre accesible del enlace del logo («Villadent, ir al
+  inicio») no contenía su texto visible «AgendaPro». La revisión manual con lector
+  de pantalla (parte M del caso) la ejecuta QA.
+
+## Disponibilidad — S3
+
+**PASS de la prueba local del monitor; disponibilidad real pendiente.** Se
+ejecutó `health-monitor.sh http://127.0.0.1:8092/actuator/health 5` durante dos
+minutos, con un reloj simulado dentro del horario de atención y peticiones
+reales a la API. `summary.sh monitor-smoke.csv` registró 24/24 respuestas 200
+(100 %; latencia máxima de 4,167 ms). Fuera del horario, la ejecución con el
+reloj real no generó muestras. En otra prueba, con intervalo de un segundo,
+se inyectó un fallo de conexión seguido de peticiones reales: el monitor
+registró HTTP 000, recuperó HTTP 200 y anotó 1 s de recuperación. No se midió
+el arranque en frío de un proveedor de hosting.
+
+Datos: [sondeo](monitor-smoke.csv) y [recuperación](monitor-recovery-smoke.csv).
+
+## Análisis estático y de dependencias — CP-RNF03-04
+
+**Resultado: PASS.** No quedan hallazgos críticos ni altos sin corregir o
+justificar en el código ni en las dependencias del frontend y del backend. El resultado esperado es «No quedan hallazgos
+críticos ni altos sin corregir o justificar». Se ejecutó
+`Desarrollo/security/sast/run.sh` con Docker. Semgrep incluyó ambos árboles
+`src`, sin excluir las pruebas. Dependency-Check analiza los JAR resueltos
+de `runtimeClasspath`; el análisis de las dependencias del frontend
+corresponde a pnpm audit.
+
+| Herramienta | Crítico | Alto | Medio | Bajo | Informativo |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Semgrep CE 1.186.0 (462 archivos, 347 reglas ejecutadas) | 0 | 0 | 2 | 0 | 0 |
+| OWASP Dependency-Check 12.2.2 (backend, 106 dependencias de 120 JAR) | 0 | 0 (2 justificadas) | 0 | 0 | 0 |
+| pnpm audit (producción), primera ejecución | 0 | 1 | 0 | 0 | 0 |
+| pnpm audit (todas), primera ejecución | 0 | 6 | 10 | 3 | 0 |
+| **pnpm audit (producción), tras la corrección** | **0** | **0** | **0** | **0** | **0** |
+| **pnpm audit (todas), tras la corrección** | **0** | **0** | **2** | **2** | **0** |
+
+Los 6 avisos altos de la primera ejecución se **corrigieron** actualizando las
+dependencias del frontend (Angular 22.2 → 22.3, que resuelve `zod` 4.6.7,
+`vite` 8.3.8 y `undici` 8.13.1). Tras la actualización pasaron las 430 pruebas
+unitarias, la compilación, la verificación de los hashes de la CSP, los 24
+casos E2E y la prueba de CSP contra la compilación de producción. Los 4 avisos
+restantes (2 moderados y 2 bajos) son de `fast-uri`, una dependencia de las
+herramientas de compilación, no de la aplicación publicada.
+
+Los dos resultados de Semgrep son `WARNING` con impacto `MEDIUM`: SHA-1
+en `CloudinaryClient.java:118` (firma de solicitudes al proveedor, no
+hash de contraseñas) y una expresión regular construida con un selector
+escapado en `design-tokens.spec.ts:53` (solo pruebas).
+pnpm cuenta avisos, no rutas; el aviso de producción está incluido también
+en el total general. 
+
+| Aviso alto | Dependencia y alcance | Disposición |
+| --- | --- | --- |
+| [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) | `zod` 4.6.5, a través de `@angular/forms` en producción y `@angular/cli` en desarrollo. | **Corregido**: Angular 22.3 resuelve `zod` 4.6.7. |
+| [GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm) | `vite` 8.3.0, solo en rutas de `@angular/build` y `vitest`. | **Corregido**: `vite` 8.3.8. Además solo afectaba al servidor de desarrollo en Windows, no al sitio desplegado. |
+| [GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+| [GHSA-4w7w-5xrc-9h26](https://github.com/advisories/GHSA-4w7w-5xrc-9h26) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+| [GHSA-2m5v-pch6-74hx](https://github.com/advisories/GHSA-2m5v-pch6-74hx) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+| [GHSA-qrxm-fqhp-jwvm](https://github.com/advisories/GHSA-qrxm-fqhp-jwvm) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+
+**Dependency-Check del backend.** Sin clave de la API de NVD, el servicio
+devolvía HTTP 429 al 14 % de la descarga. El análisis se completó tomando la
+base del NVD de la copia diaria que publica el propio proyecto Dependency-Check
+(`--nvdDatafeed https://dependency-check.github.io/DependencyCheck_Builder/nvd_cache/`,
+actualizada el 26/11/2026; descarga completa en 54 s), en un volumen de datos
+propio. El análisis de los JAR corre sin red (`--network none`, con el
+analizador de Maven Central desactivado). Resultado: 2 avisos altos, ambos el
+mismo y ambos **falsos positivos**:
+
+| Aviso alto | Dependencias | Disposición |
+| --- | --- | --- |
+| [CVE-2018-1258](https://nvd.nist.gov/vuln/detail/CVE-2018-1258) | `spring-security-core` 7.1.2 y `spring-security-oauth2-resource-server` 7.1.2 | **Justificado (falso positivo)**: afecta solo a Spring Framework 5.0.5 usado con Spring Security; el CPE del NVD marca cualquier versión de Spring Security. El backend usa Spring Framework 7.0.10. Queda registrado en `Desarrollo/security/sast/dependency-check-suppressions.xml`. |
+
+Con una clave de NVD el script usa la API en su lugar:
+`NVD_API_KEY=<clave> Desarrollo/security/sast/run.sh`.
+
+Informes del repositorio: Semgrep [JSON](rnf03-04-semgrep.json) y
+[texto](rnf03-04-semgrep.log); pnpm [producción](rnf03-04-pnpm-prod.json) y
+[todas las dependencias](rnf03-04-pnpm-all.json); Gradle
+[inventario de 120 JAR](rnf03-04-runtime-jars.txt); Dependency-Check [informe JSON](rnf03-04-dependency-check.json),
+[registro de actualización](rnf03-04-dc-update.log),
+[registro del análisis](rnf03-04-dc-scan.log) y
+[estados de ejecución](rnf03-04-status.txt).

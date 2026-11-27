@@ -150,7 +150,7 @@ describe('LandingPage', () => {
     async (options) => {
       await render(options);
       for (const selector of ['aside', 'footer']) {
-        const link = el.querySelector(`${selector} a[href="https://wa.me/573001234567"]`);
+        const link = el.querySelector(`${selector} a[href="https://wa.me/573144223133"]`);
         expect(link?.getAttribute('target')).toBe('_blank');
         expect(link?.getAttribute('rel')).toBe('noopener');
         if (selector === 'aside') expect(text(link!)).toBe('Escríbenos por WhatsApp');

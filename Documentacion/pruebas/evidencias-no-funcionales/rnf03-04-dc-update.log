@@ -1,0 +1,4 @@
+[INFO] Checking for updates
+[INFO] Skipping NVD API Cache check since last check was within 4 hours.
+[INFO] Skipping Known Exploited Vulnerabilities update check since last check was within 24 hours.
+[INFO] Check for updates complete (861 ms)
