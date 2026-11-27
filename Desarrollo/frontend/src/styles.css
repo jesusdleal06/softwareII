@@ -259,6 +259,18 @@
   --chart-reprogramada: oklch(0.62 0 0);
   --chart-cancelada: oklch(0.53 0.2 25);
   --chart-no-asistio: oklch(0.56 0.11 70);
+  /*
+   * Report-chart ramp: a single-hue monochrome scale for the bars, used only by
+   * `core/data/status-styles.ts` (REPORT_CHART_SERIES). Status badges keep the
+   * semantic palette above. Steps stay at or above 3:1 against `card` and keep
+   * roughly 1.3:1 between adjacent series, so stacked bars stay separable.
+   */
+  --chart-series-1: oklch(0.2 0 0);
+  --chart-series-2: oklch(0.29 0 0);
+  --chart-series-3: oklch(0.38 0 0);
+  --chart-series-4: oklch(0.46 0 0);
+  --chart-series-5: oklch(0.54 0 0);
+  --chart-series-6: oklch(0.62 0 0);
   /* The sidebar tokens are monochrome too: the card grey, the ink and its hairlines. */
   --sidebar: oklch(0.9672 0 0);
   --sidebar-foreground: oklch(0.2046 0 0);
@@ -378,6 +390,13 @@
   --chart-reprogramada: oklch(0.84 0 0);
   --chart-cancelada: oklch(0.72 0.17 25);
   --chart-no-asistio: oklch(0.8 0.15 70);
+  /* The same report-chart ramp read from the light end; all six stay at or above 3:1. */
+  --chart-series-1: oklch(1 0 0);
+  --chart-series-2: oklch(0.9 0 0);
+  --chart-series-3: oklch(0.8 0 0);
+  --chart-series-4: oklch(0.7 0 0);
+  --chart-series-5: oklch(0.62 0 0);
+  --chart-series-6: oklch(0.55 0 0);
   --sidebar: oklch(0.2603 0 0);
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(1 0 0);
@@ -571,11 +590,11 @@
   --vis-font-family: 'Inter', system-ui, sans-serif;
   --vis-axis-font-family: 'Inter', system-ui, sans-serif;
   --vis-axis-tick-label-color: var(--muted-foreground);
-  --vis-axis-tick-label-font-size: 12px;
+  --vis-axis-tick-label-font-size: 11px;
   --vis-axis-label-color: var(--muted-foreground);
   --vis-axis-grid-color: var(--border);
   --vis-axis-grid-line-width: 1px;
-  --vis-axis-grid-opacity: 0.45;
+  --vis-axis-grid-opacity: 0.4;
   --vis-axis-domain-color: var(--border);
   --vis-axis-tick-line-width: 0;
   --vis-crosshair-line-stroke-color: var(--muted-foreground);
@@ -586,8 +605,8 @@
   --vis-tooltip-background-color: var(--card);
   --vis-tooltip-border-color: var(--border);
   --vis-tooltip-text-color: var(--card-foreground);
-  --vis-tooltip-padding: 0.75rem 0.875rem;
-  --vis-tooltip-border-radius: var(--r-md);
+  --vis-tooltip-padding: 0.625rem 0.75rem;
+  --vis-tooltip-border-radius: var(--r-sm);
   --vis-tooltip-backdrop-filter: none;
   --vis-tooltip-box-shadow: none;
   --vis-tooltip-transition-duration: 0ms;

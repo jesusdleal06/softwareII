@@ -101,12 +101,61 @@ describe('LandingPage', () => {
     });
 
     const profiles = [...el.querySelectorAll('[aria-labelledby="equipo"] li')].map((li) =>
-      [...li.querySelectorAll('span:not([aria-hidden])')].map((label) => text(label)),
+      [...li.querySelectorAll('span:not([aria-hidden]) > span')].map((label) => text(label)),
     );
     expect(profiles).toEqual([
       [first.name, first.specialty],
       [second.name, second.specialty, description],
     ]);
+  });
+
+  it('CP-RF11-12: opens an accessible dentist dialog from a card and returns focus on close', async () => {
+    const [first, second] = DENTISTS;
+    await render();
+
+    const triggers = Array.from(
+      el.querySelectorAll<HTMLButtonElement>('[aria-labelledby="equipo"] li button'),
+    );
+    expect(triggers.length).toBe(DENTISTS.length);
+
+    // First card has no photo: the dialog must fall back to the initials plate.
+    const trigger = triggers[0];
+    trigger.focus();
+    trigger.click();
+    fixture.detectChanges();
+
+    const dialog = el.querySelector('dialog[open]') as HTMLDialogElement;
+    expect(dialog).not.toBeNull();
+    const labelId = dialog.getAttribute('aria-labelledby');
+    expect(labelId).not.toBeNull();
+    expect(text(dialog.querySelector(`#${labelId}`)!)).toBe(first.name);
+    expect(dialog.querySelector('img')).toBeNull();
+    expect(text(dialog)).toContain(first.initials);
+    expect(text(dialog)).toContain(first.specialty);
+    for (const title of first.academicTitles ?? []) expect(text(dialog)).toContain(title);
+    expect(text(dialog)).toContain(first.description);
+
+    // Esc closes it (the native cancel event) and focus returns to the card.
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    fixture.detectChanges();
+    await settle();
+    fixture.detectChanges();
+    expect(el.querySelector('dialog[open]')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    // Second card has a photo: the dialog shows it, and the close button closes.
+    triggers[1].click();
+    fixture.detectChanges();
+    const photoDialog = el.querySelector('dialog[open]') as HTMLDialogElement;
+    expect(photoDialog).not.toBeNull();
+    expect(photoDialog.querySelector('img')?.getAttribute('src')).toBe(second.photoUrl);
+    expect(text(photoDialog)).toContain(second.name);
+
+    (photoDialog.querySelector('button[aria-label="Cerrar"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await settle();
+    fixture.detectChanges();
+    expect(el.querySelector('dialog[open]')).toBeNull();
   });
 
   it('renders the decorative calendar check in the availability panel', async () => {
