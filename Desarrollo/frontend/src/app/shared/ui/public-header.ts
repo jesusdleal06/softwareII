@@ -43,21 +43,43 @@ export class PublicHeader {}
   // The same card band as the header, so canvas, content and footer read as one page.
   host: { class: 'mt-auto border-t border-border bg-card' },
   template: `
-    <div class="public-container flex flex-col gap-1 py-6 text-sm text-muted-foreground">
-      <p class="font-semibold text-foreground">{{ clinic.name }}</p>
-      <p>{{ clinic.address }}</p>
-      <p>
-        <a
-          [href]="whatsappUrl"
-          target="_blank"
-          rel="noopener"
-          class="rounded-sm underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-        >
-          WhatsApp {{ whatsappNumber }}
-        </a>
-      </p>
-      <p>Lunes a viernes: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</p>
-      <p>Domingo: 8:00 AM - 1:00 PM</p>
+    <div
+      class="public-container flex flex-col gap-8 py-8 text-sm text-muted-foreground md:flex-row md:items-start md:justify-between md:gap-12"
+    >
+      <!-- Left: who the clinic is, then the invitation that closes the page. -->
+      <div class="md:max-w-sm">
+        <p class="text-base font-semibold text-foreground">{{ clinic.name }}</p>
+        <p class="mt-2 leading-relaxed text-pretty">
+          ¡No dejes pasar la oportunidad de cuidar tu sonrisa!
+        </p>
+      </div>
+
+      <!-- Right: the two groups a visitor needs to reach the clinic or know when it opens. -->
+      <div class="flex flex-col gap-8 sm:flex-row md:justify-end md:gap-16">
+        <div>
+          <p class="font-semibold text-foreground">Contacto</p>
+          <ul class="mt-3 flex flex-col gap-2">
+            <li>
+              <a
+                [href]="whatsappUrl"
+                target="_blank"
+                rel="noopener"
+                class="rounded-sm underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+              >
+                WhatsApp {{ whatsappNumber }}
+              </a>
+            </li>
+            <li>{{ clinic.address }}</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-semibold text-foreground">Horarios de atención</p>
+          <ul class="mt-3 flex flex-col gap-2">
+            <li>Lunes a viernes: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</li>
+            <li>Domingo: 8:00 AM - 1:00 PM</li>
+          </ul>
+        </div>
+      </div>
     </div>
   `,
 })

@@ -119,6 +119,22 @@ describe('shared ui markup', () => {
     expect(text(footer)).not.toContain('Lunes a sábado');
   });
 
+  it('groups the footer as brand plus tagline on one side and contact on the other', () => {
+    const footer = render().querySelector('footer') as HTMLElement;
+    const [brand, contact] = [...footer.querySelectorAll('.public-container > div')] as HTMLElement[];
+
+    // Left: who we are, then the invitation.
+    expect(text(brand)).toContain('Centro Odontológico Villadent');
+    expect(text(brand)).toContain('¡No dejes pasar la oportunidad de cuidar tu sonrisa!');
+
+    // Right: phone, address and opening hours, each under its own label.
+    expect(text(contact)).toContain('Contacto');
+    expect(text(contact)).toContain('WhatsApp +57 314 4223133');
+    expect(text(contact)).toContain('Horarios de atención');
+    expect(text(contact)).toContain('Lunes a viernes: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM');
+    expect(text(contact)).toContain('Domingo: 8:00 AM - 1:00 PM');
+  });
+
   it('shows the staff link as a compact button on phones and as text from sm up', () => {
     const header = render().querySelector('header') as HTMLElement;
     const staff = header.querySelector('a[href="/ingreso"]') as HTMLElement;
