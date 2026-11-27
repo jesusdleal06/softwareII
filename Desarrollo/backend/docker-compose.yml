@@ -35,6 +35,12 @@ services:
         # Flyway migrates at startup and needs a database that already answers
         # queries, not merely a created container.
         condition: service_healthy
+    # Local secrets (WhatsApp token, phone number id, template name, manage-link
+    # base). The file is git-ignored and optional, so the API still starts
+    # without it; `environment` below wins over any key repeated there.
+    env_file:
+      - path: .env
+        required: false
     environment:
       # Inside the compose network the database is reached by service name on
       # its internal port, so the host defaults in application.properties
