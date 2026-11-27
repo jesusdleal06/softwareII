@@ -23,7 +23,7 @@ import { REPORT_SERIES } from '../../../core/data/status-styles';
   selector: 'section[appReportChart]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:p-6',
+    class: 'card flex flex-col gap-4',
     'aria-labelledby': 'grafico',
   },
   imports: [
@@ -34,18 +34,18 @@ import { REPORT_SERIES } from '../../../core/data/status-styles';
     VisTooltipModule,
   ],
   template: `
-    <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex flex-col gap-1">
-        <h2 id="grafico" class="text-lg font-bold">Citas por día según estado</h2>
+        <h2 id="grafico" class="card-title tracking-tight">Citas por día según estado</h2>
         <p class="text-sm text-muted-foreground">{{ periodLabel() }}</p>
       </div>
-      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label="Leyenda">
+      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Leyenda">
         @for (item of legend(); track item.status) {
           <li class="flex items-center gap-2">
-            <svg class="size-3 shrink-0" viewBox="0 0 12 12" aria-hidden="true">
+            <svg class="size-2.5 shrink-0" viewBox="0 0 12 12" aria-hidden="true">
               <rect width="12" height="12" rx="2" [style.fill]="item.color"></rect>
             </svg>
-            <span>{{ item.label }} <span class="font-semibold tabular-nums">{{ item.total }}</span></span>
+            <span>{{ item.label }} <span class="font-semibold text-foreground tabular-nums">{{ item.total }}</span></span>
           </li>
         }
       </ul>

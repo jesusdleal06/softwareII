@@ -2,8 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, Directive, input, output 
 import { LucideCircleAlert } from '@lucide/angular';
 import { cn, mergeClasses } from './class-names';
 
+/**
+ * Kept in step with `@utility field` in `styles.css`: `border-input` is the only
+ * boundary that reaches 3:1, so the `bg-muted` fill is added to the border, never
+ * substituted for it (deviation L4 of the spec).
+ */
 const CONTROL_BASE =
-  'w-full min-h-14 rounded-xl border bg-background px-4 text-lg text-foreground placeholder:text-placeholder-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary';
+  'w-full h-10 rounded-md border bg-muted px-3 text-sm text-foreground placeholder:text-placeholder-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card focus-visible:border-primary dark:bg-secondary';
 
 /**
  * Chevron used as a select mask.
@@ -36,30 +41,30 @@ abstract class FieldBase {
   });
 
   protected readonly labelClass = computed(() =>
-    cn('text-base font-semibold text-foreground', this.labelHidden() && 'sr-only'),
+    cn('mb-1.5 block text-sm font-medium text-foreground', this.labelHidden() && 'sr-only'),
   );
 }
 
 const MESSAGES = `
   @if (error()) {
-    <p [id]="fieldId() + '-error'" role="alert" class="flex items-start gap-2 text-base font-medium text-destructive">
-      <svg lucideCircleAlert class="mt-0.5 size-5 shrink-0" aria-hidden="true"></svg>
+    <p [id]="fieldId() + '-error'" role="alert" class="mt-1.5 flex items-start gap-2 text-sm font-medium text-destructive">
+      <svg lucideCircleAlert class="mt-0.5 size-4 shrink-0" aria-hidden="true"></svg>
       <span>{{ error() }}</span>
     </p>
   } @else if (hint()) {
-    <p [id]="fieldId() + '-hint'" class="text-sm text-muted-foreground">{{ hint() }}</p>
+    <p [id]="fieldId() + '-hint'" class="mt-1.5 text-xs text-muted-foreground">{{ hint() }}</p>
   }
 `;
 
 /**
- * Large text input with label, hint and error (prototype `TextField`).
+ * Text input with label, hint and error (prototype `TextField`).
  * `sanitize` rewrites the typed text (and the input) before `valueChange` emits.
  */
 @Component({
   selector: 'app-text-field',
   imports: [LucideCircleAlert],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-2' },
+  host: { class: 'flex flex-col' },
   template: `
     <label [for]="fieldId()" [class]="labelClass()">{{ label() }}</label>
     <input
@@ -159,12 +164,12 @@ export interface SelectOption {
   label: string;
 }
 
-/** Large native select with label, hint and error (prototype `SelectField`). */
+/** Native select with label, hint and error (prototype `SelectField`). */
 @Component({
   selector: 'app-select-field',
   imports: [LucideCircleAlert],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-2' },
+  host: { class: 'flex flex-col' },
   styles: [
     `
       .select-arrow {
@@ -199,7 +204,7 @@ export interface SelectOption {
           <option [value]="option.value" [selected]="option.value === value()">{{ option.label }}</option>
         }
       </select>
-      <span class="select-arrow pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2" aria-hidden="true"></span>
+      <span class="select-arrow pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" aria-hidden="true"></span>
     </div>
     ${MESSAGES}
   `,

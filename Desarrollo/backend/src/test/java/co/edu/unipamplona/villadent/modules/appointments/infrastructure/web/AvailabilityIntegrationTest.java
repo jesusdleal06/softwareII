@@ -1,6 +1,9 @@
 package co.edu.unipamplona.villadent.modules.appointments.infrastructure.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,6 +14,7 @@ import co.edu.unipamplona.villadent.modules.appointments.domain.model.Appointmen
 import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentOrigin;
 import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentStatus;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivens.AppointmentRepository;
+import co.edu.unipamplona.villadent.modules.dentists.domain.error.InvalidScheduleException;
 import co.edu.unipamplona.villadent.modules.dentists.domain.model.Dentist;
 import co.edu.unipamplona.villadent.modules.dentists.domain.model.Schedule;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.DentistRepository;
@@ -59,9 +63,21 @@ class AvailabilityIntegrationTest {
     @Autowired
     private AppointmentRepository appointments;
 
+    /**
+     * Monday to Friday: the clinic works both shifts, so the fixtures that need a 14:00 slot
+     * always find one. Saturday is closed and its schedule cannot even be created.
+     */
     private LocalDate nextWorkingDay() {
         LocalDate date = LocalDate.now(Clock.system(BOGOTA)).plusDays(1);
-        while (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+        while (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            date = date.plusDays(1);
+        }
+        return date;
+    }
+
+    private LocalDate nextDayOfWeek(DayOfWeek target) {
+        LocalDate date = LocalDate.now(Clock.system(BOGOTA)).plusDays(1);
+        while (date.getDayOfWeek() != target) {
             date = date.plusDays(1);
         }
         return date;
@@ -166,5 +182,38 @@ class AvailabilityIntegrationTest {
         mockMvc.perform(get("/api/v1/public/procedures"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].active").isEmpty());
+    }
+
+    @Test
+    @DisplayName("S1: Saturday is closed, so the availability is empty")
+    void offersNoSlotsOnSaturday() throws Exception {
+        LocalDate saturday = nextDayOfWeek(DayOfWeek.SATURDAY);
+        Dentist dentist = dentist("Dra. Laura Villamizar");
+        Procedure procedure = procedure();
+        // Nothing to occupy: a Saturday schedule cannot even be created any more.
+        assertThatThrownBy(() -> Schedule.create(
+                        dentist.id(), DayOfWeek.SATURDAY.getValue(), LocalTime.of(8, 0), LocalTime.of(12, 0)))
+                .isInstanceOf(InvalidScheduleException.class);
+
+        mockMvc.perform(get(availabilityUrl(dentist, saturday, procedure)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slots").isEmpty());
+    }
+
+    @Test
+    @DisplayName("S1: Sunday offers the morning slots from 08:00 to 12:30")
+    void offersTheSundayMorningSlots() throws Exception {
+        LocalDate sunday = nextDayOfWeek(DayOfWeek.SUNDAY);
+        Dentist dentist = dentist("Dra. Camila Ortiz");
+        schedules.save(Schedule.create(
+                dentist.id(), DayOfWeek.SUNDAY.getValue(), LocalTime.of(8, 0), LocalTime.of(13, 0)));
+        Procedure procedure = procedure();
+
+        mockMvc.perform(get(availabilityUrl(dentist, sunday, procedure)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slots", hasSize(10)))
+                .andExpect(jsonPath("$.slots", hasItem("08:00")))
+                .andExpect(jsonPath("$.slots", hasItem("12:30")))
+                .andExpect(jsonPath("$.slots", not(hasItem("13:00"))));
     }
 }

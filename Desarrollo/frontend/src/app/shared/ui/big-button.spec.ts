@@ -36,7 +36,7 @@ describe('BigButton', () => {
     const { buttons, link } = render();
     expect(buttons[0].className).toContain('bg-primary');
     expect(buttons[0].className).toContain('min-h-12');
-    expect(link.className).toContain('bg-background');
+    expect(link.className).toContain('bg-secondary');
     expect(link.className).toContain('min-h-14');
     expect(buttons[1].className).toContain('bg-destructive');
     expect(buttons[1].className).toContain('min-h-16');

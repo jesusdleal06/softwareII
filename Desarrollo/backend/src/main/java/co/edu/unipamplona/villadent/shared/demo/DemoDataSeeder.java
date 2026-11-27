@@ -42,9 +42,14 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(DemoDataSeeder.class);
     private static final String DEMO_PASSWORD = "villadent2024";
-    private static final List<Shift> SHIFTS = List.of(
+    /** The clinic working hours (S1): Monday to Friday, morning and afternoon. */
+    private static final List<Shift> WEEKDAY_SHIFTS = List.of(
             new Shift(LocalTime.of(8, 0), LocalTime.of(12, 0)),
             new Shift(LocalTime.of(14, 0), LocalTime.of(18, 0)));
+    /** S1: Sunday, morning only; Saturday is closed and gets no shift at all. */
+    private static final Shift SUNDAY_SHIFT = new Shift(LocalTime.of(8, 0), LocalTime.of(13, 0));
+    private static final int[] WEEKDAYS = {1, 2, 3, 4, 5};
+    private static final int SUNDAY = 7;
     private static final List<DemoProcedure> PROCEDURES = List.of(
             new DemoProcedure("Limpieza", 30),
             new DemoProcedure("Calza (resina)", 45),
@@ -123,18 +128,22 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private void ensureSchedules(DentistResult dentist) {
         List<ScheduleResult> existing = listSchedules.listByDentist(dentist.id());
-        for (int day = 1; day <= 6; day++) {
-            int scheduleDay = day;
-            for (Shift shift : SHIFTS) {
-                boolean present = existing.stream().anyMatch(schedule ->
-                        schedule.dayOfWeek() == scheduleDay
-                                && schedule.start().equals(shift.start())
-                                && schedule.end().equals(shift.end()));
-                if (!present) {
-                    addSchedule.add(new AddScheduleCommand(
-                            dentist.id(), day, shift.start(), shift.end()));
-                }
+        for (int day : WEEKDAYS) {
+            for (Shift shift : WEEKDAY_SHIFTS) {
+                ensureShift(dentist, day, shift, existing);
             }
+        }
+        ensureShift(dentist, SUNDAY, SUNDAY_SHIFT, existing);
+    }
+
+    /** Adds the shift only when the dentist does not have it yet, so running twice adds nothing. */
+    private void ensureShift(DentistResult dentist, int day, Shift shift, List<ScheduleResult> existing) {
+        boolean present = existing.stream().anyMatch(schedule ->
+                schedule.dayOfWeek() == day
+                        && schedule.start().equals(shift.start())
+                        && schedule.end().equals(shift.end()));
+        if (!present) {
+            addSchedule.add(new AddScheduleCommand(dentist.id(), day, shift.start(), shift.end()));
         }
     }
 

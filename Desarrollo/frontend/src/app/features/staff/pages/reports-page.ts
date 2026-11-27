@@ -39,10 +39,10 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
     }
   `,
   template: `
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div class="flex flex-col gap-1">
-        <h1 class="text-2xl font-bold tracking-tight">Reportes</h1>
-        <p class="text-base text-muted-foreground">
+    <div class="page-header flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <h1 class="page-title">Reportes</h1>
+        <p class="page-subtitle tabular-nums">
           Periodo del {{ formatDate(from()) }} al {{ formatDate(to()) }}{{ dentistSuffix() }}
         </p>
       </div>
@@ -51,8 +51,8 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
           <button
             type="button"
             appBigButton
-            variant="outline"
-            size="lg"
+            variant="secondary"
+            size="md"
             (click)="exportReport()"
             [disabled]="empty() || invalidRange() || exporting() !== null"
           >
@@ -61,8 +61,8 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
           <button
             type="button"
             appBigButton
-            variant="outline"
-            size="lg"
+            variant="secondary"
+            size="md"
             (click)="exportReportPdf()"
             [disabled]="empty() || invalidRange() || exporting() !== null"
           >
@@ -70,14 +70,14 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
           </button>
         </div>
         @if (exported()) {
-          <p role="status" class="text-sm text-muted-foreground">
+          <p role="status" class="text-xs text-muted-foreground">
             {{ exported() === 'pdf' ? 'Archivo PDF descargado.' : 'Archivo CSV descargado.' }}
           </p>
         }
       </div>
     </div>
 
-    <section class="flex flex-col gap-4 rounded-2xl border bg-card p-4" aria-labelledby="filtros">
+    <section class="card flex flex-col gap-4" aria-labelledby="filtros">
       <h2 id="filtros" class="sr-only">Filtros</h2>
       <div class="flex flex-wrap gap-2" role="group" aria-label="Periodos rápidos">
         @for (s of shortcuts; track s.value) {
@@ -87,8 +87,8 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
             (click)="applyShortcut(s.value)"
             [class]="
               cn(
-                'min-h-12 rounded-xl border px-4 text-base font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                shortcut() === s.value ? 'border-primary bg-accent text-accent-foreground' : 'bg-card hover:bg-muted'
+                'btn-quiet px-3',
+                shortcut() === s.value && 'border-primary bg-accent text-accent-foreground hover:bg-accent'
               )
             "
           >
@@ -96,13 +96,12 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
           </button>
         }
       </div>
-      <div class="grid gap-4 sm:grid-cols-3">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <app-text-field
           fieldId="desde"
           label="Desde"
           type="date"
           [value]="from()"
-          inputClass="min-h-12 text-base"
           (valueChange)="setRange($event, to())"
         />
         <app-text-field
@@ -110,7 +109,6 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
           label="Hasta"
           type="date"
           [value]="to()"
-          inputClass="min-h-12 text-base"
           [error]="invalidRange() ? 'La fecha final debe ser igual o posterior a la inicial.' : undefined"
           (valueChange)="setRange(from(), $event)"
         />
@@ -120,28 +118,27 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
           placeholder="Todos"
           [options]="dentistOptions()"
           [value]="dentistId()"
-          inputClass="min-h-12 text-base"
           (valueChange)="dentistId.set($event)"
         />
       </div>
     </section>
 
     @if (loading()) {
-      <p role="status" class="rounded-2xl border bg-card px-5 py-10 text-center text-lg text-muted-foreground">
+      <p role="status" class="card text-center text-sm text-muted-foreground">
         Cargando el reporte…
       </p>
     } @else if (error()) {
-      <div class="flex flex-col items-center gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 px-6 py-10 text-center">
-        <p class="text-lg font-semibold">No pudimos cargar el reporte.</p>
-        <button type="button" appBigButton variant="outline" size="md" (click)="reload()">Reintentar</button>
+      <div class="flex flex-col items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-5 py-8 text-center">
+        <p class="text-sm font-semibold">No pudimos cargar el reporte.</p>
+        <button type="button" appBigButton variant="secondary" size="md" (click)="reload()">Reintentar</button>
       </div>
     } @else if (empty()) {
-      <div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed bg-card px-6 py-16 text-center">
-        <span class="flex size-16 items-center justify-center rounded-full bg-muted text-muted-foreground" aria-hidden="true">
-          <svg lucideFileChartColumn class="size-8"></svg>
+      <div class="card flex flex-col items-center gap-3 text-center">
+        <span class="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground" aria-hidden="true">
+          <svg lucideFileChartColumn class="size-5"></svg>
         </span>
-        <p class="text-xl font-bold">No hay datos para el periodo seleccionado</p>
-        <p class="max-w-md text-base text-muted-foreground text-pretty">
+        <p class="text-sm font-semibold">No hay datos para el periodo seleccionado</p>
+        <p class="max-w-md text-xs text-muted-foreground text-pretty">
           Prueba con otro rango de fechas o quita el filtro de odontólogo.
         </p>
       </div>
@@ -163,13 +160,13 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
       <section appReportChart [days]="breakdown()"></section>
     }
 
-    <section class="flex flex-col gap-3 rounded-2xl border bg-card p-4" aria-labelledby="reportes-generados">
+    <section class="flex flex-col gap-3 rounded-xl border bg-card p-4" aria-labelledby="reportes-generados">
       <h2 id="reportes-generados" class="text-xl font-bold">Reportes generados</h2>
 
       @if (historyLoading()) {
         <p role="status" class="text-base text-muted-foreground">Cargando los reportes generados…</p>
       } @else if (historyError()) {
-        <div class="flex flex-col items-center gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 px-6 py-8 text-center">
+        <div class="flex flex-col items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-6 py-8 text-center">
           <p class="text-base font-semibold">No pudimos cargar los reportes generados.</p>
           <button type="button" appBigButton variant="outline" size="md" (click)="loadHistory()">Reintentar</button>
         </div>

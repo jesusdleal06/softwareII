@@ -69,7 +69,7 @@ describe('ThemeToggle', () => {
 
   it('keeps a 44px touch target and hides the icon from assistive tech', () => {
     expect(control().className).toContain('size-12');
-    expect(control().className).toContain('rounded-xl');
+    expect(control().className).toContain('rounded-md');
     expect(control().className).toContain('focus-visible:ring-2');
     expect(control().querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });

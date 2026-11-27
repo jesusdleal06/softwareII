@@ -46,10 +46,10 @@ export function mondayOf(d: Date): Date {
   return copy;
 }
 
-/** Monday to Saturday of the week containing `base`. */
+/** Monday to Sunday of the week containing `base`, so the picker can show the open Sunday. */
 export function workWeek(base: Date): Date[] {
   const monday = mondayOf(base);
-  return Array.from({ length: 6 }, (_, i) => addDays(monday, i));
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 }
 
 /** `yyyy-mm-dd` → `dd/mm/yyyy`. */

@@ -54,8 +54,8 @@ const PHOTO_FAILURE = 'No pudimos subir la imagen. Intenta de nuevo.';
   host: { class: 'flex flex-col gap-6' },
   template: `
     <div class="flex flex-col gap-1">
-      <h1 class="text-2xl font-bold tracking-tight">Mi perfil</h1>
-      <p class="text-base text-muted-foreground">
+      <h1 class="page-title">Mi perfil</h1>
+      <p class="page-subtitle">
         Estos datos aparecen en el sitio público cuando tus pacientes eligen su odontólogo.
       </p>
     </div>
@@ -156,7 +156,7 @@ const PHOTO_FAILURE = 'No pudimos subir la imagen. Intenta de nuevo.';
               />
             } @else {
               <span
-                class="flex size-24 items-center justify-center rounded-full bg-secondary text-2xl font-bold text-secondary-foreground"
+                class="flex size-24 items-center justify-center rounded-full bg-secondary text-xl font-semibold text-secondary-foreground"
                 aria-hidden="true"
               >
                 {{ initials() }}

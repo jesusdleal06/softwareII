@@ -1,8 +1,8 @@
-import { SHIFTS } from '../config/clinic';
+import { shiftsForDate } from '../config/clinic';
 import { Appointment, AppointmentStatus } from '../models';
 import { endOf } from './catalog';
 import { SLOT_INTERVAL_MINUTES } from './constants';
-import { fromDateKey, toDateKey } from './dates';
+import { toDateKey } from './dates';
 import { toHhmm, toMinutes } from './time';
 
 /** Statuses that occupy a slot and count as the patient's active appointment. */
@@ -16,9 +16,9 @@ export function isActiveStatus(status: AppointmentStatus): boolean {
   return ACTIVE_STATUSES.includes(status);
 }
 
-/** Monday to Saturday. */
+/** Days with opening windows: Monday to Friday, and Sunday. Saturday is closed. */
 export function isWorkingDay(dateKey: string): boolean {
-  return fromDateKey(dateKey).getDay() !== 0;
+  return shiftsForDate(dateKey).length > 0;
 }
 
 export function isPastDate(dateKey: string, now: Date): boolean {
@@ -36,10 +36,10 @@ export interface SlotQuery {
 }
 
 /**
- * Start times (`HH:MM`) where the whole procedure fits inside a shift without
- * overlapping another active appointment of the SAME dentist. Each dentist has
- * an independent agenda. Sundays, past dates and already-started times today
- * offer nothing.
+ * Start times (`HH:MM`) where the whole procedure fits inside a window of that
+ * date's day without overlapping another active appointment of the SAME dentist.
+ * Each dentist has an independent agenda. Closed days (Saturday), past dates and
+ * already-started times today offer nothing.
  */
 export function availableSlots(query: SlotQuery): string[] {
   const { dentistId, date, durationMinutes, appointments, now, excludeAppointmentId } = query;
@@ -57,7 +57,7 @@ export function availableSlots(query: SlotQuery): string[] {
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   const free: string[] = [];
-  for (const shift of SHIFTS) {
+  for (const shift of shiftsForDate(date)) {
     for (
       let start = shift.start;
       start + durationMinutes <= shift.end;

@@ -10,8 +10,10 @@ import { AppointmentActions } from '../components/appointment-actions';
   host: { class: 'flex flex-1 flex-col' },
   template: `
     <header appPublicHeader></header>
-    <main class="flex-1">
-      <div class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+    <!-- The body paints the canvas; the shell re-asserts it so the summary card sits on it. -->
+    <main class="canvas flex-1 pb-12 sm:pb-16">
+      <!-- Same padding as the page-header utility; the management view keeps its narrower measure. -->
+      <div class="page-header mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8">
         <app-appointment-actions [token]="token()" [initialAction]="accion()" />
       </div>
     </main>

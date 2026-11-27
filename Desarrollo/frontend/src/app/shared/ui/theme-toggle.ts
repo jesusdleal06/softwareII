@@ -19,7 +19,7 @@ import { currentTheme, Theme, toggleTheme } from '../browser/theme';
       [attr.aria-pressed]="isDark()"
       [title]="label()"
       (click)="toggle()"
-      class="flex size-12 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      class="flex size-12 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
     >
       @if (isDark()) {
         <svg lucideSun class="size-5 shrink-0" aria-hidden="true"></svg>

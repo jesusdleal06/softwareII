@@ -10,25 +10,25 @@ import { Appointment } from '../../core/models';
   imports: [LucideCheckCheck],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex flex-col gap-3 rounded-2xl bg-success/10 p-4 dark:bg-success/20',
+    class: 'flex flex-col gap-3 rounded-xl border border-success/30 bg-success/10 p-4 dark:bg-success/20',
     'aria-label': 'Vista previa del mensaje de WhatsApp',
   },
   template: `
     <figcaption class="flex items-center gap-3">
       <span
-        class="flex size-10 items-center justify-center rounded-full bg-whatsapp text-sm font-bold text-success-foreground"
+        class="flex size-10 items-center justify-center rounded-full bg-whatsapp text-sm font-semibold text-whatsapp-foreground"
         aria-hidden="true"
       >
         V
       </span>
       <span class="flex flex-col leading-tight">
         <span class="font-semibold">{{ clinic.shortName }}</span>
-        <span class="text-xs text-muted-foreground">
+        <span class="text-xs tabular-nums text-muted-foreground">
           WhatsApp · {{ formatDate(reminder().date) }} {{ formatTime(reminder().time) }}
         </span>
       </span>
     </figcaption>
-    <div class="relative ml-2 max-w-prose rounded-2xl rounded-tl-sm bg-card px-4 py-3 text-base leading-relaxed shadow-sm">
+    <div class="relative ml-2 max-w-prose rounded-md rounded-tl-sm border border-border bg-card px-4 py-3 text-sm leading-relaxed">
       <p>Hola {{ firstName() }}, te recordamos tu cita en {{ clinic.name }}:</p>
       <p class="mt-2">
         <strong>{{ formatDate(appointment().date) }}</strong> a las <strong>{{ formatTime(appointment().time) }}</strong>
@@ -41,7 +41,7 @@ import { Appointment } from '../../core/models';
         <span class="wrap-anywhere">villadent.co/<wbr />cita/<wbr />enlace-<wbr />personal</span>
       </p>
       <p class="mt-2 text-muted-foreground">Si no puedes asistir, cancela con anticipación para liberar el turno. Gracias.</p>
-      <span class="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+      <span class="mt-1 flex items-center justify-end gap-1 text-xs tabular-nums text-muted-foreground">
         {{ formatTime(reminder().time) }}
         <svg lucideCheckCheck class="size-4 text-primary" aria-hidden="true"></svg>
       </span>

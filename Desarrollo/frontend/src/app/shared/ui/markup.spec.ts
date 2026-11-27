@@ -90,7 +90,7 @@ describe('shared ui markup', () => {
   it('renders the appointment summary rows', () => {
     const dl = render().querySelector('dl') as HTMLElement;
     expect(dl.className).toContain('w-full');
-    expect(dl.className).toContain('rounded-2xl');
+    expect(dl.className).toContain('rounded-xl');
     const content = text(dl);
     expect(content).toContain('VD-1049');
     expect(content).toContain('miércoles 14 de octubre de 2026');
@@ -110,7 +110,13 @@ describe('shared ui markup', () => {
 
   it('renders the public footer contact data', () => {
     const footer = render().querySelector('footer') as HTMLElement;
-    expect(text(footer)).toContain('Cra. 10 #21-14, Villa del Rosario, Norte de Santander');
+    expect(text(footer)).toContain('Cra. 10 #21-14, Villa Del Rosario, Norte de Santander, Colombia');
+    // One contact number only: the landline is gone, WhatsApp carries it.
+    expect(text(footer)).not.toContain('645 12 34');
+    // Weekdays plus Sunday, as the clinic opens now.
+    expect(text(footer)).toContain('Lunes a viernes: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM');
+    expect(text(footer)).toContain('Domingo: 8:00 AM - 1:00 PM');
+    expect(text(footer)).not.toContain('Lunes a sábado');
   });
 
   it('shows the staff link as a compact button on phones and as text from sm up', () => {
@@ -120,11 +126,9 @@ describe('shared ui markup', () => {
     expect(staff.className).toContain('border');
     expect(staff.className).toContain('min-h-11');
     expect(staff.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
-    const labels = Array.from(staff.querySelectorAll('span')).map((span) => [text(span), span.className]);
-    expect(labels).toEqual([
-      ['Personal', 'sm:hidden'],
-      ['Ingreso del personal', 'hidden sm:inline'],
-    ]);
+    // One label at every width: the full copy, not a mobile shorthand.
+    const labels = Array.from(staff.querySelectorAll('span')).map((span) => text(span));
+    expect(labels).toEqual(['Ingreso del personal']);
   });
 
   it('gives the staff link a full-opacity 2px focus ring', () => {
@@ -142,8 +146,8 @@ describe('shared ui markup', () => {
       expect((line.match(/·/g) ?? []).length).toBeLessThanOrEqual(1);
       expect(line).not.toMatch(/[–—]/);
     }
-    expect(text(footer)).toContain('Cra. 10 #21-14, Villa del Rosario, Norte de Santander');
-    expect(text(footer)).toContain('WhatsApp +57 314 422 3133');
+    expect(text(footer)).toContain('Cra. 10 #21-14, Villa Del Rosario, Norte de Santander, Colombia');
+    expect(text(footer)).toContain('WhatsApp +57 314 4223133');
   });
 
   it('gives the summary status badge a definition term', () => {

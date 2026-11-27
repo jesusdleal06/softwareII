@@ -44,23 +44,23 @@ export function scrollModalToTop(): void {
       @if (open()) {
         <div #backdrop [class]="wrapperClass()">
           <div [class]="panelClass()" role="document">
-            <header class="flex items-start justify-between gap-4 border-b px-6 py-5">
-              <div class="flex flex-col gap-1">
-                <h2 [id]="titleId" class="text-xl font-bold text-balance">{{ title() }}</h2>
+            <header class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+              <div class="flex min-w-0 flex-col">
+                <h2 [id]="titleId" class="card-title text-balance">{{ title() }}</h2>
                 @if (description()) {
-                  <p [id]="descriptionId" class="text-base text-muted-foreground text-pretty">{{ description() }}</p>
+                  <p [id]="descriptionId" class="card-subtitle text-pretty">{{ description() }}</p>
                 }
               </div>
               <button
                 type="button"
                 aria-label="Cerrar"
-                class="flex size-12 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring outline-none"
+                class="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                 (click)="closed.emit()"
               >
-                <svg lucideX class="size-6"></svg>
+                <svg lucideX class="size-5"></svg>
               </button>
             </header>
-            <div data-modal-scroll class="flex-1 overflow-y-auto px-6 py-5">
+            <div data-modal-scroll class="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
               <ng-content />
             </div>
           </div>
@@ -88,7 +88,7 @@ export class Modal {
 
   protected readonly dialogClass = computed(() =>
     cn(
-      'm-0 max-h-none max-w-none bg-transparent p-0 text-foreground backdrop:bg-foreground/40 backdrop:backdrop-blur-[2px]',
+      'm-0 max-h-none max-w-none bg-transparent p-0 text-foreground backdrop:bg-foreground/40',
       'fixed inset-0 h-dvh w-dvw',
     ),
   );
@@ -103,9 +103,11 @@ export class Modal {
 
   protected readonly panelClass = computed(() =>
     cn(
-      'flex w-full flex-col bg-card shadow-xl',
-      this.layout() === 'center' && cn('max-h-[92dvh] rounded-t-2xl sm:rounded-2xl', WIDTHS[this.size()]),
-      this.layout() === 'side' && 'h-full max-w-xl sm:border-l',
+      // One elevation: the panel's border. No shadow, no blur (S5).
+      'flex w-full flex-col bg-card',
+      this.layout() === 'center' &&
+        cn('max-h-[92dvh] rounded-t-xl border border-border sm:rounded-xl', WIDTHS[this.size()]),
+      this.layout() === 'side' && 'h-full max-w-xl border-l border-border',
     ),
   );
 
