@@ -6,6 +6,8 @@ import { SlotPicker, SlotSelection } from './slot-picker';
 // Wednesday 2026-10-14 09:10. On Thursday 15 Dra. Villamizar (d1) is busy 09:00–09:45.
 const NOW = new Date(2026, 9, 14, 9, 10);
 const THURSDAY = '2026-10-15';
+const SATURDAY = '2026-10-17';
+const SUNDAY = '2026-10-18';
 
 describe('SlotPicker', () => {
   let fixture: ComponentFixture<SlotPicker>;
@@ -93,19 +95,48 @@ describe('SlotPicker', () => {
   it('disables past days and the previous-week button in the current week', async () => {
     const el = await render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
     const days = el.querySelectorAll<HTMLButtonElement>('[aria-label="Día"] button');
-    expect(days).toHaveLength(6);
+    expect(days).toHaveLength(7);
     expect(days[0].disabled).toBe(true); // Monday 12
     expect(days[2].disabled).toBe(false); // today
     expect(text(days[2])).toContain('Hoy');
     expect(el.querySelector<HTMLButtonElement>('[aria-label="Semana anterior"]')?.disabled).toBe(true);
-    expect(text(el)).toContain('12 - 17 de octubre de 2026');
+    expect(text(el)).toContain('12 - 18 de octubre de 2026');
+  });
+
+  it('marks Saturday as closed and keeps Sunday selectable', async () => {
+    const el = await render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
+    const days = Array.from(el.querySelectorAll<HTMLButtonElement>('[aria-label="Día"] button'));
+    const saturday = days[5];
+    expect(text(saturday)).toContain('Sáb');
+    expect(saturday.disabled).toBe(true);
+    expect(saturday.getAttribute('aria-label')).toBe('sábado 17 de octubre de 2026: la clínica no abre');
+    expect(saturday.tabIndex).toBe(-1);
+    const sunday = days[6];
+    expect(text(sunday)).toContain('Dom');
+    expect(sunday.disabled).toBe(false);
+    expect(sunday.getAttribute('aria-label')).toBeNull();
+  });
+
+  it('offers the Sunday morning slots when Sunday is chosen', async () => {
+    store.availability.mockResolvedValue(['08:00', '08:30', '09:00', '12:00', '12:30']);
+    const el = await render({ dentistId: 'd1', procedureId: 'p1', date: SUNDAY, time: '' });
+    expect(hours(el)).toEqual(['8:00 AM', '8:30 AM', '9:00 AM', '12:00 PM', '12:30 PM']);
+    expect(store.availability).toHaveBeenCalledWith('d1', 'p1', SUNDAY);
+  });
+
+  it('offers no slot buttons on a closed Saturday', async () => {
+    store.availability.mockResolvedValue(['08:00', '08:30']);
+    const el = await render({ dentistId: 'd1', procedureId: 'p1', date: SATURDAY, time: '' });
+    expect(hours(el)).toEqual([]);
+    expect(text(el)).toContain('La clínica no abre los sábados.');
+    expect(store.availability).not.toHaveBeenCalled();
   });
 
   it('navigates to the next week', async () => {
     const el = await render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
     el.querySelector<HTMLButtonElement>('[aria-label="Semana siguiente"]')?.click();
     fixture.detectChanges();
-    expect(text(el)).toContain('19 - 24 de octubre de 2026');
+    expect(text(el)).toContain('19 - 25 de octubre de 2026');
     expect(el.querySelector<HTMLButtonElement>('[aria-label="Semana anterior"]')?.disabled).toBe(false);
   });
 
@@ -223,7 +254,7 @@ describe('SlotPicker', () => {
 
   it('formats the week range with a hyphen separator', async () => {
     const el = await render({ dentistId: 'd1', procedureId: 'p1', date: '', time: '' });
-    expect(text(el)).toContain('12 - 17 de octubre de 2026');
+    expect(text(el)).toContain('12 - 18 de octubre de 2026');
     expect(text(el)).not.toMatch(/[–—]/);
   });
 

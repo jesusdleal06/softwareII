@@ -43,7 +43,7 @@ export function reportRange(shortcut: ReportShortcut, now: Date): [string, strin
       return [toDateKey(now), toDateKey(now)];
     case 'semana': {
       const monday = mondayOf(now);
-      return [toDateKey(monday), toDateKey(addDays(monday, 5))];
+      return [toDateKey(monday), toDateKey(addDays(monday, 6))];
     }
     case 'mes': {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -81,13 +81,16 @@ export function computeReportMetrics(appointments: readonly Appointment[]): Repo
   };
 }
 
-/** Working days (Sundays skipped) between `from` and `to`, scanning at most 62 calendar days. */
+/**
+ * Days the clinic opens (Monday to Friday, and Sunday) between `from` and `to`,
+ * scanning at most 62 calendar days. Closed Saturdays are skipped.
+ */
 export function reportDays(from: string, to: string): string[] {
   const days: string[] = [];
   const end = fromDateKey(to);
   let d = fromDateKey(from);
   for (let guard = 0; d <= end && guard < MAX_REPORT_DAYS; guard++) {
-    if (d.getDay() !== 0) days.push(toDateKey(d));
+    if (d.getDay() !== 6) days.push(toDateKey(d));
     d = addDays(d, 1);
   }
   return days;

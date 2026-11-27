@@ -30,7 +30,7 @@ describe('dates', () => {
     expect(mondayOf(new Date(2026, 9, 14, 15, 0)).getHours()).toBe(0);
   });
 
-  it('returns the Monday-to-Saturday work week', () => {
+  it('returns the Monday-to-Sunday work week', () => {
     expect(workWeek(new Date(2026, 9, 14)).map(toDateKey)).toEqual([
       '2026-10-12',
       '2026-10-13',
@@ -38,7 +38,11 @@ describe('dates', () => {
       '2026-10-15',
       '2026-10-16',
       '2026-10-17',
+      '2026-10-18',
     ]);
+    // A Sunday closes the week that started the previous Monday.
+    expect(workWeek(new Date(2026, 9, 18)).map(toDateKey).at(-1)).toBe('2026-10-18');
+    expect(workWeek(new Date(2026, 9, 18)).map(toDateKey)[0]).toBe('2026-10-12');
   });
 
   it('formats dates in Spanish', () => {

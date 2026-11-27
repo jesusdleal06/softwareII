@@ -9,6 +9,7 @@ import {
   provideFakeStore,
 } from '../../../shared/testing/fake-store';
 import { settle, text } from '../../../shared/testing/dom';
+import { PUBLIC_WHATSAPP_URL } from '../../../shared/ui/public-header';
 import { LandingPage } from './landing-page';
 
 // Wednesday 2026-10-14 09:10 (the project's fixture instant).
@@ -25,9 +26,10 @@ describe('LandingPage', () => {
       dentists?: Dentist[];
       catalogFailure?: boolean;
       availabilityFailure?: boolean;
+      now?: Date;
     } = {},
   ): Promise<void> {
-    store = createFakeStore({ now: NOW, session: null });
+    store = createFakeStore({ now: options.now ?? NOW, session: null });
     if (options.dentists) store.dentistsState.set(options.dentists);
     store.availability.mockResolvedValue(options.availability ?? ['09:00', '10:00', '11:00']);
     if (options.catalogFailure)
@@ -114,24 +116,54 @@ describe('LandingPage', () => {
     expect(icon?.querySelector('path[d]')).not.toBeNull();
   });
 
-  it('feeds the hero panel with the real next-available slots from the store', async () => {
+  /** Opening windows the panel must advertise for a weekday and for a Sunday. */
+  const WEEKDAY_WINDOWS = [
+    `${formatTime('08:00')} - ${formatTime('12:00')}`,
+    `${formatTime('14:00')} - ${formatTime('18:00')}`,
+  ];
+  const SUNDAY_WINDOWS = [`${formatTime('08:00')} - ${formatTime('13:00')}`];
+
+  /** Day label plus the windows advertised under it. */
+  function panelDays(panel: HTMLElement): { label: string; windows: string[] }[] {
+    return [...panel.querySelectorAll('li')].map((li) => {
+      const [label, ...windows] = [...li.querySelectorAll('span')].map((span) => text(span));
+      return { label, windows };
+    });
+  }
+
+  it('advertises each upcoming day with its opening windows instead of single slots', async () => {
     await render();
     const panel = hero().querySelector('aside') as HTMLElement;
     expect(panel).not.toBeNull();
     expect(text(panel)).toContain('Próximos horarios');
 
-    const shownTimes = Array.from(panel.querySelectorAll('span'))
-      .map((s) => s.textContent?.trim() ?? '')
-      .filter((t) => /^\d{1,2}:\d{2} (AM|PM)$/.test(t));
-    expect(shownTimes.length).toBeGreaterThan(0);
-    for (const time of shownTimes)
-      expect([formatTime('09:00'), formatTime('10:00'), formatTime('11:00')]).toContain(time);
+    // Wednesday 09:10 fixture: today, Thursday and Friday are the next working days.
+    expect(panelDays(panel)).toEqual([
+      { label: 'Hoy', windows: WEEKDAY_WINDOWS },
+      { label: 'Jue', windows: WEEKDAY_WINDOWS },
+      { label: 'Vie', windows: WEEKDAY_WINDOWS },
+    ]);
   });
 
   it('shows an honest empty state when the agenda has no free slots', async () => {
     await render({ availability: [] });
     const panel = el.querySelector('aside') as HTMLElement;
     expect(text(panel)).toContain('No hay cupos en los próximos días');
+  });
+
+  it('skips a closed Saturday in the lookahead and may advertise Sunday', async () => {
+    // Friday 2026-10-16: the next days are Sat 17 (closed), Sun 18 and Mon 19.
+    await render({ now: new Date(2026, 9, 16, 9, 10) });
+    const panel = hero().querySelector('aside') as HTMLElement;
+    const labels = Array.from(panel.querySelectorAll('li > span')).map((label) => text(label));
+    expect(labels).toEqual(['Hoy', 'Dom', 'Lun']);
+    expect(text(panel)).not.toContain('Sáb');
+    // Sunday is one continuous morning, Monday goes back to the weekday windows.
+    expect(panelDays(panel).map((day) => day.windows)).toEqual([
+      WEEKDAY_WINDOWS,
+      SUNDAY_WINDOWS,
+      WEEKDAY_WINDOWS,
+    ]);
   });
   it.each([{ catalogFailure: true }, { availabilityFailure: true }])(
     'shows a booking fallback instead of an empty agenda when loading fails: %j',
@@ -150,7 +182,7 @@ describe('LandingPage', () => {
     async (options) => {
       await render(options);
       for (const selector of ['aside', 'footer']) {
-        const link = el.querySelector(`${selector} a[href="https://wa.me/573144223133"]`);
+        const link = el.querySelector(`${selector} a[href="${PUBLIC_WHATSAPP_URL}"]`);
         expect(link?.getAttribute('target')).toBe('_blank');
         expect(link?.getAttribute('rel')).toBe('noopener');
         if (selector === 'aside') expect(text(link!)).toBe('Escríbenos por WhatsApp');

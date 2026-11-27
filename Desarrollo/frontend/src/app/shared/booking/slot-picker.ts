@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, On
 import { LucideCheck, LucideChevronLeft, LucideChevronRight, LucideClock } from '@lucide/angular';
 import {
   addDays,
+  formatLongDate,
   formatTime,
   fromDateKey,
   isMorning,
   isPastDate,
+  isWorkingDay,
   mondayOf,
   monthName,
   shortDayName,
@@ -203,15 +205,16 @@ const EMPTY_HINT =
           </button>
         </div>
       </div>
-      <div role="radiogroup" aria-label="Día" class="grid grid-cols-3 gap-2 sm:grid-cols-6" (keydown)="onGroupKeydown($event)">
+      <div role="radiogroup" aria-label="Día" class="grid grid-cols-3 gap-2 sm:grid-cols-7" (keydown)="onGroupKeydown($event)">
         @for (day of days(); track day.key) {
           @let active = value().date === day.key;
           <button
             type="button"
             role="radio"
             [attr.aria-checked]="active"
-            [tabindex]="!day.past && day.key === dayTabStop() ? 0 : -1"
-            [disabled]="day.past"
+            [attr.aria-label]="day.closedLabel"
+            [tabindex]="!day.past && !day.closed && day.key === dayTabStop() ? 0 : -1"
+            [disabled]="day.past || day.closed"
             (click)="patch({ date: day.key })"
             [class]="
               cn(
@@ -226,7 +229,9 @@ const EMPTY_HINT =
               {{ day.shortName }}
             </span>
             <span class="text-xl font-semibold leading-none tabular-nums">{{ day.dayOfMonth }}</span>
-            @if (day.today) {
+            @if (day.closed) {
+              <span class="text-xs font-semibold text-muted-foreground">Cerrado</span>
+            } @else if (day.today) {
               <span [class]="cn('text-xs font-semibold', active ? 'text-primary-foreground/80' : 'text-primary')">Hoy</span>
             }
           </button>
@@ -243,6 +248,8 @@ const EMPTY_HINT =
         <p [class]="emptyHint">
           Selecciona el odontólogo, el procedimiento y el día para ver los horarios disponibles.
         </p>
+      } @else if (closedDay()) {
+        <p [class]="emptyHint">La clínica no abre los sábados. Elige otro día.</p>
       } @else if (loadingSlots()) {
         <p role="status" [class]="emptyHint">Buscando horarios disponibles…</p>
       } @else if (slotsError()) {
@@ -343,14 +350,24 @@ export class SlotPicker implements OnInit {
     const today = toDateKey(now);
     return this.week().map((d) => {
       const key = toDateKey(d);
+      const closed = !isWorkingDay(key);
       return {
         key,
         shortName: shortDayName(d),
         dayOfMonth: d.getDate(),
         past: isPastDate(key, now),
         today: key === today,
+        closed,
+        /** Closed days say why they cannot be picked; open days keep their visible text as the name. */
+        closedLabel: closed ? `${formatLongDate(key)}: la clínica no abre` : null,
       };
     });
+  });
+
+  /** The chosen day is closed (Saturday): no hours are offered, not even from the API. */
+  protected readonly closedDay = computed(() => {
+    const date = this.value().date;
+    return !!date && !isWorkingDay(date);
   });
 
   protected readonly isCurrentWeek = computed(
@@ -358,7 +375,9 @@ export class SlotPicker implements OnInit {
   );
 
   protected readonly weekRange = computed(() => {
-    const [first, , , , , last] = this.week();
+    const week = this.week();
+    const first = week[0];
+    const last = week[week.length - 1];
     return `${first.getDate()} - ${last.getDate()} de ${monthName(last)} de ${last.getFullYear()}`;
   });
 
@@ -385,6 +404,13 @@ export class SlotPicker implements OnInit {
       }
       if (key === this.lastKey) return;
       this.lastKey = key;
+      // A closed day has no windows: asking the API would invent hours the clinic never opens.
+      if (!isWorkingDay(date)) {
+        this.slotsState.set([]);
+        this.loadingSlots.set(false);
+        this.slotsError.set(false);
+        return;
+      }
       const seq = ++this.requestSeq;
       this.loadingSlots.set(true);
       this.slotsError.set(false);
@@ -425,7 +451,7 @@ export class SlotPicker implements OnInit {
 
   /** A selection on another week must not remove the displayed week's tab stop. */
   protected readonly dayTabStop = computed(() => {
-    const enabled = this.days().filter((day) => !day.past);
+    const enabled = this.days().filter((day) => !day.past && !day.closed);
     return enabled.find((day) => day.key === this.value().date)?.key ?? enabled[0]?.key;
   });
 

@@ -25,6 +25,7 @@ public final class Schedule {
         if (!end.isAfter(start)) {
             throw new InvalidScheduleException("La hora de fin debe ser posterior a la hora de inicio.");
         }
+        ClinicHours.validate(dayOfWeek, start, end, active);
         this.id = id;
         this.dentistId = dentistId;
         this.dayOfWeek = dayOfWeek;

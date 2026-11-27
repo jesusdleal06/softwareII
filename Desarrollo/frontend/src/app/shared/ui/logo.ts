@@ -23,12 +23,22 @@ import { cn } from './class-names';
       @if (compact()) {
         <img src="brand/icon-192.png" alt="" width="192" height="192" class="size-10 shrink-0 rounded-full" />
       } @else {
-        <!-- The logo's navy and grey text needs a light backdrop: a white plate in dark mode.
-             The white plate is the brand asset's own backing, not a palette choice: no
-             token stays white in the dark theme. -->
-        <span class="shrink-0 rounded-md dark:bg-white dark:px-1.5 dark:py-0.5">
-          <img src="brand/villadent-logo.png" alt="" width="374" height="160" class="h-10 w-auto" />
-        </span>
+        <!-- Two assets, one per theme: the header swaps to the logo drawn for the dark
+             ground instead of putting a white plate behind the light one. -->
+        <img
+          src="brand/villadent-logo.png"
+          alt=""
+          width="371"
+          height="160"
+          class="h-10 w-auto shrink-0 dark:hidden"
+        />
+        <img
+          src="brand/villadent-logo-dark.png"
+          alt=""
+          width="377"
+          height="160"
+          class="hidden h-10 w-auto shrink-0 dark:block"
+        />
         <!-- Hidden on phones: the logo already identifies the site and the controls need the room. -->
         <span class="hidden min-w-0 truncate border-l border-border pl-2 text-xs font-medium text-muted-foreground sm:block">AgendaPro</span>
       }

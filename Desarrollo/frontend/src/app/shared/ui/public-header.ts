@@ -47,7 +47,6 @@ export class PublicHeader {}
       <p class="font-semibold text-foreground">{{ clinic.name }}</p>
       <p>{{ clinic.address }}</p>
       <p>
-        {{ clinic.phone }} ·
         <a
           [href]="whatsappUrl"
           target="_blank"
@@ -57,7 +56,8 @@ export class PublicHeader {}
           WhatsApp {{ whatsappNumber }}
         </a>
       </p>
-      <p>Lunes a sábado: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</p>
+      <p>Lunes a viernes: 8:00 AM - 12:00 PM y 2:00 PM - 6:00 PM</p>
+      <p>Domingo: 8:00 AM - 1:00 PM</p>
     </div>
   `,
 })
