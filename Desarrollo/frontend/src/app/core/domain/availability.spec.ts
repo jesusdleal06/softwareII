@@ -10,15 +10,17 @@ import { makeAppointment } from '../testing/appointment.fixture';
 // Reference "now": Wednesday 2026-10-14 at 09:10 local time.
 const NOW = new Date(2026, 9, 14, 9, 10);
 const THURSDAY = '2026-10-15';
+const SUNDAY = '2026-10-18';
 
 describe('availability', () => {
   it('considers Pendiente, Confirmada and Reprogramada as active', () => {
     expect(ACTIVE_STATUSES).toEqual(['Pendiente', 'Confirmada', 'Reprogramada']);
   });
 
-  it('treats Sunday as non-working and earlier dates as past', () => {
-    expect(isWorkingDay('2026-10-18')).toBe(false);
-    expect(isWorkingDay('2026-10-17')).toBe(true);
+  it('treats Saturday as closed and Sunday as working, and earlier dates as past', () => {
+    expect(isWorkingDay('2026-10-16')).toBe(true); // viernes
+    expect(isWorkingDay('2026-10-17')).toBe(false); // sábado: la clínica no abre
+    expect(isWorkingDay(SUNDAY)).toBe(true); // domingo 08:00-13:00
     expect(isPastDate('2026-10-13', NOW)).toBe(true);
     expect(isPastDate('2026-10-14', NOW)).toBe(false);
   });
@@ -45,6 +47,24 @@ describe('availability', () => {
       '16:00',
       '16:30',
     ]);
+  });
+
+  it('previews only the Sunday window: 08:00 to 12:30, nothing in the afternoon', () => {
+    const base = { dentistId: 'd1', date: SUNDAY, appointments: [], now: NOW };
+    expect(availableSlots({ ...base, durationMinutes: 30 })).toEqual([
+      '08:00',
+      '08:30',
+      '09:00',
+      '09:30',
+      '10:00',
+      '10:30',
+      '11:00',
+      '11:30',
+      '12:00',
+      '12:30',
+    ]);
+    // A 60-minute procedure no longer fits at 12:30.
+    expect(availableSlots({ ...base, durationMinutes: 60 }).at(-1)).toBe('12:00');
   });
 
   it('keeps each dentist agenda independent', () => {
@@ -107,9 +127,9 @@ describe('availability', () => {
     expect(availableSlots({ ...base, excludeAppointmentId: 'r1' })).toContain('08:00');
   });
 
-  it('returns nothing for Sundays and past dates', () => {
+  it('returns nothing for Saturdays and past dates', () => {
     const base = { dentistId: 'd1', durationMinutes: 30, appointments: [], now: NOW };
-    expect(availableSlots({ ...base, date: '2026-10-18' })).toEqual([]);
+    expect(availableSlots({ ...base, date: '2026-10-17' })).toEqual([]);
     expect(availableSlots({ ...base, date: '2026-10-13' })).toEqual([]);
   });
 

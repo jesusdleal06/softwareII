@@ -11,6 +11,7 @@ import { Stepper } from '../../../shared/ui/stepper';
 import { AlertMessage } from '../../../shared/ui/alert-message';
 import { PatientForm } from '../../../shared/booking/patient-form';
 import { SlotPicker, SlotSelection } from '../../../shared/booking/slot-picker';
+import { PUBLIC_WHATSAPP_NUMBER } from '../../../shared/ui/public-header';
 
 const STEPS = ['Elige tu horario', 'Tus datos', 'Confirma tu cita'] as const;
 const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otro.';
@@ -173,7 +174,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                   </button>
                 </div>
                 <p class="text-center text-sm text-muted-foreground">
-                  ¿Necesitas ayuda? Escríbenos al WhatsApp +57 300 123 4567 o
+                  ¿Necesitas ayuda? Escríbenos al WhatsApp {{ whatsappNumber }} o
                   <a
                     routerLink="/"
                     class="rounded-sm font-medium text-primary underline decoration-1 underline-offset-4 outline-none transition-[text-decoration-thickness] hover:decoration-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
@@ -205,6 +206,7 @@ export class BookingFlow implements OnInit {
   protected readonly errors = signal<PatientErrors>({});
   protected readonly notice = signal<string | null>(null);
   protected readonly incompleteMessage = INCOMPLETE_MESSAGE;
+  protected readonly whatsappNumber = PUBLIC_WHATSAPP_NUMBER;
   protected readonly created = signal<Appointment | null>(null);
   protected readonly saving = signal(false);
 

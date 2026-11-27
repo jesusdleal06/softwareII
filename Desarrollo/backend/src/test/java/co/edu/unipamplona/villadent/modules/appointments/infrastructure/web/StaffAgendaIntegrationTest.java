@@ -82,9 +82,10 @@ class StaffAgendaIntegrationTest {
         return "3" + ThreadLocalRandom.current().nextInt(100_000_000, 1_000_000_000);
     }
 
+    /** Monday to Friday: the clinic works both shifts, so the fixtures always find a full day. */
     private LocalDate nextWorkingDay() {
         LocalDate date = LocalDate.now(Clock.system(BOGOTA)).plusDays(1);
-        while (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+        while (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
             date = date.plusDays(1);
         }
         return date;

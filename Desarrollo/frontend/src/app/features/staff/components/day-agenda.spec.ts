@@ -7,6 +7,8 @@ import { text } from '../../../shared/testing/dom';
 import { DayAgenda } from './day-agenda';
 
 const DAY = '2026-10-14';
+const SATURDAY = '2026-10-17';
+const SUNDAY = '2026-10-18';
 
 /** A 15-minute procedure, the shortest slot: its block is the smallest touch target. */
 const SHORT_PROCEDURE: Procedure = { id: 'test-short', name: 'Revisión', durationMinutes: 15 };
@@ -61,12 +63,16 @@ describe('DayAgenda', () => {
 
   function render(
     now = new Date(2026, 9, 14, 9, 10),
-    input: { dentists?: readonly Dentist[]; appointments?: readonly Appointment[] } = {},
+    input: {
+      dentists?: readonly Dentist[];
+      appointments?: readonly Appointment[];
+      dateKey?: string;
+    } = {},
   ): void {
     fixture = TestBed.createComponent(DayAgenda);
     fixture.componentRef.setInput('dentists', input.dentists ?? DENTISTS);
     fixture.componentRef.setInput('appointments', input.appointments ?? APPOINTMENTS);
-    fixture.componentRef.setInput('dateKey', DAY);
+    fixture.componentRef.setInput('dateKey', input.dateKey ?? DAY);
     fixture.componentRef.setInput('now', now);
     selected = [];
     fixture.componentInstance.selected.subscribe((a) => selected.push(a));
@@ -80,6 +86,11 @@ describe('DayAgenda', () => {
 
   function columns(): NodeListOf<HTMLElement> {
     return el.querySelectorAll('[aria-label^="Agenda de "]');
+  }
+
+  /** Hour labels of the time axis, in order. */
+  function axisLabels(): string[] {
+    return Array.from(el.querySelectorAll('span.right-2')).map((label) => text(label));
   }
 
   function frame(): HTMLElement {
@@ -287,5 +298,33 @@ describe('DayAgenda', () => {
     expect(line.style.top).toBe('184px');
     render(new Date(2026, 9, 15, 9, 10));
     expect(el.querySelector('.bg-destructive.h-0\\.5')).toBeNull();
+  });
+
+  it('uses the Sunday window for the axis and draws no lunch band', () => {
+    const sunday = makeAppointment({ id: 'su1', dentistId: 'd1', time: '12:30', patientName: 'Ana Beltrán' });
+    render(undefined, { dateKey: SUNDAY, appointments: [sunday] });
+    // 08:00-13:00: the afternoon is not part of the day.
+    expect(axisLabels()).toEqual(['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM']);
+    expect(text(el)).not.toContain('Descanso');
+    // 300 min × 2.4 + 2 × 16 = 752px.
+    expect((columns()[0] as HTMLElement).style.height).toBe('752px');
+    // 12:30 → (270 × 2.4) + 16 + 2 = 666px; height 30 × 2.4 − 4 = 68px.
+    expect(block('Ana Beltrán').style.top).toBe('666px');
+    expect(block('Ana Beltrán').style.height).toBe('68px');
+  });
+
+  it('shows a closed state on Saturday instead of an empty grid', () => {
+    render(undefined, { dateKey: SATURDAY, appointments: [], dentists: [DENTISTS[0]] });
+    expect(columns()).toHaveLength(0);
+    expect(text(frame())).toContain('La clínica no abre los sábados');
+    expect(text(frame())).not.toContain('No hay citas para este día');
+  });
+
+  it('keeps already booked Saturday appointments visible on a closed day', () => {
+    const legacy = makeAppointment({ id: 'sat1', dentistId: 'd1', time: '10:00', patientName: 'Rosa Jaimes' });
+    render(undefined, { dateKey: SATURDAY, appointments: [legacy] });
+    expect(block('Rosa Jaimes')).not.toBeNull();
+    expect(block('Rosa Jaimes').style.top).toBe('306px');
+    expect(text(el)).toContain('La clínica no abre los sábados');
   });
 });

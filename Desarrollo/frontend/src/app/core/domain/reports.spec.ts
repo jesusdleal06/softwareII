@@ -45,8 +45,9 @@ describe('reports', () => {
     expect(computeReportMetrics([makeAppointment({ status: 'Pendiente' })]).noShowRate).toBe(0);
   });
 
-  it('lists the days in range skipping Sundays, capped at 62 iterations', () => {
-    expect(reportDays('2026-10-17', '2026-10-19')).toEqual(['2026-10-17', '2026-10-19']);
+  it('lists the days in range skipping Saturdays and keeping Sundays, capped at 62 iterations', () => {
+    expect(reportDays('2026-10-17', '2026-10-19')).toEqual(['2026-10-18', '2026-10-19']);
+    expect(reportDays('2026-10-12', '2026-10-18')).toContain('2026-10-18');
     expect(reportDays('2026-01-01', '2026-12-31')).toHaveLength(53);
     expect(reportDays('2026-10-20', '2026-10-19')).toEqual([]);
   });
@@ -62,7 +63,7 @@ describe('reports', () => {
 
   it('resolves the quick ranges relative to now', () => {
     expect(reportRange('hoy', NOW)).toEqual(['2026-10-14', '2026-10-14']);
-    expect(reportRange('semana', NOW)).toEqual(['2026-10-12', '2026-10-17']);
+    expect(reportRange('semana', NOW)).toEqual(['2026-10-12', '2026-10-18']);
     expect(reportRange('mes', NOW)).toEqual(['2026-10-01', '2026-10-31']);
     expect(reportRange('30', NOW)).toEqual(['2026-09-15', '2026-10-14']);
   });

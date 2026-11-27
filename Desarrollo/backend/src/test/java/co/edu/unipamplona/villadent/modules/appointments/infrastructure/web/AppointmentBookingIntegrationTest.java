@@ -63,9 +63,10 @@ class AppointmentBookingIntegrationTest {
     @Autowired
     private AppointmentRepository appointments;
 
+    /** Monday to Friday: the afternoon shift exists there, so a 14:00 appointment is bookable. */
     private LocalDate nextWorkingDay() {
         LocalDate date = LocalDate.now(Clock.system(BOGOTA)).plusDays(1);
-        while (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+        while (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
             date = date.plusDays(1);
         }
         return date;

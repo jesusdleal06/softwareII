@@ -27,9 +27,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Demo-only appointments, so the agenda and the reports are not empty. It repeats the
- * prototype's Monday-to-Saturday week for the previous, the current and the next week,
- * relative to the day the backend starts.
+ * Demo-only appointments, so the agenda and the reports are not empty. It repeats a
+ * Monday-to-Sunday week (the clinic is closed on Saturdays) for the previous, the current
+ * and the next week, relative to the day the backend starts.
  *
  * <ul>
  *   <li>It only runs on a database with no appointments at all, so it never mixes with real data.</li>
@@ -56,7 +56,7 @@ public class DemoAppointmentSeeder implements ApplicationRunner {
     private static final String EXTRACTION = "Exodoncia";
     private static final String BRACES = "Instalación de brackets";
 
-    /** The prototype week: day offset from Monday, dentist, procedure, time, patient, status. */
+    /** The demo week: day offset from Monday, dentist, procedure, time, patient, status. */
     private static final List<Seed> WEEK = List.of(
             new Seed(0, LAURA, CLEANING, "08:00", "María Fernanda López", null),
             new Seed(0, LAURA, FILLING, "09:00", "Jorge Enrique Castro", AppointmentStatus.NO_ASISTIO),
@@ -73,7 +73,8 @@ public class DemoAppointmentSeeder implements ApplicationRunner {
             new Seed(3, LAURA, CLEANING, "15:00", "Olga Lucía Torres", AppointmentStatus.PENDIENTE),
             new Seed(4, CAMILA, EXTRACTION, "10:00", "Miguel Ángel Prada", AppointmentStatus.PENDIENTE),
             new Seed(4, LAURA, CHECKUP, "11:00", "Camilo Andrés Vera", AppointmentStatus.CONFIRMADA),
-            new Seed(5, LAURA, CLEANING, "09:30", "Teresa de Jesús Niño", AppointmentStatus.PENDIENTE));
+            new Seed(4, LAURA, CLEANING, "16:30", "Teresa de Jesús Niño", AppointmentStatus.PENDIENTE),
+            new Seed(6, LAURA, CHECKUP, "09:00", "Silvia Juliana Ospina", AppointmentStatus.CONFIRMADA));
 
     /** Previous, current and next week; each gets its own phone prefix (300, 310, 320). */
     private static final int[] WEEKS = {-1, 0, 1};

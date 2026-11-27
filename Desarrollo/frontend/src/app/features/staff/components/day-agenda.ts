@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
 import { LucideCalendarX } from '@lucide/angular';
-import { SHIFTS } from '../../../core/config/clinic';
+import { shiftsForDate } from '../../../core/config/clinic';
 import { STATUS_STYLES } from '../../../core/data/status-styles';
 import {
   endOf,
@@ -14,13 +14,12 @@ import { Appointment, Dentist } from '../../../core/models';
 import { mediaQuery } from '../../../shared/browser/media-query';
 import { cn } from '../../../shared/ui/class-names';
 
-const DAY_START = SHIFTS[0].start; // 8:00
-const DAY_END = SHIFTS[SHIFTS.length - 1].end; // 18:00
+const DAY_START_FALLBACK = 8 * 60; // 8:00
+const DAY_END_FALLBACK = 18 * 60; // 18:00
 /** 30 min = 72px: enough for name + procedure without clipping. */
 const PX_PER_MINUTE = 2.4;
 /** Room so the first and last hour labels are not clipped. */
 const MARGIN = 16;
-const HEIGHT = (DAY_END - DAY_START) * PX_PER_MINUTE + MARGIN * 2;
 const TIME_AXIS_REM = 5;
 const SINGLE_LANE_MAX_REM = 30;
 export const SINGLETON_FRAME_CONTENT_WIDTH = `${TIME_AXIS_REM + SINGLE_LANE_MAX_REM}rem`;
@@ -37,8 +36,8 @@ const BLOCK_BASE =
   "absolute inset-x-1.5 rounded-md border text-left leading-tight outline-none transition-colors hover:brightness-95 active:brightness-90 after:absolute after:inset-x-0 after:-top-1.5 after:-bottom-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
 const BLOCK_CONTENT = 'absolute inset-0 flex flex-col gap-0.5 overflow-hidden px-2 sm:px-2.5';
 
-function top(minutes: number): number {
-  return (minutes - DAY_START) * PX_PER_MINUTE + MARGIN;
+function positionFor(minutes: number, axisStart: number): number {
+  return (minutes - axisStart) * PX_PER_MINUTE + MARGIN;
 }
 
 interface Block {
@@ -110,7 +109,18 @@ interface Block {
       [class.box-content]="singletonFrameMaxWidth() !== null"
       [style.max-width]="singletonFrameMaxWidth()"
     >
-      @if (appointments().length === 0) {
+      @if (closed() && appointments().length === 0) {
+        <div class="flex flex-col items-center gap-3 px-6 py-14 text-center">
+          <span
+            class="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground"
+            aria-hidden="true"
+          >
+            <svg lucideCalendarX class="size-5"></svg>
+          </span>
+          <p class="text-sm font-semibold">La clínica no abre los sábados</p>
+          <p class="text-xs text-muted-foreground">Elige otro día para ver la agenda.</p>
+        </div>
+      } @else if (appointments().length === 0) {
         <div class="flex flex-col items-center gap-3 px-6 py-14 text-center">
           <span
             class="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground"
@@ -122,6 +132,11 @@ interface Block {
           <p class="text-xs text-muted-foreground">{{ emptyHint() }}</p>
         </div>
       } @else {
+        @if (closed()) {
+          <p class="border-b border-border bg-muted/60 px-3 py-2 text-sm font-medium text-muted-foreground">
+            La clínica no abre los sábados: solo se muestran las citas ya agendadas.
+          </p>
+        }
         <div class="grid" [style.grid-template-columns]="gridColumns()">
         <!-- Headers -->
         <div class="border-b border-border bg-card" aria-hidden="true"></div>
@@ -140,9 +155,9 @@ interface Block {
           </div>
         }
 
-        <!-- Hour axis -->
-        <div class="relative" [style.height.px]="height">
-          @for (h of hours; track h) {
+        <!-- Hour axis: the selected day's own windows. -->
+        <div class="relative" [style.height.px]="axisHeight()">
+          @for (h of hours(); track h) {
             <span
               class="absolute right-2 -translate-y-1/2 text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap"
               [style.top.px]="top(h)"
@@ -157,27 +172,29 @@ interface Block {
           <div
             class="relative min-w-0 border-l border-border"
             role="group"
-            [style.height.px]="height"
+            [style.height.px]="axisHeight()"
             [attr.aria-label]="'Agenda de ' + column.dentist.name"
           >
-            @for (h of hours; track h) {
+            @for (h of hours(); track h) {
               <div class="absolute inset-x-0 border-t border-border" [style.top.px]="top(h)" aria-hidden="true"></div>
             }
-            @for (h of halfHours; track h) {
+            @for (h of halfHours(); track h) {
               <div
                 class="absolute inset-x-0 border-t border-border/60"
                 [style.top.px]="top(h + 30)"
                 aria-hidden="true"
               ></div>
             }
-            <div
-              class="absolute inset-x-0 flex items-center justify-center bg-muted/60"
-              [style.top.px]="top(breakStart)"
-              [style.height.px]="breakHeight"
-              aria-hidden="true"
-            >
-              <span class="rounded-sm bg-card px-2 py-0.5 text-xs font-medium text-muted-foreground">Descanso</span>
-            </div>
+            @if (lunchBreak(); as band) {
+              <div
+                class="absolute inset-x-0 flex items-center justify-center bg-muted/60"
+                [style.top.px]="top(band.start)"
+                [style.height.px]="band.height"
+                aria-hidden="true"
+              >
+                <span class="rounded-sm bg-card px-2 py-0.5 text-xs font-medium text-muted-foreground">Descanso</span>
+              </div>
+            }
             @if (nowMinutes(); as minutes) {
               <div class="absolute inset-x-0 z-10 flex items-center" [style.top.px]="top(minutes)" aria-hidden="true">
                 <span class="-ml-1.5 size-3 rounded-full bg-destructive"></span>
@@ -236,13 +253,43 @@ export class DayAgenda {
   readonly selected = output<Appointment>();
 
   protected readonly cn = cn;
-  protected readonly top = top;
   protected readonly formatTimeFromMinutes = formatTimeFromMinutes;
-  protected readonly height = HEIGHT;
-  protected readonly hours = Array.from({ length: (DAY_END - DAY_START) / 60 + 1 }, (_, i) => DAY_START + i * 60);
-  protected readonly halfHours = this.hours.slice(0, -1);
-  protected readonly breakStart = SHIFTS[0].end;
-  protected readonly breakHeight = (SHIFTS[1].start - SHIFTS[0].end) * PX_PER_MINUTE;
+
+  /**
+   * Opening windows of the day on display, from the shared clinic config: Monday to
+   * Friday open morning and afternoon, Sunday only the morning, Saturday closed.
+   */
+  private readonly windows = computed(() => shiftsForDate(this.dateKey()));
+
+  /** Saturday: the clinic does not open, so there is no window to draw. */
+  protected readonly closed = computed(() => this.windows().length === 0);
+
+  /**
+   * Hour axis bounds. A closed day keeps the former 08:00-18:00 span so appointments
+   * booked before the rule changed stay visible instead of being clipped away.
+   */
+  private readonly axisStart = computed(() => this.windows()[0]?.start ?? DAY_START_FALLBACK);
+  private readonly axisEnd = computed(() => this.windows().at(-1)?.end ?? DAY_END_FALLBACK);
+  protected readonly axisHeight = computed(
+    () => (this.axisEnd() - this.axisStart()) * PX_PER_MINUTE + MARGIN * 2,
+  );
+  protected readonly hours = computed(() =>
+    Array.from(
+      { length: (this.axisEnd() - this.axisStart()) / 60 + 1 },
+      (_, i) => this.axisStart() + i * 60,
+    ),
+  );
+  protected readonly halfHours = computed(() => this.hours().slice(0, -1));
+
+  /** The lunch band exists only between two windows; Sunday's single window has none. */
+  protected readonly lunchBreak = computed(() => {
+    const [morning, afternoon] = this.windows();
+    return afternoon ? { start: morning.end, height: (afternoon.start - morning.end) * PX_PER_MINUTE } : null;
+  });
+
+  protected top(minutes: number): number {
+    return positionFor(minutes, this.axisStart());
+  }
 
   /** Narrow screens cannot fit several columns: one dentist at a time with tabs. */
   private readonly narrow = mediaQuery('(max-width: 1023px)');
@@ -278,7 +325,9 @@ export class DayAgenda {
   protected readonly nowMinutes = computed(() => {
     const now = this.now();
     const minutes = now.getHours() * 60 + now.getMinutes();
-    return this.dateKey() === toDateKey(now) && minutes >= DAY_START && minutes <= DAY_END ? minutes : null;
+    return this.dateKey() === toDateKey(now) && minutes >= this.axisStart() && minutes <= this.axisEnd()
+      ? minutes
+      : null;
   });
 
   protected readonly columns = computed(() =>
@@ -286,12 +335,12 @@ export class DayAgenda {
       dentist,
       blocks: this.appointments()
         .filter((a) => a.dentistId === dentist.id)
-        .map((a) => toBlock(a)),
+        .map((a) => toBlock(a, this.axisStart())),
     })),
   );
 }
 
-function toBlock(appointment: Appointment): Block {
+function toBlock(appointment: Appointment, axisStart: number): Block {
   const start = toMinutes(appointment.time);
   const end = endOf(appointment);
   const procedureName = appointment.procedureName;
@@ -307,7 +356,7 @@ function toBlock(appointment: Appointment): Block {
     statusLabel,
     range: `${formatTime(appointment.time)}-${formatTimeFromMinutes(end)}`,
     phone: formatPhone(appointment.patientPhone),
-    top: top(start),
+    top: positionFor(start, axisStart),
     height,
     compact,
     tall: height >= 100,
