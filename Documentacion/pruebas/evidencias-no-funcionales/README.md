@@ -83,6 +83,28 @@ escaneo activo del frontend [HTML](rnf03-03-active-frontend.html) y
 [JSON](rnf03-03-active-frontend.json), de la API
 [HTML](rnf03-03-active-api.html) y [JSON](rnf03-03-active-api.json).
 
+### Encabezados de seguridad en Vercel (corrección de las alertas medias)
+
+Los encabezados de `Desarrollo/frontend/vercel.json` (CSP con el script en línea
+permitido por hash, `frame-ancestors 'none'`, `X-Frame-Options`,
+`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP y CORP)
+y la fuente Inter alojada en el propio sitio se verificaron sobre la
+**compilación de producción** servida localmente con esos mismos encabezados
+(`scripts/serve-dist.mjs`): la prueba `e2e/security-headers.spec.ts` recorrió
+la página principal, el agendamiento, el ingreso del personal, «Mi perfil» y
+los reportes sin ninguna violación de CSP (6 de 6). Escaneo base de ZAP sobre
+esa compilación ([HTML](rnf03-03-baseline-frontend-prod-headers.html),
+[JSON](rnf03-03-baseline-frontend-prod-headers.json)): **0 altas**.
+
+| Alerta | Antes | Después |
+| --- | --- | --- |
+| 10038 Falta el encabezado CSP | Media | Corregida |
+| 10020 Falta protección contra clickjacking | Media | Corregida |
+| 90003 Falta integridad de subrecursos | Media | Corregida (sin CSS externo) |
+| 10063 Falta Permissions-Policy | Baja | Corregida |
+| 10055 CSP: `style-src 'unsafe-inline'` | Media | Justificada: Angular y Unovis insertan estilos en tiempo de ejecución; los scripts no permiten código en línea sin hash. |
+| 90004 Falta Cross-Origin-Embedder-Policy | Baja | Justificada: `require-corp` bloquearía las fotos de Cloudinary y la aplicación no usa `SharedArrayBuffer`. |
+
 ## Compatibilidad y accesibilidad — S4
 
 - **CP-RNF01-02:** el agendamiento del paciente y el ingreso del personal se
@@ -114,3 +136,58 @@ registró HTTP 000, recuperó HTTP 200 y anotó 1 s de recuperación. No se midi
 el arranque en frío de un proveedor de hosting.
 
 Datos: [sondeo](monitor-smoke.csv) y [recuperación](monitor-recovery-smoke.csv).
+
+## Análisis estático y de dependencias — CP-RNF03-04
+
+**Resultado: frontend y código, sin críticos ni altos; backend pendiente del
+análisis de Dependency-Check.** El resultado esperado es «No quedan hallazgos
+críticos ni altos sin corregir o justificar». Se ejecutó
+`Desarrollo/security/sast/run.sh` con Docker. Semgrep incluyó ambos árboles
+`src`, sin excluir las pruebas. Dependency-Check analiza los JAR resueltos
+de `runtimeClasspath`; el análisis de las dependencias del frontend
+corresponde a pnpm audit.
+
+| Herramienta | Crítico | Alto | Medio | Bajo | Informativo |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Semgrep CE 1.186.0 (462 archivos, 347 reglas ejecutadas) | 0 | 0 | 2 | 0 | 0 |
+| OWASP Dependency-Check 12.2.2 (backend) | — | — | — | — | — |
+| pnpm audit (producción), primera ejecución | 0 | 1 | 0 | 0 | 0 |
+| pnpm audit (todas), primera ejecución | 0 | 6 | 10 | 3 | 0 |
+| **pnpm audit (producción), tras la corrección** | **0** | **0** | **0** | **0** | **0** |
+| **pnpm audit (todas), tras la corrección** | **0** | **0** | **2** | **2** | **0** |
+
+Los 6 avisos altos de la primera ejecución se **corrigieron** actualizando las
+dependencias del frontend (Angular 22.2 → 22.3, que resuelve `zod` 4.6.7,
+`vite` 8.3.8 y `undici` 8.13.1). Tras la actualización pasaron las 430 pruebas
+unitarias, la compilación, la verificación de los hashes de la CSP, los 24
+casos E2E y la prueba de CSP contra la compilación de producción. Los 4 avisos
+restantes (2 moderados y 2 bajos) son de `fast-uri`, una dependencia de las
+herramientas de compilación, no de la aplicación publicada.
+
+Los dos resultados de Semgrep son `WARNING` con impacto `MEDIUM`: SHA-1
+en `CloudinaryClient.java:118` (firma de solicitudes al proveedor, no
+hash de contraseñas) y una expresión regular construida con un selector
+escapado en `design-tokens.spec.ts:53` (solo pruebas).
+pnpm cuenta avisos, no rutas; el aviso de producción está incluido también
+en el total general. 
+
+| Aviso alto | Dependencia y alcance | Disposición |
+| --- | --- | --- |
+| [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) | `zod` 4.6.5, a través de `@angular/forms` en producción y `@angular/cli` en desarrollo. | **Corregido**: Angular 22.3 resuelve `zod` 4.6.7. |
+| [GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm) | `vite` 8.3.0, solo en rutas de `@angular/build` y `vitest`. | **Corregido**: `vite` 8.3.8. Además solo afectaba al servidor de desarrollo en Windows, no al sitio desplegado. |
+| [GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+| [GHSA-4w7w-5xrc-9h26](https://github.com/advisories/GHSA-4w7w-5xrc-9h26) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+| [GHSA-2m5v-pch6-74hx](https://github.com/advisories/GHSA-2m5v-pch6-74hx) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+| [GHSA-qrxm-fqhp-jwvm](https://github.com/advisories/GHSA-qrxm-fqhp-jwvm) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
+
+Dependency-Check del backend queda **pendiente**: sin clave de la API de NVD,
+el servicio devolvió HTTP 429 después de descargar 60.000 de 433.047 registros
+(14 %), y analizar los JAR con una base incompleta daría un resultado falso.
+Para completarlo: `NVD_API_KEY=<clave> Desarrollo/security/sast/run.sh`.
+
+Informes del repositorio: Semgrep [JSON](rnf03-04-semgrep.json) y
+[texto](rnf03-04-semgrep.log); pnpm [producción](rnf03-04-pnpm-prod.json) y
+[todas las dependencias](rnf03-04-pnpm-all.json); Gradle
+[inventario de 120 JAR](rnf03-04-runtime-jars.txt); Dependency-Check
+[registro de actualización](rnf03-04-dc-update.log) y
+[estados de ejecución](rnf03-04-status.txt).

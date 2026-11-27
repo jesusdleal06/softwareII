@@ -1,0 +1,5 @@
+Semgrep: exit 0
+pnpm audit (prod): exit 1
+pnpm audit (all): exit 1
+Gradle runtimeClasspath: exit 0
+Dependency-Check NVD update: exit 8 (scan skipped; see log)
