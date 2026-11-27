@@ -43,8 +43,10 @@ export interface DentistProfileDto {
   fullName: string;
   specialty: string;
   photoUrl: string | null;
-  academicTitles: string[];
-  description: string;
+  /** Null for dentists that existed before migration V5 and have not edited their profile. */
+  academicTitles: string[] | null;
+  /** Null for dentists that existed before migration V5 and have not edited their profile. */
+  description: string | null;
 }
 
 /** PUT /api/v1/dentists/me/profile body. */
