@@ -39,6 +39,19 @@ export const STAFF_ROUTES: Routes = [
         loadComponent: () => import('./pages/reports-page').then((m) => m.ReportsPage),
       },
       {
+        path: 'procedimientos',
+        canActivate: [roleGuard],
+        data: { [ROUTE_ROLES_KEY]: sectionRoles('procedimientos') },
+        loadComponent: () =>
+          import('./pages/admin-procedures-page').then((m) => m.AdminProceduresPage),
+      },
+      {
+        path: 'personal',
+        canActivate: [roleGuard],
+        data: { [ROUTE_ROLES_KEY]: sectionRoles('personal') },
+        loadComponent: () => import('./pages/admin-staff-page').then((m) => m.AdminStaffPage),
+      },
+      {
         path: 'mi-perfil',
         canActivate: [roleGuard],
         data: { [ROUTE_ROLES_KEY]: sectionRoles('mi-perfil') },
