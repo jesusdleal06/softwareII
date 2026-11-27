@@ -147,7 +147,20 @@ describe('AppStore', () => {
     await store.ensureCatalogs();
     expect(store.dentists().map((d) => d.name)).toEqual(['Dra. Laura Villamizar', 'Dr. Andrés Peña']);
     expect(store.dentists()[0]).toMatchObject({ id: '1', specialty: 'Odontología general' });
-    expect(store.procedures()).toEqual([{ id: '1', name: 'Limpieza', durationMinutes: 30 }]);
+    expect(store.procedures()).toEqual([
+      { id: '1', name: 'Limpieza', durationMinutes: 30, dentistIds: [] },
+    ]);
+  });
+
+  it('keeps the dentists that perform each procedure', async () => {
+    const { store, api } = setup();
+    api.procedures.mockResolvedValue([
+      { id: 1, name: 'Limpieza', durationMinutes: 30, dentistIds: [4, 7] },
+    ] as unknown as Awaited<ReturnType<FakeApi['procedures']>>);
+
+    await store.ensureCatalogs();
+
+    expect(store.procedures()[0].dentistIds).toEqual(['4', '7']);
   });
 
   it('books a public appointment through the API and maps the response', async () => {

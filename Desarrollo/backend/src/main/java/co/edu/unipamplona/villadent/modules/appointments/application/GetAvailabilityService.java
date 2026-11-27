@@ -49,6 +49,11 @@ public class GetAvailabilityService implements GetAvailabilityUseCase {
                 .filter(ProcedureResult::active)
                 .orElseThrow(() -> new NotFoundException("No se encontró el procedimiento."));
 
+        if (!procedure.isPerformedBy(dentist.id())) {
+            return new AvailabilityResult(
+                    dentist.id(), query.date(), procedure.id(), List.of());
+        }
+
         LocalDateTime now = LocalDateTime.now(clock);
         if (query.date().isBefore(now.toLocalDate())) {
             return new AvailabilityResult(

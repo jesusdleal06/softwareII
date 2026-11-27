@@ -6,6 +6,7 @@ import {
   getAvailability,
   loginApi,
   registerDentist,
+  setProcedureDentists,
   uniqueName,
   uniquePhone,
 } from './support/api';
@@ -57,6 +58,12 @@ test('CP-RF01-02: warns when the dentist has no schedule and lets the user choos
     uniqueName('Dr. E2E Sin Agenda'),
     'Odontología E2E',
   );
+  // The procedure must be performed by both dentists so the picker offers the
+  // schedule-less one and then the original dentist again.
+  await setProcedureDentists(api, token, target.procedure.id, [
+    target.dentist.id,
+    noScheduleDentist.id,
+  ]);
 
   await page.goto('/agendar');
   await selectDentistInPicker(page, noScheduleDentist);

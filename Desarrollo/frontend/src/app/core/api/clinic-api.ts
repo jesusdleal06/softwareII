@@ -26,6 +26,21 @@ export interface BookAppointmentPayload {
   time: string;
 }
 
+/** Staff catalog entry with the dentists who perform the procedure. */
+export interface AdminProcedureDto {
+  id: number;
+  name: string;
+  durationMinutes: number;
+  active: boolean;
+  dentistIds: number[];
+}
+
+export interface CreateProcedurePayload {
+  name: string;
+  durationMinutes: number;
+  dentistIds: number[];
+}
+
 export interface ReportQuery {
   from: string;
   to: string;
@@ -87,6 +102,42 @@ export class ClinicApi {
 
   async procedures(): Promise<ProcedureDto[]> {
     return this.request(this.http.get<ProcedureDto[]>('/api/v1/public/procedures'));
+  }
+
+  /** Staff catalog with inactive entries and their dentists; needs a staff token. */
+  async adminProcedures(): Promise<AdminProcedureDto[]> {
+    return this.request(
+      this.http.get<AdminProcedureDto[]>('/api/v1/procedures', { headers: this.auth() }),
+    );
+  }
+
+  async createProcedure(payload: CreateProcedurePayload): Promise<AdminProcedureDto> {
+    return this.request(
+      this.http.post<AdminProcedureDto>('/api/v1/procedures', payload, { headers: this.auth() }),
+    );
+  }
+
+  async updateProcedureDentists(
+    id: number,
+    dentistIds: number[],
+  ): Promise<AdminProcedureDto> {
+    return this.request(
+      this.http.put<AdminProcedureDto>(
+        `/api/v1/procedures/${id}/dentists`,
+        { dentistIds },
+        { headers: this.auth() },
+      ),
+    );
+  }
+
+  async setProcedureActive(id: number, active: boolean): Promise<AdminProcedureDto> {
+    return this.request(
+      this.http.patch<AdminProcedureDto>(
+        `/api/v1/procedures/${id}/${active ? 'activar' : 'desactivar'}`,
+        {},
+        { headers: this.auth() },
+      ),
+    );
   }
 
   async availability(dentistId: string, procedureId: string, date: string): Promise<AvailabilityDto> {

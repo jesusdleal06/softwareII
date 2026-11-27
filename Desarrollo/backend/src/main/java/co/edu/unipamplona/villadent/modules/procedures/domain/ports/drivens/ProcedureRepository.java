@@ -12,5 +12,7 @@ public interface ProcedureRepository {
 
     List<Procedure> findAll();
 
+    List<Long> findDentistIds(Long procedureId);
+
     Procedure save(Procedure procedure);
 }
