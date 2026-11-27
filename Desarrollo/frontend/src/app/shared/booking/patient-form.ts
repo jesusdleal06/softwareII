@@ -15,7 +15,7 @@ export function sanitizePhoneInput(value: string): string {
   selector: 'app-patient-form',
   imports: [TextField],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-6' },
+  host: { class: 'grid gap-4 sm:grid-cols-2' },
   template: `
     <app-text-field
       [fieldId]="idPrefix() + '-nombre'"

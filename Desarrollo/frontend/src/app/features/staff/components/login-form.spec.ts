@@ -100,19 +100,64 @@ describe('LoginForm', () => {
     }
   });
 
-  it('announces the pending submit with aria-busy', async () => {
-    let resolve: (value: typeof ASSISTANT_SESSION | null) => void = () => undefined;
-    store.login.mockReturnValue(new Promise((r) => (resolve = r)));
+  function preparePendingLogin(): () => void {
+    let rejectCredentials!: () => void;
+    store.login.mockReturnValue(new Promise((resolve) => {
+      rejectCredentials = () => resolve(null);
+    }));
     typeInto(el.querySelector('#login-email') as HTMLInputElement, 'ana@villadent.co');
-    typeInto(el.querySelector('#login-password') as HTMLInputElement, 'villadent2024');
+    typeInto(el.querySelector('#login-password') as HTMLInputElement, 'mala');
     fixture.detectChanges();
-    clickButton(el, 'Ingresar');
-    fixture.detectChanges();
+    return rejectCredentials;
+  }
+
+  it('CP-RNF02-02 / CP-RF09-02: keeps submit focus through pending and rejected login', async () => {
+    const rejectCredentials = preparePendingLogin();
     const form = el.querySelector('form') as HTMLFormElement;
+    const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    button.focus();
+    button.click();
+    fixture.detectChanges();
+
+    expect(text(button)).toBe('Ingresando…');
     expect(form.getAttribute('aria-busy')).toBe('true');
-    resolve(ASSISTANT_SESSION);
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(button);
+
+    rejectCredentials();
     await settle();
     fixture.detectChanges();
+
+    expect(text(button)).toBe('Ingresar');
     expect(form.getAttribute('aria-busy')).toBeNull();
+    expect(button.getAttribute('aria-disabled')).toBeNull();
+    expect(document.activeElement).toBe(button);
+    expect(alertText()).toBe('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
+    expect(store.session()).toBeNull();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('ignores repeated button activations and form submissions while login is pending', async () => {
+    const rejectCredentials = preparePendingLogin();
+    const form = el.querySelector('form') as HTMLFormElement;
+    const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    button.click();
+    fixture.detectChanges();
+    button.click();
+    // Exercise the form submit path used by Enter in a field without relying on jsdom keyboard defaults.
+    form.requestSubmit();
+    typeInto(el.querySelector('#login-password') as HTMLInputElement, '');
+    form.requestSubmit();
+    fixture.detectChanges();
+
+    expect(store.login).toHaveBeenCalledExactlyOnceWith('ana@villadent.co', 'mala');
+    expect(alertText()).toBe('');
+    expect(form.getAttribute('aria-busy')).toBe('true');
+
+    rejectCredentials();
+    await settle();
+    fixture.detectChanges();
+    expect(alertText()).toBe('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
   });
 });

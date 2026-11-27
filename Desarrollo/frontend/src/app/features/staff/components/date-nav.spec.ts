@@ -32,7 +32,9 @@ describe('DateNav', () => {
 
   it('goes back to today and highlights "Hoy" only on today', () => {
     render('2026-10-20');
-    expect(getByText(el, 'button', 'Hoy').classList).toContain('bg-card');
+    // Presentational assertion: the quiet chip fill moved from card-white to the
+    // shared `bg-secondary` fill, so it reads as a control on the card band.
+    expect(getByText(el, 'button', 'Hoy').classList).toContain('bg-secondary');
     clickButton(el, 'Hoy');
     expect(emitted).toEqual(['2026-10-14']);
 

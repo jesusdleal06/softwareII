@@ -78,6 +78,22 @@ describe('BookingFlow', () => {
     );
   });
 
+  it('CP-RNF02-02: keeps incomplete selection feedback next to the focused action', () => {
+    create();
+    const button = getByText<HTMLButtonElement>(el, 'button', 'Continuar');
+    button.focus();
+    button.click();
+    fixture.detectChanges();
+    const alerts = el.querySelectorAll('[role="alert"]');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent?.trim()).toBe(
+      'Selecciona el odontólogo, el procedimiento, el día y la hora para continuar.',
+    );
+    expect(button.previousElementSibling).toBe(alerts[0]);
+    expect(document.activeElement).toBe(button);
+    expect(text(el.querySelector('h1')!)).toBe('Elige tu horario');
+  });
+
   it('moves focus to the step heading on step change', async () => {
     create();
     await pickSlot();

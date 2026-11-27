@@ -1,7 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { Dentist } from '../../../core/models';
 import { formatTime } from '../../../core/domain';
-import { createFakeStore, FakeStore, provideFakeStore } from '../../../shared/testing/fake-store';
+import {
+  createFakeStore,
+  DENTISTS,
+  FakeStore,
+  provideFakeStore,
+} from '../../../shared/testing/fake-store';
 import { settle, text } from '../../../shared/testing/dom';
 import { LandingPage } from './landing-page';
 
@@ -13,16 +19,31 @@ describe('LandingPage', () => {
   let el: HTMLElement;
   let store: FakeStore;
 
-  async function render(options: { availability?: string[] } = {}): Promise<void> {
+  async function render(
+    options: {
+      availability?: string[];
+      dentists?: Dentist[];
+      catalogFailure?: boolean;
+      availabilityFailure?: boolean;
+    } = {},
+  ): Promise<void> {
     store = createFakeStore({ now: NOW, session: null });
+    if (options.dentists) store.dentistsState.set(options.dentists);
     store.availability.mockResolvedValue(options.availability ?? ['09:00', '10:00', '11:00']);
+    if (options.catalogFailure)
+      store.ensureCatalogs.mockRejectedValue(new Error('Catalog offline'));
+    if (options.availabilityFailure)
+      store.availability.mockRejectedValue(new Error('Availability offline'));
     TestBed.configureTestingModule({ providers: [provideRouter([]), provideFakeStore(store)] });
     fixture = TestBed.createComponent(LandingPage);
     fixture.detectChanges();
+    el = fixture.nativeElement as HTMLElement;
+    expect(text(el.querySelector('aside [role="status"]')!)).toBe(
+      'Buscando los próximos horarios…',
+    );
     await fixture.whenStable();
     await settle();
     fixture.detectChanges();
-    el = fixture.nativeElement as HTMLElement;
   }
 
   /** First section of the page: the hero. */
@@ -41,7 +62,7 @@ describe('LandingPage', () => {
     const heroText = text(hero());
     expect(heroText).not.toContain('Centro Odontológico Villadent');
     expect(heroText).not.toContain('¿Ya tienes una cita?');
-    expect(heroText).toContain('Agenda tu cita en Villadent en menos de 2 minutos');
+    expect(heroText).toContain('Agenda tu cita en 2 minutos');
   });
 
   it('renders no eyebrow or kicker label and no "Paso N" scenario tags', async () => {
@@ -67,6 +88,32 @@ describe('LandingPage', () => {
     expect(how.querySelector('ol')?.className).not.toBe(team.querySelector('ul')?.className);
   });
 
+  it('renders each specialty once when the description matches, and keeps a distinct description', async () => {
+    const [first, second] = DENTISTS;
+    const description = 'Atención preventiva para toda la familia.';
+    await render({
+      dentists: [
+        { ...first, description: first.specialty },
+        { ...second, description },
+      ],
+    });
+
+    const profiles = [...el.querySelectorAll('[aria-labelledby="equipo"] li')].map((li) =>
+      [...li.querySelectorAll('span:not([aria-hidden])')].map((label) => text(label)),
+    );
+    expect(profiles).toEqual([
+      [first.name, first.specialty],
+      [second.name, second.specialty, description],
+    ]);
+  });
+
+  it('renders the decorative calendar check in the availability panel', async () => {
+    await render();
+    const icon = hero().querySelector('aside svg');
+    expect(icon?.getAttribute('aria-hidden')).toBe('true');
+    expect(icon?.querySelector('path[d]')).not.toBeNull();
+  });
+
   it('feeds the hero panel with the real next-available slots from the store', async () => {
     await render();
     const panel = hero().querySelector('aside') as HTMLElement;
@@ -77,12 +124,41 @@ describe('LandingPage', () => {
       .map((s) => s.textContent?.trim() ?? '')
       .filter((t) => /^\d{1,2}:\d{2} (AM|PM)$/.test(t));
     expect(shownTimes.length).toBeGreaterThan(0);
-    for (const time of shownTimes) expect([formatTime('09:00'), formatTime('10:00'), formatTime('11:00')]).toContain(time);
+    for (const time of shownTimes)
+      expect([formatTime('09:00'), formatTime('10:00'), formatTime('11:00')]).toContain(time);
   });
 
   it('shows an honest empty state when the agenda has no free slots', async () => {
     await render({ availability: [] });
     const panel = el.querySelector('aside') as HTMLElement;
     expect(text(panel)).toContain('No hay cupos en los próximos días');
+  });
+  it.each([{ catalogFailure: true }, { availabilityFailure: true }])(
+    'shows a booking fallback instead of an empty agenda when loading fails: %j',
+    async (failure) => {
+      await render(failure);
+      const panel = el.querySelector('aside')!;
+      expect(text(panel)).toContain(
+        'No pudimos cargar los horarios en este momento. Puedes agendar igual y elegir tu horario en el siguiente paso.',
+      );
+      expect(text(panel)).not.toContain('No hay cupos');
+      expect(text(panel.querySelector('a[href="/agendar"]')!)).toBe('Ver todos los horarios');
+    },
+  );
+  it.each([{ availability: [] }, { catalogFailure: true }])(
+    'links to WhatsApp from the availability fallback and footer: %j',
+    async (options) => {
+      await render(options);
+      for (const selector of ['aside', 'footer']) {
+        const link = el.querySelector(`${selector} a[href="https://wa.me/573001234567"]`);
+        expect(link?.getAttribute('target')).toBe('_blank');
+        expect(link?.getAttribute('rel')).toBe('noopener');
+        if (selector === 'aside') expect(text(link!)).toBe('Escríbenos por WhatsApp');
+      }
+    },
+  );
+  it('omits the team section when no dentists are available', async () => {
+    await render({ dentists: [] });
+    expect(el.querySelector('[aria-labelledby="equipo"]')).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { REPORT_SERIES, STATUS_ORDER, STATUS_STYLES } from './status-styles';
 
 /**
  * Design token contract.
@@ -186,6 +187,59 @@ describe('design token contract (WCAG 2.x measured)', () => {
 
   it('honours prefers-reduced-motion', () => {
     expect(STYLES).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+
+  describe('appointment status badges', () => {
+    it.each([
+      { theme: 'light', tokens: light },
+      { theme: 'dark', tokens: dark },
+    ])('keeps Pendiente text at 4.5:1 on the composited $theme card', ({ theme, tokens }) => {
+      const classes = STATUS_STYLES.Pendiente.badge.split(/\s+/);
+      const background = classes.find((name) => name.startsWith('bg-'));
+      const foreground =
+        (theme === 'dark' && classes.find((name) => name.startsWith('dark:text-')))
+        || classes.find((name) => name.startsWith('text-'));
+      const fill = /^bg-([\w-]+)\/(\d+)$/.exec(background ?? '');
+      const ink = /^(?:dark:)?text-([\w-]+)$/.exec(foreground ?? '');
+      if (!fill || !ink) throw new Error(`Cannot measure badge classes: ${classes.join(' ')}`);
+
+      const effectiveFill = tint(tokens, fill[1], Number(fill[2]) / 100, rgb(tokens, 'card'));
+      const ratio = contrast(rgb(tokens, ink[1]), effectiveFill);
+      expect(ratio, `${theme} Pendiente contrast over card: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(TEXT);
+    });
+
+    it('preserves the six labels, agenda blocks, report encodings and non-Pending badges', () => {
+      expect(STATUS_ORDER).toEqual(['Pendiente', 'Confirmada', 'Reprogramada', 'Atendida', 'No asistió', 'Cancelada']);
+      expect(STATUS_ORDER.map((status) => STATUS_STYLES[status].label)).toEqual(STATUS_ORDER);
+      expect(STATUS_ORDER.map((status) => STATUS_STYLES[status].block)).toEqual([
+        'bg-warning/15 border-warning text-foreground',
+        'bg-primary/10 border-primary text-foreground',
+        'bg-accent border-accent-foreground/50 text-foreground',
+        'bg-success/10 border-success text-foreground',
+        'bg-muted border-muted-foreground/60 text-muted-foreground',
+        'bg-destructive/5 border-destructive/60 text-muted-foreground line-through',
+      ]);
+      // The three neutral statuses ride the chart ramp (L10): with the accent inverted to
+      // ink, `Confirmada` (primary) and `Reprogramada` (accent-foreground) were the same
+      // black, so Reprogramada/No asistió moved to the neutral chart steps. The three
+      // semantic statuses keep their hue.
+      expect(REPORT_SERIES.map(({ color }) => color)).toEqual([
+        'bg-warning', 'bg-primary', 'bg-chart-2', 'bg-success', 'bg-chart-4', 'bg-destructive',
+      ]);
+      const stripe = (angle: number, stops: string) =>
+        `repeating-linear-gradient(${angle}deg, transparent 0 ${stops.split(' ')[0]}, var(--chart-pattern-ink) ${stops})`;
+      expect(REPORT_SERIES.map(({ pattern }) => pattern)).toEqual([
+        stripe(135, '3px 6px'), stripe(45, '3px 6px'), stripe(0, '3px 6px'), null,
+        stripe(90, '3px 6px'), `${stripe(45, '2px 4px')}, ${stripe(135, '2px 4px')}`,
+      ]);
+      expect(STATUS_ORDER.slice(1).map((status) => STATUS_STYLES[status].badge)).toEqual([
+        'bg-primary/10 text-primary border-primary/30',
+        'bg-accent text-accent-foreground border-primary/20',
+        'bg-success/15 text-success border-success/30',
+        'bg-muted text-muted-foreground border-border',
+        'bg-destructive/10 text-destructive border-destructive/30',
+      ]);
+    });
   });
 
   describe('light theme contrast', () => {

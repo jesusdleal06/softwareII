@@ -82,6 +82,10 @@ describe('DayAgenda', () => {
     return el.querySelectorAll('[aria-label^="Agenda de "]');
   }
 
+  function frame(): HTMLElement {
+    return el.lastElementChild as HTMLElement;
+  }
+
   const originalMatchMedia = window.matchMedia;
 
   function stubNarrow(matches: boolean): void {
@@ -115,6 +119,7 @@ describe('DayAgenda', () => {
     expect(text(el)).toContain('8:00 AM');
     expect(text(el)).toContain('6:00 PM');
     expect(text(cols[0])).toContain('Descanso');
+    expect(frame().style.maxWidth).toBe('');
   });
 
   it('positions and sizes each block by start time and duration', () => {
@@ -149,9 +154,13 @@ describe('DayAgenda', () => {
   });
 
   it('shows an empty state when the day has no appointments', () => {
-    render(undefined, { appointments: [] });
+    render(undefined, { dentists: [DENTISTS[0]], appointments: [] });
     expect(columns()).toHaveLength(0);
-    expect(text(el)).toContain('No hay citas para este día');
+    expect(Array.from(frame().querySelectorAll('p'), text)).toEqual([
+      'No hay citas para este día',
+      'Cambia de fecha o registra una cita nueva.',
+    ]);
+    expect(frame().style.maxWidth).toBe('');
   });
 
   it('places each appointment in its dentist column', () => {
@@ -192,9 +201,13 @@ describe('DayAgenda', () => {
     }
   });
 
-  it('does not stretch a single dentist column across the whole card', () => {
+  it('caps the populated singleton frame at the time axis plus the existing lane cap, before borders', () => {
     render(undefined, { dentists: [DENTISTS[0]] });
     expect((el.querySelector('.grid') as HTMLElement).style.gridTemplateColumns).toBe('5rem minmax(0, 30rem)');
+    expect(text(frame())).toContain('8:00 AM');
+    expect(text(frame())).toContain('6:00 PM');
+    expect(frame().style.maxWidth).toBe('35rem');
+    expect(frame().classList.contains('box-content')).toBe(true);
   });
 
   it('keeps a 15-minute block proportional while its touch area reaches 44px', () => {
@@ -241,6 +254,14 @@ describe('DayAgenda', () => {
     const cols = columns();
     expect(cols).toHaveLength(1);
     expect(cols[0].getAttribute('aria-label')).toBe('Agenda de Dr. Andrés Peña');
+  });
+
+  it('also caps the frame when dentist toggles leave one visible lane', () => {
+    stubNarrow(true);
+    render();
+    expect(columns()).toHaveLength(1);
+    expect(frame().style.maxWidth).toBe('35rem');
+    expect(frame().classList.contains('box-content')).toBe(true);
   });
 
   it('falls back to the first dentist when the visible one leaves the list', () => {

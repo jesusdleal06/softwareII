@@ -45,6 +45,18 @@ describe('WhatsappBubble', () => {
     expect(url).toBeDefined();
     expect(url?.className).not.toContain('text-primary');
     expect(url?.className).not.toContain('underline');
-    expect(text(bubble)).toContain('villadent.co/cita/enlace-personal');
+    expect(url?.textContent).toBe('villadent.co/cita/enlace-personal');
+    expect(bubble.querySelector('a, [role="link"], [tabindex]')).toBeNull();
+    expect(text(bubble)).not.toContain('3135556677');
+    expect(text(bubble)).not.toContain('VD-1049');
+  });
+
+  it('offers URL breaks after separators before falling back to arbitrary breaks', () => {
+    const url = Array.from(render().querySelectorAll('figure span')).find((span) =>
+      text(span).includes('villadent.co/cita/'),
+    );
+    expect(url?.innerHTML.split('<wbr>')).toEqual(['villadent.co/', 'cita/', 'enlace-', 'personal']);
+    expect(url?.classList.contains('break-all')).toBe(false);
+    expect(url?.classList.contains('wrap-anywhere')).toBe(true);
   });
 });

@@ -5,7 +5,7 @@ import { AppStore } from '../../../core/services/app-store.service';
 import { StatusBadge } from '../../../shared/ui/status-badge';
 import { AppointmentDetail } from '../components/appointment-detail';
 import { DateNav } from '../components/date-nav';
-import { DayAgenda } from '../components/day-agenda';
+import { DayAgenda, SINGLETON_FRAME_CONTENT_WIDTH } from '../components/day-agenda';
 
 /** Read-only agenda of the logged-in dentist (prototype `MiAgendaView`, container). */
 @Component({
@@ -14,52 +14,58 @@ import { DayAgenda } from '../components/day-agenda';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col gap-6' },
   template: `
-    <div class="flex flex-col gap-1">
-      <h1 class="text-2xl font-bold tracking-tight">Mi agenda</h1>
-      <p class="flex items-center gap-2 text-base text-muted-foreground">
-        <svg lucideEye class="size-5" aria-hidden="true"></svg>
+    <div class="page-header">
+      <h1 class="page-title">Mi agenda</h1>
+      <p class="page-subtitle flex items-center gap-2 text-pretty">
+        <svg lucideEye class="size-4 shrink-0" aria-hidden="true"></svg>
         Vista de solo lectura. Para cambios, comunícate con la auxiliar administrativa.
       </p>
     </div>
 
-    <div class="rounded-2xl border bg-card p-4">
+    <div class="card">
       <app-date-nav [date]="date()" [today]="today" (dateChange)="date.set($event)" />
     </div>
 
-    <div class="grid gap-4 lg:grid-cols-[1fr_22rem]">
+    <div
+      class="grid gap-4 lg:items-start lg:grid-cols-[minmax(0,var(--timeline-track,1fr))_22rem]"
+      [style.--timeline-track]="own().length ? singletonTrackWidth : null"
+    >
       <app-day-agenda
         [dentists]="dentists()"
         [appointments]="own()"
         [dateKey]="date()"
         [now]="now"
+        emptyHint="Cambia de fecha."
         (selected)="selectedId.set($event.id)"
       />
 
-      <aside class="flex flex-col gap-3 rounded-2xl border bg-card p-4" aria-labelledby="lista-pacientes">
-        <h2 id="lista-pacientes" class="text-lg font-bold">
+      <aside class="card flex flex-col gap-3 self-start" aria-labelledby="lista-pacientes">
+        <h2 id="lista-pacientes" class="card-title tracking-tight">
           Pacientes del día
-          <span class="text-base font-medium text-muted-foreground">({{ pendingCount() }} por atender)</span>
+          <span class="card-subtitle block font-normal tabular-nums">({{ pendingCount() }} por atender)</span>
         </h2>
         @if (sorted().length === 0) {
-          <p class="rounded-xl border border-dashed bg-muted/40 px-4 py-6 text-center text-base text-muted-foreground">
+          <p class="py-6 text-center text-xs text-muted-foreground">
             No tienes citas este día.
           </p>
         } @else {
-          <ul class="flex flex-col divide-y">
+          <ul class="flex flex-col">
             @for (c of sorted(); track c.id) {
-              <li>
+              <li class="row">
                 <button
                   type="button"
                   (click)="selectedId.set(c.id)"
-                  class="flex w-full min-h-14 items-start justify-between gap-3 py-3 text-left hover:bg-muted/60 rounded-lg px-2 -mx-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="flex w-full items-start justify-between gap-3 rounded-sm text-left outline-none transition-colors active:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                 >
-                  <span class="flex flex-col">
-                    <span class="font-semibold">{{ formatTime(c.time) }} · {{ c.patientName }}</span>
-                    <span class="text-sm text-muted-foreground">
+                  <span class="flex min-w-0 flex-col">
+                    <span class="truncate text-sm font-medium text-foreground tabular-nums">
+                      {{ formatTime(c.time) }} · {{ c.patientName }}
+                    </span>
+                    <span class="truncate text-xs text-muted-foreground tabular-nums">
                       {{ c.procedureName }} · {{ formatPhone(c.patientPhone) }}
                     </span>
                   </span>
-                  <span appStatusBadge [status]="c.status" class="mt-0.5"></span>
+                  <span appStatusBadge [status]="c.status" class="mt-0.5 shrink-0"></span>
                 </button>
               </li>
             }
@@ -78,6 +84,8 @@ export class MyAgendaPage {
   protected readonly formatPhone = formatPhone;
   protected readonly now = this.store.now();
   protected readonly today = toDateKey(this.now);
+  // The shared content-box cap excludes the two 1px borders on the frame.
+  protected readonly singletonTrackWidth = `calc(${SINGLETON_FRAME_CONTENT_WIDTH} + 2px)`;
 
   protected readonly date = signal(this.today);
   protected readonly selectedId = signal<string | null>(null);

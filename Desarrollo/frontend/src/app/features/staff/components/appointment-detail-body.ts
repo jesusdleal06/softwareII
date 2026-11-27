@@ -21,56 +21,54 @@ import { ReminderBadge } from '../../../shared/ui/status-badge';
     LucideCircleX,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-6' },
+  host: { class: 'flex flex-col gap-5' },
   template: `
     @let cita = appointment();
     @if (message(); as text) {
       <p
         role="status"
-        class="flex items-start gap-3 rounded-2xl border border-success/40 bg-success/10 px-4 py-3 text-base font-medium text-success"
+        class="flex items-start gap-2.5 rounded-md border border-success/40 bg-success/15 px-4 py-3 text-sm font-medium text-success"
       >
-        <svg lucideCircleCheck class="mt-0.5 size-5 shrink-0" aria-hidden="true"></svg>
+        <svg lucideCircleCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true"></svg>
         {{ text }}
       </p>
     }
     <dl appAppointmentSummary [appointment]="cita"></dl>
-    <section class="flex flex-col gap-2 rounded-2xl border bg-muted/40 px-5 py-4" aria-labelledby="rec-title">
-      <h3 id="rec-title" class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        Recordatorio por WhatsApp
-      </h3>
+    <section class="card-divider flex flex-col gap-2" aria-labelledby="rec-title">
+      <h3 id="rec-title" class="text-xs font-medium text-muted-foreground">Recordatorio por WhatsApp</h3>
       <app-reminder-badge [status]="cita.reminder" />
-      <p class="text-base text-muted-foreground text-pretty first-letter:uppercase">{{ reminderDetail() }}</p>
+      <p class="text-sm text-muted-foreground text-pretty first-letter:uppercase">{{ reminderDetail() }}</p>
     </section>
 
     @if (!readOnly() && active()) {
-      <section class="flex flex-col gap-3" aria-label="Acciones">
+      <section class="card-divider flex flex-col gap-2.5" aria-label="Acciones">
         <button
           type="button"
           appBigButton
           variant="primary"
-          size="lg"
+          size="md"
           [full]="true"
           [disabled]="cita.status === 'Confirmada'"
           (click)="confirm.emit()"
         >
           <svg lucideCircleCheck></svg> {{ cita.status === 'Confirmada' ? 'Asistencia ya confirmada' : 'Confirmar' }}
         </button>
-        <button type="button" appBigButton variant="outline" size="lg" [full]="true" (click)="reschedule.emit()">
+        <button type="button" appBigButton variant="secondary" size="md" [full]="true" (click)="reschedule.emit()">
           <svg lucideCalendarClock></svg> Reprogramar
         </button>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <button type="button" appBigButton variant="success" size="lg" (click)="attended.emit()">
+        <div class="grid gap-2.5 sm:grid-cols-2">
+          <button type="button" appBigButton variant="success" size="md" (click)="attended.emit()">
             <svg lucideUserCheck></svg> Marcar como atendida
           </button>
-          <button type="button" appBigButton variant="secondary" size="lg" (click)="noShow.emit()">
+          <button type="button" appBigButton variant="secondary" size="md" (click)="noShow.emit()">
             <svg lucideUserX></svg> Marcar como no asistió
           </button>
         </div>
         <button
           type="button"
           appBigButton
-          variant="outline"
-          size="lg"
+          variant="secondary"
+          size="md"
           [full]="true"
           class="text-destructive!"
           (click)="cancel.emit()"
@@ -81,7 +79,7 @@ import { ReminderBadge } from '../../../shared/ui/status-badge';
     }
 
     @if (!readOnly() && !active()) {
-      <p class="rounded-2xl border bg-muted/40 px-5 py-4 text-base text-muted-foreground text-pretty">
+      <p class="rounded-md border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground text-pretty">
         Esta cita está en estado <strong class="text-foreground">{{ statusLabel() }}</strong> y no admite más acciones.
       </p>
     }

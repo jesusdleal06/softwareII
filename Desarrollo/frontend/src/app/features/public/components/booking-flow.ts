@@ -44,19 +44,21 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
     @switch (view()) {
       @case ('success') {
         @if (created(); as appointment) {
-          <div class="flex flex-col items-center gap-8 text-center">
-            <span class="flex size-20 items-center justify-center rounded-full bg-success/15 text-success" aria-hidden="true">
-              <svg lucideCircleCheck class="size-12"></svg>
-            </span>
-            <div class="flex flex-col gap-2">
-              <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">¡Tu cita quedó agendada!</h1>
-              <p class="text-lg text-muted-foreground text-pretty">
-                Guarda este código: <span class="font-mono font-bold text-foreground">{{ appointment.code }}</span>
-              </p>
+          <div class="flex flex-col gap-6">
+            <div class="card flex flex-col items-center gap-6 text-center">
+              <span class="flex size-16 items-center justify-center rounded-xl bg-success/15 text-success dark:bg-success/20" aria-hidden="true">
+                <svg lucideCircleCheck class="size-8"></svg>
+              </span>
+              <div class="flex flex-col gap-2">
+                <h1 tabindex="-1" class="text-2xl font-normal tracking-tight text-balance text-foreground">¡Tu cita quedó agendada!</h1>
+                <p class="page-subtitle">
+                  Guarda este código: <span class="font-mono font-semibold text-foreground">{{ appointment.code }}</span>
+                </p>
+              </div>
             </div>
             <dl appAppointmentSummary [appointment]="appointment" class="w-full text-left"></dl>
-            <div class="flex w-full items-start gap-3 rounded-2xl bg-success/10 p-5 text-left dark:bg-success/20">
-              <svg lucideMessageCircle class="mt-0.5 size-6 shrink-0 text-whatsapp" aria-hidden="true"></svg>
+            <div class="flex w-full items-start gap-3 rounded-xl border border-success/30 bg-success/10 p-6 text-left dark:bg-success/20">
+              <svg lucideMessageCircle class="mt-0.5 size-5 shrink-0 text-whatsapp" aria-hidden="true"></svg>
               <p class="text-base leading-relaxed text-pretty">
                 Te enviaremos un recordatorio por WhatsApp al <strong>{{ formatPhone(appointment.patientPhone) }}</strong>
                 {{ ' ' }}<strong>{{ reminderText(appointment) }}</strong>. Desde ese mensaje podrás confirmar, reprogramar o
@@ -64,49 +66,50 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
               </p>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row">
-              <a appBigButton variant="outline" size="lg" class="flex-1" routerLink="/">Volver al inicio</a>
+              <a appBigButton variant="secondary" size="lg" class="flex-1" routerLink="/">Volver al inicio</a>
             </div>
           </div>
         }
       }
       @case ('blocked') {
-        <div class="flex flex-col items-center gap-6 text-center">
-          <span class="flex size-20 items-center justify-center rounded-full bg-warning/20 text-warning-foreground" aria-hidden="true">
-            <svg lucideCalendarX2 class="size-12"></svg>
+        <div class="card flex flex-col items-center gap-6 text-center">
+          <span class="flex size-16 items-center justify-center rounded-xl bg-warning/20 text-warning-foreground" aria-hidden="true">
+            <svg lucideCalendarX2 class="size-8"></svg>
           </span>
-          <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance">Ya tienes una cita programada</h1>
-          <p class="max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty">
+          <h1 tabindex="-1" class="text-2xl font-normal tracking-tight text-balance text-foreground">Ya tienes una cita programada</h1>
+          <p class="max-w-xl text-base leading-relaxed text-muted-foreground text-pretty">
             Con el celular <strong class="text-foreground">{{ formatPhone(patient().phone) }}</strong> ya existe una cita
             activa. Para cuidar el tiempo de todos, cada paciente puede tener una sola cita pendiente a la vez. Usa el
             enlace personal de tu recordatorio para reprogramarla o cancelarla.
           </p>
-          <button type="button" appBigButton variant="outline" size="lg" (click)="goTo(1)">
+          <button type="button" appBigButton variant="secondary" size="lg" (click)="goTo(1)">
             <svg lucideArrowLeft aria-hidden="true"></svg> Volver
           </button>
         </div>
       }
       @default {
         @let current = step();
-        <div class="flex flex-col gap-8">
+        <div class="flex flex-col gap-6">
           <ol appStepper [steps]="steps" [current]="current"></ol>
 
-          <header class="flex flex-col gap-1">
+          <header class="flex flex-col gap-2">
             <p role="status" class="sr-only">{{ stepAnnouncement() }}</p>
-            <h1 tabindex="-1" class="text-3xl font-bold tracking-tight text-balance">{{ steps[current - 1] }}</h1>
+            <h1 tabindex="-1" class="text-2xl font-normal tracking-tight text-balance text-foreground">{{ steps[current - 1] }}</h1>
             @switch (current) {
               @case (1) {
-                <p class="text-lg text-muted-foreground">Cada odontólogo tiene su propia agenda.</p>
+                <p class="page-subtitle">Cada odontólogo tiene su propia agenda.</p>
               }
               @case (2) {
-                <p class="text-lg text-muted-foreground">Solo necesitamos dos datos para reservar tu turno.</p>
+                <p class="page-subtitle">Solo necesitamos dos datos para reservar tu turno.</p>
               }
               @case (3) {
-                <p class="text-lg text-muted-foreground">Revisa que todo esté correcto antes de confirmar.</p>
+                <p class="page-subtitle">Revisa que todo esté correcto antes de confirmar.</p>
               }
             }
           </header>
 
-          @if (notice(); as message) {
+          @let message = notice();
+          @if (message && message !== incompleteMessage) {
             <p appAlertMessage>{{ message }}</p>
           }
 
@@ -120,9 +123,13 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                 (valueChange)="onSelectionChange($event)"
               />
               @if (!selectionComplete()) {
-                <p id="booking-continue-hint" class="text-sm text-muted-foreground">
-                  Para continuar, elige odontólogo, procedimiento, día y hora.
-                </p>
+                @if (message === incompleteMessage) {
+                  <p id="booking-continue-hint" appAlertMessage>{{ message }}</p>
+                } @else {
+                  <p id="booking-continue-hint" class="text-sm text-muted-foreground">
+                    Para continuar, elige odontólogo, procedimiento, día y hora.
+                  </p>
+                }
               }
               <button
                 type="button"
@@ -138,21 +145,21 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
               </button>
             }
             @case (2) {
-              <form class="flex flex-col gap-8" novalidate (submit)="$event.preventDefault(); goToStep3()">
+              <form class="card flex flex-col gap-6" novalidate (submit)="$event.preventDefault(); goToStep3()">
                 <app-patient-form [data]="patient()" [errors]="errors()" (dataChange)="patient.set($event)" />
-                <div class="flex flex-col gap-3 sm:flex-row-reverse">
+                <div class="card-divider flex flex-col gap-3 sm:flex-row-reverse">
                   <button type="submit" appBigButton size="xl" class="flex-1">Continuar <svg lucideArrowRight aria-hidden="true"></svg></button>
-                  <button type="button" appBigButton variant="outline" size="xl" class="sm:w-auto" (click)="goTo(1)">
+                  <button type="button" appBigButton variant="secondary" size="xl" class="sm:w-auto" (click)="goTo(1)">
                     <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
                   </button>
                 </div>
               </form>
             }
             @case (3) {
-              <div class="flex flex-col gap-8">
+              <div class="flex flex-col gap-6">
                 <dl appAppointmentSummary [appointment]="draft()"></dl>
-                <p class="flex items-start gap-3 rounded-2xl bg-success/10 p-4 text-base leading-relaxed text-pretty dark:bg-success/20">
-                  <svg lucideMessageCircle class="mt-0.5 size-6 shrink-0 text-whatsapp" aria-hidden="true"></svg>
+                <p class="flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 p-6 text-base leading-relaxed text-pretty dark:bg-success/20">
+                  <svg lucideMessageCircle class="mt-0.5 size-5 shrink-0 text-whatsapp" aria-hidden="true"></svg>
                   <span>
                     Recibirás un recordatorio por WhatsApp <strong>{{ reminderText(selection()) }}</strong>.
                   </span>
@@ -161,7 +168,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                   <button type="button" appBigButton size="xl" class="flex-1" [disabled]="saving()" (click)="confirm()">
                     {{ saving() ? 'Guardando…' : 'Confirmar cita' }}
                   </button>
-                  <button type="button" appBigButton variant="outline" size="xl" class="sm:w-auto" (click)="goTo(2)">
+                  <button type="button" appBigButton variant="secondary" size="xl" class="sm:w-auto" (click)="goTo(2)">
                     <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
                   </button>
                 </div>
@@ -169,7 +176,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                   ¿Necesitas ayuda? Escríbenos al WhatsApp +57 300 123 4567 o
                   <a
                     routerLink="/"
-                    class="rounded-md font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                    class="rounded-sm font-medium text-primary underline decoration-1 underline-offset-4 outline-none transition-[text-decoration-thickness] hover:decoration-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                     >vuelve al inicio</a
                   >.
                 </p>
@@ -197,6 +204,7 @@ export class BookingFlow implements OnInit {
   protected readonly patient = signal<PatientData>({ name: '', phone: '' });
   protected readonly errors = signal<PatientErrors>({});
   protected readonly notice = signal<string | null>(null);
+  protected readonly incompleteMessage = INCOMPLETE_MESSAGE;
   protected readonly created = signal<Appointment | null>(null);
   protected readonly saving = signal(false);
 

@@ -5,12 +5,12 @@ import { cn } from '../../../shared/ui/class-names';
 @Component({
   selector: 'div[appReportCard]',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-1 rounded-2xl border bg-card p-5' },
+  host: { class: 'card flex flex-col gap-2' },
   template: `
-    <span class="text-base font-medium text-muted-foreground">{{ heading() }}</span>
+    <span class="text-xs font-medium text-muted-foreground">{{ heading() }}</span>
     <span [class]="valueClass()">{{ value() }}</span>
     @if (note()) {
-      <span class="text-sm text-muted-foreground">{{ note() }}</span>
+      <span class="text-xs text-muted-foreground tabular-nums">{{ note() }}</span>
     }
   `,
 })
@@ -21,5 +21,5 @@ export class ReportCard {
   readonly tone = input.required<string>();
   readonly note = input<string>();
 
-  protected readonly valueClass = computed(() => cn('text-4xl font-bold tabular-nums', this.tone()));
+  protected readonly valueClass = computed(() => cn('text-3xl font-semibold tracking-tight tabular-nums', this.tone()));
 }
