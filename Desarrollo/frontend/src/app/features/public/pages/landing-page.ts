@@ -10,9 +10,11 @@ import {
   toDateKey,
 } from '../../../core/domain';
 import { shiftsForDate } from '../../../core/config/clinic';
+import { Dentist } from '../../../core/models';
 import { AppStore } from '../../../core/services/app-store.service';
 import { BigButton } from '../../../shared/ui/big-button';
 import { PUBLIC_WHATSAPP_URL, PublicFooter, PublicHeader } from '../../../shared/ui/public-header';
+import { DentistDetailDialog } from '../components/dentist-detail-dialog';
 
 interface HowItWorksStep {
   title: string;
@@ -60,6 +62,7 @@ function openingWindows(dateKey: string): string[] {
     BigButton,
     LucideCalendarCheck,
     LucideShieldCheck,
+    DentistDetailDialog,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-1 flex-col' },
@@ -193,21 +196,38 @@ function openingWindows(dateKey: string): string[] {
           <div class="card mt-8 lg:mt-12">
             <ul class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
               @for (d of dentists(); track d.id) {
-                <li class="flex items-center gap-3">
-                  <!-- The ink plate, not the 6% accent tint: a tint of the card is invisible on the card. -->
-                  <span
-                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
-                    aria-hidden="true"
+                <li>
+                  <!-- The whole card is the control: one tab stop per dentist, native Enter/Space. -->
+                  <button
+                    #profileTrigger
+                    type="button"
+                    class="flex w-full items-center gap-3 rounded-md p-1 text-left outline-none transition-colors hover:bg-secondary/50 focus-visible:bg-secondary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                    [attr.aria-haspopup]="'dialog'"
+                    (click)="openDentist(d, profileTrigger)"
                   >
-                    {{ d.initials }}
-                  </span>
-                  <div class="flex min-w-0 flex-col">
-                    <span class="text-base font-medium leading-tight text-foreground">{{ d.name }}</span>
-                    <span class="text-sm text-muted-foreground">{{ d.specialty }}</span>
-                    @if (d.description !== d.specialty) {
-                      <span class="text-sm text-muted-foreground text-pretty">{{ d.description }}</span>
+                    @if (d.photoUrl) {
+                      <img
+                        [src]="d.photoUrl"
+                        alt=""
+                        class="size-12 shrink-0 rounded-full object-cover"
+                      />
+                    } @else {
+                      <!-- The ink plate, not the 6% accent tint: a tint of the card is invisible on the card. -->
+                      <span
+                        class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
+                        aria-hidden="true"
+                      >
+                        {{ d.initials }}
+                      </span>
                     }
-                  </div>
+                    <span class="flex min-w-0 flex-col">
+                      <span class="text-base font-medium leading-tight text-foreground">{{ d.name }}</span>
+                      <span class="text-sm text-muted-foreground">{{ d.specialty }}</span>
+                      @if (d.description !== d.specialty) {
+                        <span class="text-sm text-muted-foreground text-pretty">{{ d.description }}</span>
+                      }
+                    </span>
+                  </button>
                 </li>
               }
             </ul>
@@ -217,6 +237,10 @@ function openingWindows(dateKey: string): string[] {
             </div>
           </div>
         </section>
+
+        @if (selectedDentist(); as dentist) {
+          <app-dentist-detail-dialog [dentist]="dentist" (closed)="closeDentist()" />
+        }
       }
     </main>
     <footer appPublicFooter></footer>
@@ -230,6 +254,21 @@ export class LandingPage implements OnInit {
   protected readonly whatsappUrl = PUBLIC_WHATSAPP_URL;
   protected readonly availability = signal<AvailabilityDay[]>([]);
   protected readonly availabilityStatus = signal<'loading' | 'loaded' | 'error'>('loading');
+  protected readonly selectedDentist = signal<Dentist | null>(null);
+  private dentistTrigger: HTMLButtonElement | null = null;
+
+  protected openDentist(dentist: Dentist, trigger: HTMLButtonElement): void {
+    this.dentistTrigger = trigger;
+    this.selectedDentist.set(dentist);
+  }
+
+  protected closeDentist(): void {
+    const trigger = this.dentistTrigger;
+    this.dentistTrigger = null;
+    this.selectedDentist.set(null);
+    // Return focus after the dialog leaves the DOM, so the card receives it.
+    if (trigger) setTimeout(() => trigger.focus(), 0);
+  }
 
   ngOnInit(): void {
     void this.loadAvailability();

@@ -11,6 +11,7 @@ import co.edu.unipamplona.villadent.modules.dentists.application.ListSchedulesSe
 import co.edu.unipamplona.villadent.modules.dentists.application.RegisterDentistService;
 import co.edu.unipamplona.villadent.modules.dentists.application.SetDentistActiveService;
 import co.edu.unipamplona.villadent.modules.dentists.application.SetScheduleActiveService;
+import co.edu.unipamplona.villadent.modules.dentists.application.UpdateDentistIdentityService;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.AddScheduleUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.FindDentistByUserIdUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.FindDentistUseCase;
@@ -20,6 +21,7 @@ import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.ListSc
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.RegisterDentistUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.SetDentistActiveUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.SetScheduleActiveUseCase;
+import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.UpdateDentistIdentityUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.DentistRepository;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.FutureAppointmentQuery;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.ScheduleRepository;
@@ -58,6 +60,11 @@ public class DentistConfig {
     @Bean
     public FindDentistByUserIdUseCase findDentistByUserIdUseCase(DentistRepository dentists) {
         return new FindDentistByUserIdService(dentists);
+    }
+
+    @Bean
+    public UpdateDentistIdentityUseCase updateDentistIdentityUseCase(DentistRepository dentists) {
+        return new UpdateDentistIdentityService(dentists);
     }
 
     @Bean

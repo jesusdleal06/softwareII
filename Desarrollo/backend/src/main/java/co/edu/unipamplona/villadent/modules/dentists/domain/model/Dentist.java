@@ -32,6 +32,15 @@ public final class Dentist {
         return new Dentist(id, null, specialty, userId, active, profile);
     }
 
+    /** Staff-managed rename. Keeps the profile details (photo, titles, description) intact. */
+    public Dentist changeIdentity(String name, String specialty) {
+        DentistProfile legacy = DentistProfile.fromLegacyName(requireName(name));
+        DentistProfile renamed = new DentistProfile(legacy.firstName(), legacy.secondName(), legacy.firstSurname(),
+                legacy.secondSurname(), profile.photoUrl(), profile.photoPublicId(), profile.academicTitles(),
+                profile.description());
+        return new Dentist(id, null, specialty, userId, active, renamed);
+    }
+
     public Dentist updateProfile(String firstName, String secondName, String firstSurname, String secondSurname,
                                  List<String> titles, String description) {
         firstName = require(firstName, "El primer nombre es obligatorio.");

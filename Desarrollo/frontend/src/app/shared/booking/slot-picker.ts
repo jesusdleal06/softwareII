@@ -80,14 +80,14 @@ const EMPTY_HINT =
         />
       } @else {
         <div role="radiogroup" aria-label="Odontólogo" class="grid gap-3 sm:grid-cols-3" (keydown)="onGroupKeydown($event)">
-          @for (d of dentists(); track d.id) {
+          @for (d of capableDentists(); track d.id) {
             @let active = value().dentistId === d.id;
             <button
               type="button"
               role="radio"
               [attr.aria-checked]="active"
-              [tabindex]="radioTabindex(value().dentistId, d.id, dentists()[0].id)"
-              [class.col-span-full]="dentists().length === 1"
+              [tabindex]="radioTabindex(value().dentistId, d.id, capableDentists()[0].id)"
+              [class.col-span-full]="capableDentists().length === 1"
               (click)="patch({ dentistId: d.id })"
               [class]="
                 cn(
@@ -322,7 +322,7 @@ export class SlotPicker implements OnInit {
   protected readonly formatTime = formatTime;
   private readonly store = inject(AppStore);
   protected readonly dentistOptions = computed<SelectOption[]>(() =>
-    this.dentists().map((d) => ({ value: d.id, label: `${d.name} · ${d.specialty}` })),
+    this.capableDentists().map((d) => ({ value: d.id, label: `${d.name} · ${d.specialty}` })),
   );
   protected readonly procedureOptions = computed<SelectOption[]>(() =>
     this.procedures().map((p) => ({ value: p.id, label: `${p.name} · ${p.durationMinutes} min` })),
@@ -337,11 +337,23 @@ export class SlotPicker implements OnInit {
   private readonly weekStart = signal<Date | null>(null);
 
   protected readonly dentist = computed(() =>
-    this.dentists().find((d) => d.id === this.value().dentistId),
+    this.capableDentists().find((d) => d.id === this.value().dentistId),
   );
   protected readonly procedure = computed(() =>
     this.procedures().find((p) => p.id === this.value().procedureId),
   );
+
+  /**
+   * Dentists who perform the chosen procedure. A catalog entry without an explicit
+   * assignment keeps every dentist available, so legacy entries stay bookable.
+   */
+  protected readonly capableDentists = computed<readonly Dentist[]>(() => {
+    const dentistIds = this.procedure()?.dentistIds ?? [];
+    const dentists = this.dentists();
+    return dentistIds.length === 0
+      ? dentists
+      : dentists.filter((d) => dentistIds.includes(d.id));
+  });
 
   private readonly week = computed(() => workWeek(this.weekStart() ?? mondayOf(this.now())));
 
@@ -428,6 +440,15 @@ export class SlotPicker implements OnInit {
           this.loadingSlots.set(false);
           this.slotsError.set(true);
         });
+    });
+
+    // Choosing a procedure that the selected dentist does not perform clears the dentist.
+    effect(() => {
+      if (this.fixedDentist()) return;
+      const selected = this.value().dentistId;
+      if (!selected) return;
+      if (this.capableDentists().some((d) => d.id === selected)) return;
+      this.valueChange.emit({ ...this.value(), dentistId: '', time: '' });
     });
   }
 

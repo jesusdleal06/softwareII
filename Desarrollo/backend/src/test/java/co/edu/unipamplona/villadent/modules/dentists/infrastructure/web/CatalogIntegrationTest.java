@@ -113,13 +113,22 @@ class CatalogIntegrationTest {
     void managesProcedures() throws Exception {
         String auxiliarToken = tokenFor(Role.AUXILIAR);
         String name = "Limpieza " + UUID.randomUUID();
+        MvcResult dentistCreated = mockMvc.perform(post("/api/v1/dentists")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + auxiliarToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Dra. Laura Villamizar","specialty":"Odontología general"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Number dentistId = JsonPath.read(dentistCreated.getResponse().getContentAsString(), "$.id");
 
         mockMvc.perform(post("/api/v1/procedures")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + auxiliarToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"%s","durationMinutes":30}
-                                """.formatted(name)))
+                                {"name":"%s","durationMinutes":30,"dentistIds":[%d]}
+                                """.formatted(name, dentistId.longValue())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.durationMinutes").value(30));
 
@@ -127,8 +136,8 @@ class CatalogIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + auxiliarToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"%s","durationMinutes":30}
-                                """.formatted(name)))
+                                {"name":"%s","durationMinutes":30,"dentistIds":[%d]}
+                                """.formatted(name, dentistId.longValue())))
                 .andExpect(status().isConflict());
 
         mockMvc.perform(post("/api/v1/procedures")

@@ -65,7 +65,12 @@ export function mapDentistProfile(dto: DentistProfileDto): DentistProfile {
 }
 
 export function mapProcedure(dto: ProcedureDto): Procedure {
-  return { id: String(dto.id), name: dto.name, durationMinutes: dto.durationMinutes };
+  return {
+    id: String(dto.id),
+    name: dto.name,
+    durationMinutes: dto.durationMinutes,
+    dentistIds: (dto.dentistIds ?? []).map(String),
+  };
 }
 
 export function mapStaffAppointment(dto: StaffAppointmentDto): Appointment {

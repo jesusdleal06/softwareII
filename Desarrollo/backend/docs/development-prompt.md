@@ -133,6 +133,7 @@ Base: the ER diagram in Actividad 3 (`roles`, `usuarios`, `odontologos`, `pacien
 | `odontologos` | `id_odontologo` PK, `nombre`, `especialidad`, `id_usuario` FK unique and nullable (a dentist may have no login), `activo`, timestamps. |
 | `horarios_odontologo` **new** | `id_horario` PK, `id_odontologo` FK, `dia_semana` (1–7), `hora_inicio`, `hora_fin` (check `hora_fin > hora_inicio`), `activo`. RF03, and CP-RF01-02 (a day with no schedule). |
 | `procedimientos` **new** | `id_procedimiento` PK, `nombre` unique, `duracion_min` (check in 30, 45, 60, 90), `activo`, timestamps. RF04 asks for configurable durations; the diagram had a free-text `tipo_procedimiento`. |
+| `procedimiento_odontologos` **new** | `id_procedimiento` FK, `id_odontologo` FK, `creado_en`; PK (`id_procedimiento`, `id_odontologo`). Links the dentists who perform a procedure (V8); a procedure needs at least one active dentist. |
 | `pacientes` | `id_paciente` PK, `nombre_completo`, `telefono` unique (check `^3[0-9]{9}$`), `activo`, timestamps. |
 | `citas` | `id_cita` PK, `codigo` unique (`VD-####`) **new**, `id_paciente` FK, `id_odontologo` FK, `id_procedimiento` FK **new** (replaces `tipo_procedimiento`), `fecha`, `hora`, `duracion_min`, `estado` (check in the six statuses), `origen` (`WEB`, `MANUAL`) **new**, `token_gestion_hash` unique **new** (SHA-256 of the manage link token, never the token itself), `version` **new** (optimistic locking), timestamps. |
 | `recordatorios` | `id_recordatorio` PK, `id_cita` FK, `canal` (`WHATSAPP`), `programado_para` **new**, `fecha_envio` nullable, `estado_envio` (`PROGRAMADO`, `ENVIADO`, `FALLIDO`), `intentos` **new**, `ultimo_error` **new**, timestamps. |
@@ -179,7 +180,7 @@ Prefix `/api/v1`. JSON in camelCase, dates as ISO 8601 (`2026-10-22`, `14:30`).
 | --- | --- |
 | Public | `GET /public/dentists`, `GET /public/procedures`, `GET /public/availability?dentistId&procedureId&date`, `POST /public/appointments`, `GET /public/appointments/manage/{token}`, `POST /public/appointments/manage/{token}/confirm`, `/cancel`, `/reschedule` |
 | Staff, both roles | `POST /auth/login`, `GET /appointments?dentistId&date` (a dentist sees only their own agenda) |
-| `AUXILIAR` only | `POST /appointments` (manual), `PATCH /appointments/{id}/status`, `POST /appointments/{id}/reschedule`, `GET /reports?from&to&dentistId`, managing dentists, schedules, procedures and users, including activate and deactivate |
+| `AUXILIAR` only | `POST /appointments` (manual), `PATCH /appointments/{id}/status`, `POST /appointments/{id}/reschedule`, `GET /reports?from&to&dentistId`, managing dentists, schedules, procedures and users, including activate and deactivate. Procedures carry `dentistIds`, set on create and replaced with `PUT /procedures/{id}/dentists`. Staff accounts (`/staff`, `/staff/{id}`) can be created, edited, activated and deactivated; adding an odontólogo also creates its dentist record. |
 
 Decided (2026-10-22): catalog management (dentists, schedules, procedures, users) belongs to the administrative role, `AUXILIAR`.
 

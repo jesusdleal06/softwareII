@@ -333,3 +333,17 @@ export async function registerDentist(
   expect([200, 201]).toContain(response.status());
   return (await response.json()) as DentistDto;
 }
+
+/** Replaces the dentists who perform a procedure (admin catalog). */
+export async function setProcedureDentists(
+  api: APIRequestContext,
+  token: string,
+  procedureId: number,
+  dentistIds: number[],
+): Promise<void> {
+  const response = await api.put(`/api/v1/procedures/${procedureId}/dentists`, {
+    headers: authHeaders(token),
+    data: { dentistIds },
+  });
+  expect(response.status()).toBe(200);
+}

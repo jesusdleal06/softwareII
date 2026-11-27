@@ -7,17 +7,18 @@ import {
   VisXYContainerModule,
 } from '@unovis/angular';
 import { DailyBreakdown, formatDate, fromDateKey, shortDayName } from '../../../core/domain';
-import { REPORT_SERIES } from '../../../core/data/status-styles';
+import { REPORT_CHART_SERIES } from '../../../core/data/status-styles';
 
 /**
  * Stacked bars of appointments per day and status, drawn with Unovis (the engine
  * behind shadcn-vue charts). Presentational.
  *
- * The chart is deliberately sober: solid low-chroma fills, square bars, no
- * animation and no decorative patterns. Values are never tooltip-only: each bar
- * carries its total above it, the legend repeats the range totals in stack order
- * and a toggleable data table repeats every number, so the tooltip is an
- * enhancement rather than the only way to read the chart.
+ * The chart follows the shadcn bar-chart language: a single-hue ramp, rounded
+ * stacked bars, horizontal grid lines only (no axis or tick lines) and muted
+ * tick labels. No animation and no decorative patterns. Values are never
+ * tooltip-only: each bar carries its total above it, the legend repeats the
+ * range totals in stack order and a toggleable data table repeats every number,
+ * so the tooltip is an enhancement rather than the only way to read the chart.
  */
 @Component({
   selector: 'section[appReportChart]',
@@ -39,7 +40,7 @@ import { REPORT_SERIES } from '../../../core/data/status-styles';
         <h2 id="grafico" class="card-title tracking-tight">Citas por día según estado</h2>
         <p class="text-sm text-muted-foreground">{{ periodLabel() }}</p>
       </div>
-      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Leyenda">
+      <ul class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-label="Leyenda">
         @for (item of legend(); track item.status) {
           <li class="flex items-center gap-2">
             <svg class="size-2.5 shrink-0" viewBox="0 0 12 12" aria-hidden="true">
@@ -67,7 +68,7 @@ import { REPORT_SERIES } from '../../../core/data/status-styles';
           [y]="yAccessors"
           [color]="colors"
           [barStyle]="barStyle"
-          [roundedCorners]="2"
+          [roundedCorners]="4"
           [barPadding]="0.35"
           [barMaxWidth]="48"
           [duration]="duration"
@@ -141,8 +142,8 @@ export class ReportChart {
   readonly days = input.required<readonly DailyBreakdown[]>();
 
   protected readonly formatDate = formatDate;
-  protected readonly series = REPORT_SERIES;
-  protected readonly colors = REPORT_SERIES.map((series) => series.color);
+  protected readonly series = REPORT_CHART_SERIES;
+  protected readonly colors = REPORT_CHART_SERIES.map((series) => series.color);
   /** Sober charts never animate, regardless of the motion preference. */
   protected readonly duration = 0;
   protected readonly chartMargin = { top: 24, right: 8, bottom: 24, left: 32 };
@@ -153,7 +154,7 @@ export class ReportChart {
   });
 
   protected readonly x = (_row: ChartRow, index: number): number => index;
-  protected readonly yAccessors = REPORT_SERIES.map(
+  protected readonly yAccessors = REPORT_CHART_SERIES.map(
     (_series, index) => (row: ChartRow): number => row.values[index],
   );
 
@@ -164,7 +165,7 @@ export class ReportChart {
         date: day.date,
         total: day.total,
         counts: day.counts,
-        values: REPORT_SERIES.map((series) => day.counts[series.status]),
+        values: REPORT_CHART_SERIES.map((series) => day.counts[series.status]),
         dayName: shortDayName(date),
         dayOfMonth: date.getDate(),
       };
@@ -194,7 +195,7 @@ export class ReportChart {
 
   protected readonly legend = computed(() => {
     const days = this.days();
-    return REPORT_SERIES.map((series) => ({
+    return REPORT_CHART_SERIES.map((series) => ({
       status: series.status,
       label: series.label,
       color: series.color,
@@ -216,14 +217,14 @@ export class ReportChart {
   protected readonly integerTick = (tick: number | Date): string => String(Math.round(Number(tick)));
 
   protected readonly tooltipTemplate = (row: ChartRow): string => {
-    const present = REPORT_SERIES.filter((series) => row.counts[series.status] > 0);
+    const present = REPORT_CHART_SERIES.filter((series) => row.counts[series.status] > 0);
     const lines = present
       .map(
         (series) =>
           `<div class="flex items-center justify-between gap-4"><span class="flex items-center gap-2"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${series.color}"></span>${series.label}</span><span class="font-semibold tabular-nums">${row.counts[series.status]}</span></div>`,
       )
       .join('');
-    return `<div class="flex min-w-40 flex-col gap-1 text-sm"><p class="font-semibold">${formatDate(row.date)}</p>${lines}<div class="mt-1 flex items-center justify-between gap-4 border-t pt-1 text-muted-foreground"><span>Total</span><span class="font-semibold tabular-nums">${row.total}</span></div></div>`;
+    return `<div class="flex min-w-36 flex-col gap-1 text-xs"><p class="font-medium">${formatDate(row.date)}</p>${lines}<div class="mt-1 flex items-center justify-between gap-4 border-t pt-1 text-muted-foreground"><span>Total</span><span class="font-semibold tabular-nums">${row.total}</span></div></div>`;
   };
 }
 

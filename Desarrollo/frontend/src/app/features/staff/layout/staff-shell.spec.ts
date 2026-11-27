@@ -48,7 +48,7 @@ describe('StaffShell', () => {
     const header = el.querySelector('header') as HTMLElement;
     expect(text(header)).toContain('Ana María Rueda');
     expect(text(header)).toContain('Auxiliar administrativa');
-    expect(navLabels(el)).toEqual(['Agenda', 'Reportes']);
+    expect(navLabels(el)).toEqual(['Agenda', 'Reportes', 'Procedimientos', 'Personal']);
     const active = el.querySelector('nav a[aria-current="page"]');
     expect(active?.getAttribute('href')).toBe('/panel/agenda');
     expect(el.querySelector('header a[aria-label="Villadent AgendaPro, ir al inicio"]')?.getAttribute('href')).toBe(
@@ -62,6 +62,18 @@ describe('StaffShell', () => {
     expect(text(el.querySelector('header') as HTMLElement)).toContain('Dra. Laura Villamizar');
     expect(text(el.querySelector('header span.rounded-full') as HTMLElement)).toBe('LV');
     expect(el.querySelectorAll('nav')).toHaveLength(2);
+  });
+
+  it('keeps the admin procedures and staff screens away from a dentist', async () => {
+    await open(DENTIST_SESSION, '/panel/procedimientos');
+    const router = TestBed.inject(Router);
+    expect(router.url).toBe('/acceso-denegado?ruta=%2Fpanel%2Fprocedimientos');
+  });
+
+  it('keeps the staff screen away from a dentist', async () => {
+    await open(DENTIST_SESSION, '/panel/personal');
+    const router = TestBed.inject(Router);
+    expect(router.url).toBe('/acceso-denegado?ruta=%2Fpanel%2Fpersonal');
   });
 
   it('labels the desktop and mobile navigation differently', async () => {

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import './unovis-jsdom';
 import { DailyBreakdown } from '../../../core/domain';
-import { REPORT_SERIES } from '../../../core/data/status-styles';
+import { REPORT_CHART_SERIES } from '../../../core/data/status-styles';
 import { text } from '../../../shared/testing/dom';
 import { ReportChart } from './report-chart';
 
@@ -41,7 +41,7 @@ describe('ReportChart', () => {
   it('keeps the chart heading and legend order from the status canon', () => {
     expect(text(el.querySelector('h2') as HTMLElement)).toBe('Citas por día según estado');
     const items = Array.from(el.querySelectorAll<HTMLLIElement>('[aria-label="Leyenda"] li'));
-    expect(items).toHaveLength(REPORT_SERIES.length);
+    expect(items).toHaveLength(REPORT_CHART_SERIES.length);
     expect(items.map((item) => text(item).replace(/\s+/g, ' '))).toEqual([
       'Pendiente 1',
       'Confirmada 3',
@@ -64,11 +64,28 @@ describe('ReportChart', () => {
   it('uses solid fills, with no decorative pattern in the bars or the legend', () => {
     expect(el.querySelector('pattern, [mask], [style*="mask"]')).toBeNull();
     const swatches = el.querySelectorAll('[aria-label="Leyenda"] rect');
-    expect(swatches).toHaveLength(REPORT_SERIES.length);
+    expect(swatches).toHaveLength(REPORT_CHART_SERIES.length);
     for (const swatch of Array.from(swatches)) {
       expect(swatch.getAttribute('mask')).toBeNull();
       expect(swatch.getAttribute('style')).not.toContain('mask');
     }
+  });
+
+  it('paints the series with the single-hue chart ramp', () => {
+    const colors = REPORT_CHART_SERIES.map((series) => series.color);
+    expect(colors).toEqual([
+      'var(--chart-series-1)',
+      'var(--chart-series-2)',
+      'var(--chart-series-3)',
+      'var(--chart-series-4)',
+      'var(--chart-series-5)',
+      'var(--chart-series-6)',
+    ]);
+    expect(new Set(colors).size).toBe(colors.length);
+    const fills = Array.from(
+      el.querySelectorAll<SVGRectElement>('[aria-label="Leyenda"] rect'),
+    ).map((swatch) => swatch.getAttribute('style') ?? '');
+    fills.forEach((fill, index) => expect(fill).toContain(colors[index]));
   });
 
   it('never animates the chart', () => {
@@ -91,7 +108,7 @@ describe('ReportChart', () => {
     expect(table).not.toBeNull();
     expect(text(table.querySelector('caption') as HTMLElement)).toBe('Citas por día según estado');
     const headers = Array.from(table.querySelectorAll('thead th')).map((cell) => text(cell));
-    expect(headers).toEqual(['Día', ...REPORT_SERIES.map((series) => series.label), 'Total']);
+    expect(headers).toEqual(['Día', ...REPORT_CHART_SERIES.map((series) => series.label), 'Total']);
   });
 
   it('lists one row per day with every series count and the total', () => {

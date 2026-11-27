@@ -1,6 +1,7 @@
 package co.edu.unipamplona.villadent.modules.appointments.application;
 
 import co.edu.unipamplona.villadent.modules.appointments.domain.error.ActiveAppointmentExistsException;
+import co.edu.unipamplona.villadent.modules.appointments.domain.error.DentistDoesNotPerformProcedureException;
 import co.edu.unipamplona.villadent.modules.appointments.domain.error.SlotTakenException;
 import co.edu.unipamplona.villadent.modules.appointments.domain.model.Appointment;
 import co.edu.unipamplona.villadent.modules.appointments.domain.model.AppointmentOrigin;
@@ -61,6 +62,10 @@ public class BookAppointmentService implements BookAppointmentUseCase {
         ProcedureResult procedure = procedures.findById(command.procedureId())
                 .filter(ProcedureResult::active)
                 .orElseThrow(() -> new NotFoundException("No se encontró el procedimiento."));
+
+        if (!procedure.isPerformedBy(dentist.id())) {
+            throw new DentistDoesNotPerformProcedureException();
+        }
 
         LocalDateTime now = LocalDateTime.now(clock);
         List<Appointment> booked = appointments.findByDentistIdAndDate(dentist.id(), command.date());

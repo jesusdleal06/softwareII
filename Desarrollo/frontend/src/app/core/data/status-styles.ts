@@ -81,3 +81,27 @@ export const REPORT_SERIES: readonly {
   label: STYLES[status].label,
   color: STYLES[status].series,
 }));
+
+/**
+ * Single-hue palette for the report bars only: badges keep the semantic colours
+ * above, while the chart reads the monochrome ramp in `styles.css`. Labels and
+ * order mirror REPORT_SERIES so legends and tables stay aligned.
+ */
+const CHART_SERIES_COLORS: Record<AppointmentStatus, string> = {
+  Pendiente: 'var(--chart-series-1)',
+  Confirmada: 'var(--chart-series-2)',
+  Reprogramada: 'var(--chart-series-3)',
+  Atendida: 'var(--chart-series-4)',
+  'No asistió': 'var(--chart-series-5)',
+  Cancelada: 'var(--chart-series-6)',
+};
+
+export const REPORT_CHART_SERIES: readonly {
+  status: AppointmentStatus;
+  label: string;
+  color: string;
+}[] = STATUS_ORDER.map((status) => ({
+  status,
+  label: STYLES[status].label,
+  color: CHART_SERIES_COLORS[status],
+}));

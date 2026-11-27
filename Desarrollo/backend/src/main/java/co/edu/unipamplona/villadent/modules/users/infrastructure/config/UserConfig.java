@@ -5,11 +5,13 @@ import co.edu.unipamplona.villadent.modules.users.application.ListUsersService;
 import co.edu.unipamplona.villadent.modules.users.application.LoginService;
 import co.edu.unipamplona.villadent.modules.users.application.RegisterUserService;
 import co.edu.unipamplona.villadent.modules.users.application.SetUserActiveService;
+import co.edu.unipamplona.villadent.modules.users.application.UpdateUserIdentityService;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivers.FindUserUseCase;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivers.ListUsersUseCase;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivers.LoginUseCase;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivers.RegisterUserUseCase;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivers.SetUserActiveUseCase;
+import co.edu.unipamplona.villadent.modules.users.domain.ports.drivers.UpdateUserIdentityUseCase;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.PasswordHasher;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.TokenGenerator;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.UserRepository;
@@ -47,5 +49,10 @@ public class UserConfig {
     @Bean
     public FindUserUseCase findUserUseCase(UserRepository users) {
         return new FindUserService(users);
+    }
+
+    @Bean
+    public UpdateUserIdentityUseCase updateUserIdentityUseCase(UserRepository users) {
+        return new UpdateUserIdentityService(users);
     }
 }

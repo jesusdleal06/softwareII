@@ -70,6 +70,8 @@ export interface ProcedureDto {
   id: number;
   name: string;
   durationMinutes: number;
+  /** Dentists who perform the procedure; absent on older payloads. */
+  dentistIds?: number[];
 }
 
 export interface AvailabilityDto {
