@@ -14,6 +14,7 @@ import co.edu.unipamplona.villadent.modules.dentists.domain.error.DentistPhotoUp
 import co.edu.unipamplona.villadent.modules.dentists.domain.model.Dentist;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.DentistRepository;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.ImageStorage.StoredImage;
+import co.edu.unipamplona.villadent.shared.cloudinary.CloudinaryClient;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -107,8 +108,8 @@ class CloudinaryImageStorageTest {
         });
         server.start();
         Clock clock = Clock.fixed(Instant.ofEpochSecond(1700000000), ZoneOffset.UTC);
-        return new CloudinaryImageStorage(clock, "test-cloud", "test-key", "test-secret",
-                "http://127.0.0.1:" + server.getAddress().getPort());
+        return new CloudinaryImageStorage(new CloudinaryClient(clock, "test-cloud", "test-key", "test-secret",
+                "http://127.0.0.1:" + server.getAddress().getPort()));
     }
 
     private static void assertPart(String body, String name, String value, String boundary) {

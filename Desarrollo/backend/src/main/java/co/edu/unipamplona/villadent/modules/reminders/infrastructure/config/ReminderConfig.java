@@ -4,6 +4,7 @@ import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.At
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetReminderAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.reminders.application.CancelReminderService;
 import co.edu.unipamplona.villadent.modules.reminders.application.GetReminderStatusService;
+import co.edu.unipamplona.villadent.modules.reminders.application.ManageLinkIssuer;
 import co.edu.unipamplona.villadent.modules.reminders.application.ReminderDeliveryService;
 import co.edu.unipamplona.villadent.modules.reminders.application.ScheduleReminderService;
 import co.edu.unipamplona.villadent.modules.reminders.application.SendDueRemindersService;
@@ -20,6 +21,7 @@ import java.time.Clock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
 public class ReminderConfig {
@@ -30,6 +32,7 @@ public class ReminderConfig {
     }
 
     @Bean
+    @Profile("!e2e")
     public ReminderSender reminderSender(
             @Value("${app.whatsapp.api-url:https://graph.facebook.com/v21.0}") String apiUrl,
             @Value("${app.whatsapp.token:}") String token,
@@ -39,22 +42,21 @@ public class ReminderConfig {
     }
 
     @Bean
+    public ManageLinkIssuer manageLinkIssuer(
+            AttachManageTokenUseCase attachManageToken,
+            ManageTokenGenerator tokenGenerator,
+            @Value("${app.manage-link-base:http://localhost:4200/cita/}") String manageLinkBase) {
+        return new ManageLinkIssuer(attachManageToken, tokenGenerator, manageLinkBase);
+    }
+
+    @Bean
     public ReminderDeliveryService reminderDeliveryService(
             ReminderRepository reminders,
             GetReminderAppointmentUseCase appointments,
-            AttachManageTokenUseCase attachManageToken,
-            ManageTokenGenerator tokenGenerator,
+            ManageLinkIssuer manageLinks,
             ReminderSender sender,
-            Clock clock,
-            @Value("${app.manage-link-base:http://localhost:4200/cita/}") String manageLinkBase) {
-        return new ReminderDeliveryService(
-                reminders,
-                appointments,
-                attachManageToken,
-                tokenGenerator,
-                sender,
-                clock,
-                manageLinkBase);
+            Clock clock) {
+        return new ReminderDeliveryService(reminders, appointments, manageLinks, sender, clock);
     }
 
     @Bean

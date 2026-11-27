@@ -1,0 +1,55 @@
+name: villadent-e2e
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: villadent_e2e
+      POSTGRES_USER: villadent
+      POSTGRES_PASSWORD: villadent
+    ports:
+      - "127.0.0.1:5446:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "villadent", "-d", "villadent_e2e"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ../backend
+    command: ["./gradlew", "bootRun", "--console=plain"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: demo,e2e
+      DB_URL: jdbc:postgresql://postgres:5432/villadent_e2e
+      DB_USER: villadent
+      DB_PASSWORD: villadent
+    ports:
+      - "127.0.0.1:8091:8080"
+    volumes:
+      # The backend dev image supplies the toolchain, not the application sources.
+      - ../backend/src:/app/src:ro
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 180s
+
+  frontend:
+    build:
+      context: ../frontend
+    environment:
+      API_TARGET: http://api:8080
+    ports:
+      - "127.0.0.1:4291:4200"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4200/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 24

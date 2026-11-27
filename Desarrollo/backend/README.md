@@ -195,6 +195,13 @@ El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`Remin
 Si `from` es posterior a `to`, la API responde `400` con código `INVALID_DATE_RANGE` y el mensaje «La fecha final debe ser igual o posterior a la inicial.». La misma consulta se descarga como CSV con `GET /api/v1/reports/export`; el archivo se llama `reporte-<desde>-<hasta>.csv`.
 
 
+For the same date range and optional dentist filter, add `format=pdf` to download an A4 PDF named `reporte-<from>-<to>.pdf`. Omitting `format` or specifying `format=csv` preserves the CSV response; other values return `400`.
+
+- `GET /api/v1/reports/history` lists up to 50 PDFs, newest first, with `id`, `from`, `to`, `dentistId`, `dentistName`, `generatedAt`, and `generatedBy`. An unfiltered export has a null dentist ID and name.
+- `GET /api/v1/reports/history/{id}/pdf` streams the stored PDF as an attachment. An unknown ID returns `404`. Both endpoints require `AUXILIAR`.
+
+PDFs are uploaded as authenticated raw assets in `villadent/reports` using the Cloudinary credentials above. The API never returns a Cloudinary URL. If Cloudinary is unavailable or not configured, the PDF still downloads but no history entry is written.
+
 ### Dentist profiles
 
 - `GET /api/v1/dentists/me/profile` reads the signed-in dentist's profile.

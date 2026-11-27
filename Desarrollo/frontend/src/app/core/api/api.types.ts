@@ -151,6 +151,16 @@ export interface ReportDto {
   daily: DailyReportDto[];
 }
 
+export interface ReportHistoryDto {
+  id: number;
+  from: string;
+  to: string;
+  dentistId: number | null;
+  dentistName: string | null;
+  generatedAt: string;
+  generatedBy: string;
+}
+
 export interface ProblemDetailDto {
   type?: string;
   title?: string;

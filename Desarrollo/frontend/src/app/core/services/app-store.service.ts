@@ -236,6 +236,18 @@ export class AppStore {
     return this.api.exportReport({ from, to, dentistId });
   }
 
+  async exportReportPdf(from: string, to: string, dentistId?: string) {
+    return this.api.exportReport({ from, to, dentistId, format: 'pdf' });
+  }
+
+  async reportHistory() {
+    return this.api.reportHistory();
+  }
+
+  async downloadReportPdf(id: number, from: string, to: string) {
+    return this.api.downloadReportPdf(id, from, to);
+  }
+
   private upsert(appointment: Appointment): void {
     this.appointmentsState.update((list) => {
       const index = list.findIndex((a) => a.id === appointment.id);

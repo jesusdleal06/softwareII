@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ReportDto } from '../../../core/api/api.types';
+import '../components/unovis-jsdom';
+import { ReportDto, ReportHistoryDto } from '../../../core/api/api.types';
 import { reportDays, reportRange } from '../../../core/domain';
 import { CLOCK } from '../../../core/services/tokens';
 import { clickButton, getByText, settle, text, typeInto } from '../../../shared/testing/dom';
@@ -75,8 +76,36 @@ describe('ReportsPage', () => {
     typeInto(el.querySelector(id) as HTMLInputElement, value);
   }
 
-  function bars(): HTMLElement[] {
-    return Array.from(el.querySelectorAll<HTMLElement>('[aria-label="Gráfico de barras"] [role="img"]'));
+  /** The chart's accessible data table: one row per day. */
+  function chartRows(): HTMLTableRowElement[] {
+    return Array.from(el.querySelectorAll<HTMLTableRowElement>('table.chart-table tbody tr'));
+  }
+
+  function chartCells(row: HTMLTableRowElement): string[] {
+    return Array.from(row.querySelectorAll('th, td')).map((cell) => text(cell));
+  }
+
+  function makeHistory(overrides: Partial<ReportHistoryDto> = {}): ReportHistoryDto {
+    return {
+      id: 1,
+      from: '2026-10-01',
+      to: '2026-10-31',
+      dentistId: null,
+      dentistName: null,
+      generatedAt: new Date(2026, 9, 20, 14, 30).toISOString(),
+      generatedBy: 'Ana Auxiliar',
+      ...overrides,
+    };
+  }
+
+  /** Recreates the page after configuring the history response (the list loads on construction). */
+  async function renderWithHistory(entries: ReportHistoryDto[]): Promise<void> {
+    store.reportHistory.mockResolvedValue(entries);
+    fixture = TestBed.createComponent(ReportsPage);
+    fixture.detectChanges();
+    await settle();
+    fixture.detectChanges();
+    el = fixture.nativeElement as HTMLElement;
   }
 
   it('starts with this week (Monday to Saturday)', () => {
@@ -86,7 +115,7 @@ describe('ReportsPage', () => {
     expect(getByText(el, 'button', 'Esta semana').getAttribute('aria-pressed')).toBe('true');
     expect(store.report).toHaveBeenCalledWith(from, to, undefined);
     expectMetrics({ attended: 10, cancelled: 2, noShow: 2, noShowRate: 17 });
-    expect(bars()).toHaveLength(reportDays(from, to).length);
+    expect(chartRows()).toHaveLength(reportDays(from, to).length);
   });
 
   it('computes the metrics for "Hoy"', async () => {
@@ -112,10 +141,17 @@ describe('ReportsPage', () => {
     await refresh();
     expect(text(el)).toContain('Periodo del 14/10/2026 al 14/10/2026');
     expectMetrics({ attended: 2, cancelled: 1, noShow: 0, noShowRate: 0 });
-    expect(bars()).toHaveLength(1);
-    expect(bars()[0].getAttribute('aria-label')).toBe(
-      '14/10/2026: 4 citas. Pendiente: 1, Confirmada: 2, Reprogramada: 1',
-    );
+    expect(chartRows()).toHaveLength(1);
+    expect(chartCells(chartRows()[0])).toEqual([
+      '14/10/2026',
+      '1',
+      '2',
+      '1',
+      '0',
+      '0',
+      '0',
+      '4',
+    ]);
   });
 
   it('computes the metrics for "Este mes" and filters by dentist', async () => {
@@ -174,6 +210,71 @@ describe('ReportsPage', () => {
     clickButton(el, 'Exportar');
     await refresh();
     expect(store.exportReport).toHaveBeenCalledWith('2026-10-12', '2026-10-17', undefined);
+    expect(store.exportReportPdf).not.toHaveBeenCalled();
     expect(text(el)).toContain('Archivo CSV descargado.');
+  });
+
+  it('CP-RF10-05: downloads the report as a PDF with the current filters', async () => {
+    store.exportReportPdf.mockResolvedValue({
+      blob: new Blob(['%PDF'], { type: 'application/pdf' }),
+      filename: 'reporte-2026-10-12-2026-10-17.pdf',
+    });
+    clickButton(el, 'Descargar PDF');
+    await refresh();
+    expect(store.exportReportPdf).toHaveBeenCalledWith('2026-10-12', '2026-10-17', undefined);
+    expect(store.exportReport).not.toHaveBeenCalled();
+    expect(text(el)).toContain('Archivo PDF descargado.');
+    // A successful PDF export refreshes the generated-reports list.
+    expect(store.reportHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it('CP-RF10-12: lists generated reports newest first with period, dentist, date and author', async () => {
+    const older = makeHistory({
+      id: 1,
+      from: '2026-09-01',
+      to: '2026-09-30',
+      dentistId: null,
+      dentistName: null,
+      generatedAt: new Date(2026, 9, 1, 8, 5).toISOString(),
+      generatedBy: 'Carlos Auxiliar',
+    });
+    const newer = makeHistory({
+      id: 2,
+      from: '2026-10-01',
+      to: '2026-10-31',
+      dentistId: 1,
+      dentistName: 'Dra. Laura Villamizar',
+      generatedAt: new Date(2026, 9, 20, 14, 30).toISOString(),
+      generatedBy: 'Ana Auxiliar',
+    });
+    await renderWithHistory([older, newer]);
+
+    const rows = Array.from(el.querySelectorAll<HTMLTableRowElement>('[aria-labelledby="reportes-generados"] tbody tr'));
+    expect(rows).toHaveLength(2);
+    expect(text(rows[0])).toContain('01/10/2026 al 31/10/2026');
+    expect(text(rows[0])).toContain('Dra. Laura Villamizar');
+    expect(text(rows[0])).toContain('20/10/2026 14:30');
+    expect(text(rows[0])).toContain('Ana Auxiliar');
+    expect(text(rows[1])).toContain('01/09/2026 al 30/09/2026');
+    expect(text(rows[1])).toContain('Todos');
+    expect(text(rows[1])).toContain('01/10/2026 08:05');
+    expect(text(rows[1])).toContain('Carlos Auxiliar');
+  });
+
+  it('CP-RF10-12: downloads a generated report from its row', async () => {
+    await renderWithHistory([makeHistory({ id: 2, from: '2026-10-01', to: '2026-10-31' })]);
+    const row = el.querySelector<HTMLTableRowElement>('[aria-labelledby="reportes-generados"] tbody tr');
+    expect(row).not.toBeNull();
+    const button = row!.querySelector<HTMLButtonElement>('button');
+    expect(button?.getAttribute('aria-label')).toBe('Descargar reporte del 01/10/2026 al 31/10/2026');
+    button!.click();
+    await refresh();
+    expect(store.downloadReportPdf).toHaveBeenCalledWith(2, '2026-10-01', '2026-10-31');
+  });
+
+  it('CP-RF10-12: shows the empty state when no reports were generated', async () => {
+    await renderWithHistory([]);
+    expect(text(el)).toContain('Aún no hay reportes generados.');
+    expect(el.querySelector('[aria-labelledby="reportes-generados"] table')).toBeNull();
   });
 });

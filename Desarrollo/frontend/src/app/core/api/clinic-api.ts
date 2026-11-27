@@ -13,6 +13,7 @@ import {
   StaffDentistDto,
   PublicAppointmentDto,
   ReportDto,
+  ReportHistoryDto,
   StaffAppointmentDto,
 } from './api.types';
 
@@ -29,6 +30,8 @@ export interface ReportQuery {
   from: string;
   to: string;
   dentistId?: string;
+  /** `pdf` asks for a PDF; omitted or `csv` keeps the original CSV export. */
+  format?: 'csv' | 'pdf';
 }
 
 /** Thin HTTP client for `/api/v1`. Every failure is normalized to `ApiError`. */
@@ -179,9 +182,30 @@ export class ClinicApi {
         observe: 'response',
       }),
     );
+    const extension = query.format === 'pdf' ? 'pdf' : 'csv';
     return {
       blob: response.body ?? new Blob(),
-      filename: this.filename(response) ?? `reporte-${query.from}-${query.to}.csv`,
+      filename: this.filename(response) ?? `reporte-${query.from}-${query.to}.${extension}`,
+    };
+  }
+
+  /** Generated reports, newest first, at most 50 entries. */
+  async reportHistory(): Promise<ReportHistoryDto[]> {
+    return this.request(this.http.get<ReportHistoryDto[]>('/api/v1/reports/history', { headers: this.auth() }));
+  }
+
+  /** Downloads the stored PDF of a generated report. */
+  async downloadReportPdf(id: number, from: string, to: string): Promise<{ blob: Blob; filename: string }> {
+    const response = await this.request(
+      this.http.get(`/api/v1/reports/history/${id}/pdf`, {
+        headers: this.auth(),
+        responseType: 'blob',
+        observe: 'response',
+      }),
+    );
+    return {
+      blob: response.body ?? new Blob(),
+      filename: this.filename(response) ?? `reporte-${from}-${to}.pdf`,
     };
   }
 
@@ -193,6 +217,7 @@ export class ClinicApi {
   private reportParams(query: ReportQuery): HttpParams {
     let params = new HttpParams().set('from', query.from).set('to', query.to);
     if (query.dentistId) params = params.set('dentistId', query.dentistId);
+    if (query.format === 'pdf') params = params.set('format', 'pdf');
     return params;
   }
 

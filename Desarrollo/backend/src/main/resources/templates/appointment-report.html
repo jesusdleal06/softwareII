@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <title>Reporte de citas — Villadent</title>
+    <meta charset="UTF-8" />
+    <style>
+        @page {
+            size: A4;
+            margin: 16mm 16mm 20mm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                color: #36545c; font: 9pt sans-serif;
+            }
+        }
+        body { margin: 0; color: #17383e; font: 10pt sans-serif; }
+        header { border-bottom: 2px solid #228479; padding-bottom: 12pt; }
+        .logo { width: 105pt; height: 45pt; float: right; }
+        h1 { margin: 4pt 0; font-size: 24pt; }
+        h2 { font-size: 14pt; margin-top: 18pt; }
+        p { margin: 4pt 0; }
+        .summary { width: 100%; table-layout: fixed; border-spacing: 4pt; margin: 12pt -4pt 0; }
+        .summary td {
+            width: 20%; background: #eaf5f2; border-left: 3px solid #228479;
+            padding: 9pt 4pt; text-align: center;
+        }
+        .summary-value { font-size: 22pt; font-weight: bold; color: #228479; }
+        .summary-label { font-size: 9pt; color: #36545c; margin-top: 3pt; }
+        .daily { width: 100%; border-collapse: collapse; -fs-table-paginate: paginate; }
+        .daily thead { display: table-header-group; }
+        .daily tr { page-break-inside: avoid; }
+        .daily th, .daily td { padding: 5pt 3pt; text-align: center; border-bottom: 1px solid #d2e2e0; }
+        .daily th { background: #eaf5f2; font-size: 8pt; }
+        .date { white-space: nowrap; }
+        .empty { padding: 12pt; background: #f6f8f7; }
+    </style>
+</head>
+<body>
+    <header>
+        <img class="logo" th:src="${logo}" alt="Villadent" />
+        <p>Centro Odontológico Villadent</p>
+        <h1>Reporte de citas</h1>
+        <p>Periodo: <span th:text="${report.from}">2026-01-01</span> a <span th:text="${report.to}">2026-01-31</span></p>
+        <p>Odontólogo: <span th:text="${dentistName}">Todos</span></p>
+        <p>Generado: <span th:text="${generatedAt}">31/01/2026 16:00</span></p>
+    </header>
+    <table class="summary" aria-label="Resumen">
+        <tbody>
+            <tr>
+                <td>
+                    <div class="summary-value" th:text="${report.total}">0</div>
+                    <div class="summary-label">Total de citas</div>
+                </td>
+                <td>
+                    <div class="summary-value" th:text="${report.attended}">0</div>
+                    <div class="summary-label">Pacientes atendidos</div>
+                </td>
+                <td>
+                    <div class="summary-value" th:text="${report.cancelled}">0</div>
+                    <div class="summary-label">Citas canceladas</div>
+                </td>
+                <td>
+                    <div class="summary-value" th:text="${report.noShow}">0</div>
+                    <div class="summary-label">Inasistencias</div>
+                </td>
+                <td>
+                    <div class="summary-value" th:text="|${report.noShowRate}%|">0%</div>
+                    <div class="summary-label">Índice de inasistencia</div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>Detalle por día</h2>
+    <p class="empty" th:if="${report.total == 0}">No hay datos para el periodo seleccionado</p>
+    <table class="daily" th:if="${report.total > 0}">
+        <thead><tr>
+            <th>Fecha</th><th>Total</th><th>Pendiente</th><th>Confirmada</th>
+            <th>Reprogramada</th><th>Cancelada</th><th>Atendida</th><th>No asistió</th>
+        </tr></thead>
+        <tbody><tr th:each="day : ${report.daily}">
+            <td class="date" th:text="${day.date()}">2026-01-01</td>
+            <td th:text="${day.total()}">0</td>
+            <td th:text="${day.counts().pending()}">0</td>
+            <td th:text="${day.counts().confirmed()}">0</td>
+            <td th:text="${day.counts().rescheduled()}">0</td>
+            <td th:text="${day.counts().cancelled()}">0</td>
+            <td th:text="${day.counts().attended()}">0</td>
+            <td th:text="${day.counts().noShow()}">0</td>
+        </tr></tbody>
+    </table>
+</body>
+</html>

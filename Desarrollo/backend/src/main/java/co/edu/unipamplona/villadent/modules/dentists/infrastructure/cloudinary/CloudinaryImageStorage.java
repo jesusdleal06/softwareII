@@ -1,92 +1,23 @@
 package co.edu.unipamplona.villadent.modules.dentists.infrastructure.cloudinary;
 
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.ImageStorage;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.Clock;
-import java.time.Duration;
-import java.util.HexFormat;
-import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import co.edu.unipamplona.villadent.shared.cloudinary.CloudinaryClient;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.web.client.RestClient;
 
 @Component
 public class CloudinaryImageStorage implements ImageStorage {
-    private static final String FOLDER = "villadent/dentists";
+    private final CloudinaryClient client;
 
-    private final RestClient client;
-    private final Clock clock;
-    private final String cloudName;
-    private final String apiKey;
-    private final String apiSecret;
-
-    @Autowired
-    public CloudinaryImageStorage(Clock clock,
-                                 @Value("${app.cloudinary.cloud-name}") String cloudName,
-                                 @Value("${app.cloudinary.api-key}") String apiKey,
-                                 @Value("${app.cloudinary.api-secret}") String apiSecret) {
-        this(clock, cloudName, apiKey, apiSecret, "https://api.cloudinary.com");
-    }
-
-    CloudinaryImageStorage(Clock clock, String cloudName, String apiKey, String apiSecret, String baseUrl) {
-        this.clock = clock;
-        this.cloudName = cloudName;
-        this.apiKey = apiKey;
-        this.apiSecret = apiSecret;
-        var factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(15));
-        this.client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
+    public CloudinaryImageStorage(CloudinaryClient client) {
+        this.client = client;
     }
 
     @Override
     public StoredImage upload(byte[] bytes, String contentType) {
-        if (cloudName.isBlank() || apiKey.isBlank() || apiSecret.isBlank()) {
-            throw new IllegalStateException("Cloudinary credentials are not configured");
+        var asset = client.upload("image", null, "villadent/dentists", "profile-photo", contentType, bytes);
+        if (asset.secureUrl() == null || asset.secureUrl().isBlank()) {
+            throw new IllegalStateException("Cloudinary did not return an image URL");
         }
-
-        long timestamp = clock.instant().getEpochSecond();
-        var file = new ByteArrayResource(bytes) {
-            @Override
-            public String getFilename() {
-                return "profile-photo";
-            }
-        };
-        var fileHeaders = new HttpHeaders();
-        fileHeaders.setContentType(MediaType.parseMediaType(contentType));
-
-        var form = new LinkedMultiValueMap<String, Object>();
-        form.add("file", new HttpEntity<>(file, fileHeaders));
-        form.add("folder", FOLDER);
-        form.add("timestamp", Long.toString(timestamp));
-        form.add("api_key", apiKey);
-        form.add("signature", sign(timestamp));
-        Map<?, ?> body = client.post().uri("/v1_1/{cloud}/image/upload", cloudName)
-                .contentType(MediaType.MULTIPART_FORM_DATA).body(form)
-                .retrieve().body(Map.class);
-        if (body == null || !(body.get("secure_url") instanceof String url) || url.isBlank()
-                || !(body.get("public_id") instanceof String publicId) || publicId.isBlank()) {
-            throw new IllegalStateException("Cloudinary did not return an image URL and public ID");
-        }
-        return new StoredImage(url, publicId);
-    }
-
-    private String sign(long timestamp) {
-        String parameters = "folder=" + FOLDER + "&timestamp=" + timestamp + apiSecret;
-        try {
-            return HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-1").digest(parameters.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-1 is not available", exception);
-        }
+        return new StoredImage(asset.secureUrl(), asset.publicId());
     }
 }
