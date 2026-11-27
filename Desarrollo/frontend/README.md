@@ -4,9 +4,11 @@ Aplicación web en **Angular** para el agendamiento de citas del Centro Odontol�
 
 > **Fase actual:** conectado a la API Spring Boot de `Desarrollo/backend`. Todos los datos (odontólogos, procedimientos, disponibilidad, citas y reportes) vienen del backend, que también aplica las reglas de negocio. La sesión del personal se conserva por pestaña (`sessionStorage`).
 
-**Stack:** Angular 22.2 (componentes standalone, signals) · Tailwind CSS v4 · `@lucide/angular` · Vitest 5 + jsdom
+**Stack:** Angular 22.2 (componentes standalone, signals) · Tailwind CSS v4 · `@lucide/angular` · Unovis 1.8 (`@unovis/angular`) para los gráficos · Vitest 5 + jsdom
 
 **Tema:** la interfaz es clara por omisión y el encabezado tiene un conmutador claro/oscuro. La preferencia se guarda en `localStorage` y se aplica antes del primer pintado, para que no haya destello de tema incorrecto.
+
+**Gráficos:** los reportes usan una paleta sólida y sobria, sin tramas ni animación. Cada barra muestra su total encima, la leyenda repite los totales en el mismo orden del apilado y «Ver tabla de datos» ofrece todos los números, de modo que el color no es la única forma de leer el gráfico.
 
 ---
 
@@ -92,6 +94,9 @@ El perfil `demo` también crea 48 citas de ejemplo en la semana anterior, la act
 | `/panel/agenda`    | Agenda diaria de todos los odontólogos     | Auxiliar administrativa                 |
 | `/panel/mi-agenda` | Agenda propia                              | Odontóloga                              |
 | `/panel/reportes`  | Reportes de citas                          | Auxiliar administrativa                 |
+| `/panel/mi-perfil` | Perfil público del odontólogo (nombres, títulos, descripción y foto) | Odontóloga        |
+
+- En `/panel/mi-perfil` el odontólogo edita los datos que ven los pacientes al elegir su odontólogo en el agendamiento público; la validación vive en `src/app/core/domain/dentist-profile.ts`.
 
 - Sin sesión, cualquier ruta de `/panel` redirige a `/ingreso`.
 - Con un rol no permitido, redirige a `/acceso-denegado?ruta=<ruta>`.

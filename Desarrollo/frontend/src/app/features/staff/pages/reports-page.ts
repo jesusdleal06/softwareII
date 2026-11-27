@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { LucideDownload, LucideFileChartColumn } from '@lucide/angular';
-import { formatDate, reportRange, ReportShortcut } from '../../../core/domain';
+import { formatDate, formatDateTime, reportRange, ReportShortcut } from '../../../core/domain';
 import { AppointmentStatus } from '../../../core/models';
-import { DailyReportDto, ReportDto } from '../../../core/api/api.types';
+import { DailyReportDto, ReportDto, ReportHistoryDto } from '../../../core/api/api.types';
 import { AppStore } from '../../../core/services/app-store.service';
 import { BigButton } from '../../../shared/ui/big-button';
 import { cn } from '../../../shared/ui/class-names';
@@ -47,18 +47,32 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
         </p>
       </div>
       <div class="flex flex-col items-start gap-2 lg:items-end">
-        <button
-          type="button"
-          appBigButton
-          variant="outline"
-          size="lg"
-          (click)="exportReport()"
-          [disabled]="empty() || invalidRange() || exporting()"
-        >
-          <svg lucideDownload></svg> {{ exporting() ? 'Exportando…' : 'Exportar' }}
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            appBigButton
+            variant="outline"
+            size="lg"
+            (click)="exportReport()"
+            [disabled]="empty() || invalidRange() || exporting() !== null"
+          >
+            <svg lucideDownload></svg> {{ exporting() === 'csv' ? 'Exportando…' : 'Exportar' }}
+          </button>
+          <button
+            type="button"
+            appBigButton
+            variant="outline"
+            size="lg"
+            (click)="exportReportPdf()"
+            [disabled]="empty() || invalidRange() || exporting() !== null"
+          >
+            <svg lucideDownload></svg> {{ exporting() === 'pdf' ? 'Generando…' : 'Descargar PDF' }}
+          </button>
+        </div>
         @if (exported()) {
-          <p role="status" class="text-sm text-muted-foreground">Archivo CSV descargado.</p>
+          <p role="status" class="text-sm text-muted-foreground">
+            {{ exported() === 'pdf' ? 'Archivo PDF descargado.' : 'Archivo CSV descargado.' }}
+          </p>
         }
       </div>
     </div>
@@ -148,6 +162,62 @@ const SHORTCUTS: readonly { value: ReportShortcut; label: string }[] = [
 
       <section appReportChart [days]="breakdown()"></section>
     }
+
+    <section class="flex flex-col gap-3 rounded-2xl border bg-card p-4" aria-labelledby="reportes-generados">
+      <h2 id="reportes-generados" class="text-xl font-bold">Reportes generados</h2>
+
+      @if (historyLoading()) {
+        <p role="status" class="text-base text-muted-foreground">Cargando los reportes generados…</p>
+      } @else if (historyError()) {
+        <div class="flex flex-col items-center gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 px-6 py-8 text-center">
+          <p class="text-base font-semibold">No pudimos cargar los reportes generados.</p>
+          <button type="button" appBigButton variant="outline" size="md" (click)="loadHistory()">Reintentar</button>
+        </div>
+      } @else if (history().length === 0) {
+        <p class="text-base text-muted-foreground">Aún no hay reportes generados.</p>
+      } @else {
+        @if (downloadError()) {
+          <p role="alert" class="text-sm text-destructive">No pudimos descargar el reporte. Inténtalo de nuevo.</p>
+        }
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <caption class="sr-only">Reportes generados</caption>
+            <thead>
+              <tr class="border-b text-muted-foreground">
+                <th scope="col" class="px-2 py-2 font-semibold">Periodo</th>
+                <th scope="col" class="px-2 py-2 font-semibold">Odontólogo</th>
+                <th scope="col" class="px-2 py-2 font-semibold">Generado</th>
+                <th scope="col" class="px-2 py-2 font-semibold">Autor</th>
+                <th scope="col" class="px-2 py-2"><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of history(); track entry.id) {
+                <tr class="border-b last:border-0">
+                  <td class="px-2 py-3">{{ period(entry) }}</td>
+                  <td class="px-2 py-3">{{ entry.dentistName ?? 'Todos' }}</td>
+                  <td class="px-2 py-3">{{ formatDateTime(entry.generatedAt) }}</td>
+                  <td class="px-2 py-3">{{ entry.generatedBy }}</td>
+                  <td class="px-2 py-3 text-right">
+                    <button
+                      type="button"
+                      appBigButton
+                      variant="outline"
+                      size="md"
+                      [attr.aria-label]="'Descargar reporte del ' + period(entry)"
+                      [disabled]="downloadingId() === entry.id"
+                      (click)="downloadHistory(entry)"
+                    >
+                      <svg lucideDownload></svg> Descargar
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
   `,
 })
 export class ReportsPage {
@@ -155,6 +225,7 @@ export class ReportsPage {
 
   protected readonly cn = cn;
   protected readonly formatDate = formatDate;
+  protected readonly formatDateTime = formatDateTime;
   protected readonly shortcuts = SHORTCUTS;
   protected readonly dentistOptions = computed<SelectOption[]>(() =>
     this.store.dentists().map((d) => ({ value: d.id, label: d.name })),
@@ -162,14 +233,20 @@ export class ReportsPage {
   protected readonly report = signal<ReportDto | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal(false);
-  protected readonly exporting = signal(false);
+  protected readonly exporting = signal<'csv' | 'pdf' | null>(null);
 
   protected readonly shortcut = signal<Shortcut>('semana');
   private readonly range = signal<[string, string]>(reportRange('semana', this.store.now()));
   protected readonly from = computed(() => this.range()[0]);
   protected readonly to = computed(() => this.range()[1]);
   protected readonly dentistId = signal('');
-  protected readonly exported = signal(false);
+  protected readonly exported = signal<'csv' | 'pdf' | null>(null);
+
+  protected readonly history = signal<ReportHistoryDto[]>([]);
+  protected readonly historyLoading = signal(false);
+  protected readonly historyError = signal(false);
+  protected readonly downloadError = signal(false);
+  protected readonly downloadingId = signal<number | null>(null);
 
   protected readonly metrics = computed(() => {
     const report = this.report();
@@ -197,9 +274,11 @@ export class ReportsPage {
   });
 
   private requestSeq = 0;
+  private historySeq = 0;
 
   constructor() {
     void this.store.ensureCatalogs();
+    this.loadHistory();
     effect(() => {
       const from = this.from();
       const to = this.to();
@@ -214,7 +293,7 @@ export class ReportsPage {
       const seq = ++this.requestSeq;
       this.loading.set(true);
       this.error.set(false);
-      this.exported.set(false);
+      this.exported.set(null);
       this.store
         .report(from, to, dentistId || undefined)
         .then((report) => {
@@ -244,22 +323,82 @@ export class ReportsPage {
   }
 
   protected async exportReport(): Promise<void> {
-    if (this.empty() || this.invalidRange() || this.exporting()) return;
-    this.exporting.set(true);
+    if (this.empty() || this.invalidRange() || this.exporting() !== null) return;
+    this.exporting.set('csv');
     try {
       const { blob, filename } = await this.store.exportReport(this.from(), this.to(), this.dentistId() || undefined);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(url);
-      this.exported.set(true);
+      this.saveBlob(blob, filename);
+      this.exported.set('csv');
     } catch {
       this.error.set(true);
     } finally {
-      this.exporting.set(false);
+      this.exporting.set(null);
     }
+  }
+
+  protected async exportReportPdf(): Promise<void> {
+    if (this.empty() || this.invalidRange() || this.exporting() !== null) return;
+    this.exporting.set('pdf');
+    try {
+      const { blob, filename } = await this.store.exportReportPdf(this.from(), this.to(), this.dentistId() || undefined);
+      this.saveBlob(blob, filename);
+      this.exported.set('pdf');
+      // The backend stores every generated PDF, so the list changes after a successful export.
+      this.loadHistory();
+    } catch {
+      this.error.set(true);
+    } finally {
+      this.exporting.set(null);
+    }
+  }
+
+  protected loadHistory(): void {
+    const seq = ++this.historySeq;
+    this.historyLoading.set(true);
+    this.historyError.set(false);
+    this.downloadError.set(false);
+    this.store
+      .reportHistory()
+      .then((entries) => {
+        if (seq !== this.historySeq) return;
+        const newestFirst = [...entries].sort(
+          (a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime(),
+        );
+        this.history.set(newestFirst);
+        this.historyLoading.set(false);
+      })
+      .catch(() => {
+        if (seq !== this.historySeq) return;
+        this.historyError.set(true);
+        this.historyLoading.set(false);
+      });
+  }
+
+  protected async downloadHistory(entry: ReportHistoryDto): Promise<void> {
+    if (this.downloadingId() !== null) return;
+    this.downloadingId.set(entry.id);
+    this.downloadError.set(false);
+    try {
+      const { blob, filename } = await this.store.downloadReportPdf(entry.id, entry.from, entry.to);
+      this.saveBlob(blob, filename);
+    } catch {
+      this.downloadError.set(true);
+    } finally {
+      this.downloadingId.set(null);
+    }
+  }
+
+  protected period(entry: ReportHistoryDto): string {
+    return `${formatDate(entry.from)} al ${formatDate(entry.to)}`;
+  }
+
+  private saveBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   protected applyShortcut(shortcut: ReportShortcut): void {

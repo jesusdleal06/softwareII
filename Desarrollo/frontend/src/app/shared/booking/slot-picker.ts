@@ -86,20 +86,32 @@ const EMPTY_HINT =
                 )
               "
             >
-              <span
-                [class]="
-                  cn(
-                    'flex size-12 shrink-0 items-center justify-center rounded-full text-base font-bold',
-                    active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                  )
-                "
-                aria-hidden="true"
-              >
-                {{ d.initials }}
-              </span>
-              <span class="flex min-w-0 flex-1 flex-col">
+              @if (d.photoUrl) {
+                <img [src]="d.photoUrl" alt="" class="size-12 shrink-0 rounded-full object-cover" />
+              } @else {
+                <span
+                  [class]="
+                    cn(
+                      'flex size-12 shrink-0 items-center justify-center rounded-full text-base font-bold',
+                      active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+                    )
+                  "
+                  aria-hidden="true"
+                >
+                  {{ d.initials }}
+                </span>
+              }
+              <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span class="font-semibold leading-tight">{{ d.name }}</span>
                 <span class="text-sm text-muted-foreground">{{ d.specialty }}</span>
+                @if (d.academicTitles?.length) {
+                  <span class="text-sm font-medium text-foreground/80">
+                    {{ d.academicTitles?.join(' · ') }}
+                  </span>
+                }
+                @if (d.description) {
+                  <span class="text-sm text-pretty text-muted-foreground">{{ d.description }}</span>
+                }
               </span>
               @if (active) {
                 <svg lucideCheck class="size-6 shrink-0 text-primary" aria-hidden="true"></svg>

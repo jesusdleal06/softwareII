@@ -137,6 +137,14 @@ const LIGHT_PAIRS: readonly Pair[] = [
   { label: 'whatsapp-foreground on whatsapp', fg: solid('whatsapp-foreground'), bg: solid('whatsapp'), min: TEXT },
   { label: 'input border on background', fg: solid('input'), bg: solid('background'), min: NON_TEXT },
   { label: 'focus ring on background', fg: solid('ring'), bg: solid('background'), min: NON_TEXT },
+  // Report chart segments are meaningful non-text graphics (WCAG 1.4.11): each solid
+  // fill must reach 3:1 against the card background.
+  { label: 'chart Atendida on card', fg: solid('chart-atendida'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Confirmada on card', fg: solid('chart-confirmada'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Pendiente on card', fg: solid('chart-pendiente'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Reprogramada on card', fg: solid('chart-reprogramada'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Cancelada on card', fg: solid('chart-cancelada'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart No asistió on card', fg: solid('chart-no-asistio'), bg: solid('card'), min: NON_TEXT },
 ];
 
 const DARK_PAIRS: readonly Pair[] = [
@@ -159,6 +167,14 @@ const DARK_PAIRS: readonly Pair[] = [
   { label: 'whatsapp-foreground on whatsapp', fg: solid('whatsapp-foreground'), bg: solid('whatsapp'), min: TEXT },
   { label: 'input border on card', fg: solid('input'), bg: solid('card'), min: NON_TEXT },
   { label: 'focus ring on background', fg: solid('ring'), bg: solid('background'), min: NON_TEXT },
+  // Report chart segments are meaningful non-text graphics (WCAG 1.4.11): each solid
+  // fill must reach 3:1 against the card background.
+  { label: 'chart Atendida on card', fg: solid('chart-atendida'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Confirmada on card', fg: solid('chart-confirmada'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Pendiente on card', fg: solid('chart-pendiente'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Reprogramada on card', fg: solid('chart-reprogramada'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart Cancelada on card', fg: solid('chart-cancelada'), bg: solid('card'), min: NON_TEXT },
+  { label: 'chart No asistió on card', fg: solid('chart-no-asistio'), bg: solid('card'), min: NON_TEXT },
 ];
 
 function themeTokens(): string[] {
@@ -208,7 +224,7 @@ describe('design token contract (WCAG 2.x measured)', () => {
       expect(ratio, `${theme} Pendiente contrast over card: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(TEXT);
     });
 
-    it('preserves the six labels, agenda blocks, report encodings and non-Pending badges', () => {
+    it('preserves the six labels, agenda blocks, report colours and non-Pending badges', () => {
       expect(STATUS_ORDER).toEqual(['Pendiente', 'Confirmada', 'Reprogramada', 'Atendida', 'No asistió', 'Cancelada']);
       expect(STATUS_ORDER.map((status) => STATUS_STYLES[status].label)).toEqual(STATUS_ORDER);
       expect(STATUS_ORDER.map((status) => STATUS_STYLES[status].block)).toEqual([
@@ -220,13 +236,12 @@ describe('design token contract (WCAG 2.x measured)', () => {
         'bg-destructive/5 border-destructive/60 text-muted-foreground line-through',
       ]);
       expect(REPORT_SERIES.map(({ color }) => color)).toEqual([
-        'bg-warning', 'bg-primary', 'bg-accent-foreground', 'bg-success', 'bg-muted-foreground', 'bg-destructive',
-      ]);
-      const stripe = (angle: number, stops: string) =>
-        `repeating-linear-gradient(${angle}deg, transparent 0 ${stops.split(' ')[0]}, var(--chart-pattern-ink) ${stops})`;
-      expect(REPORT_SERIES.map(({ pattern }) => pattern)).toEqual([
-        stripe(135, '3px 6px'), stripe(45, '3px 6px'), stripe(0, '3px 6px'), null,
-        stripe(90, '3px 6px'), `${stripe(45, '2px 4px')}, ${stripe(135, '2px 4px')}`,
+        'var(--chart-pendiente)',
+        'var(--chart-confirmada)',
+        'var(--chart-reprogramada)',
+        'var(--chart-atendida)',
+        'var(--chart-no-asistio)',
+        'var(--chart-cancelada)',
       ]);
       expect(STATUS_ORDER.slice(1).map((status) => STATUS_STYLES[status].badge)).toEqual([
         'bg-primary/10 text-primary border-primary/30',

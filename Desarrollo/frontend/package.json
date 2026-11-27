@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:ci": "ng test --watch=false"
+    "test:ci": "ng test --watch=false",
+    "e2e": "playwright test"
   },
   "private": true,
   "packageManager": "pnpm@11.28.5",
@@ -19,6 +20,8 @@
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
     "@lucide/angular": "~1.49.0",
+    "@unovis/angular": "1.8.1",
+    "@unovis/ts": "1.8.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -26,6 +29,7 @@
     "@angular/build": "^22.2.2",
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.0",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "^4.1.12",
     "jsdom": "^30.0.0",
     "playwright": "^1.65.1",

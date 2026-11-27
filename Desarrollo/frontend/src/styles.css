@@ -108,8 +108,18 @@
   --chart-3: oklch(0.6 0.15 70);
   --chart-4: oklch(0.53 0.2 25);
   --chart-5: oklch(0.5 0.02 230);
-  /* Ink of the chart's non-colour series patterns. Bars are mid-dark in the light theme. */
-  --chart-pattern-ink: oklch(1 0 0 / 0.55);
+  /*
+   * Report palette: muted and low-chroma. Two brand teal tones for the happy path,
+   * two slate greys for the pending ones, two earthy tones for the failures. Every
+   * value stays at or above 3:1 against `card` (WCAG 1.4.11). Contract:
+   * `core/data/design-tokens.spec.ts`.
+   */
+  --chart-atendida: oklch(0.46 0.09 205);
+  --chart-confirmada: oklch(0.58 0.09 205);
+  --chart-pendiente: oklch(0.5 0.02 240);
+  --chart-reprogramada: oklch(0.62 0.018 240);
+  --chart-cancelada: oklch(0.52 0.09 30);
+  --chart-no-asistio: oklch(0.56 0.08 75);
   --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.22 0.02 230);
@@ -161,8 +171,13 @@
   --chart-3: oklch(0.8 0.15 70);
   --chart-4: oklch(0.72 0.17 25);
   --chart-5: oklch(0.7 0.02 230);
-  /* Bars are light in the dark theme, so the pattern ink flips to black. */
-  --chart-pattern-ink: oklch(0 0 0 / 0.45);
+  /* Same report palette, lightened for the dark card; all six stay at or above 3:1. */
+  --chart-atendida: oklch(0.7 0.09 205);
+  --chart-confirmada: oklch(0.78 0.08 205);
+  --chart-pendiente: oklch(0.7 0.02 240);
+  --chart-reprogramada: oklch(0.8 0.015 240);
+  --chart-cancelada: oklch(0.7 0.1 30);
+  --chart-no-asistio: oklch(0.76 0.09 75);
   --sidebar: oklch(0.245 0.015 230);
   --sidebar-foreground: oklch(0.95 0.005 220);
   --sidebar-primary: oklch(0.72 0.1 205);
@@ -237,4 +252,34 @@
   .reveal:focus-within {
     animation: none;
   }
+}
+
+/* Unovis (report charts) reads its own `--vis-*` variables. Map them to the
+   project tokens so the chart follows the light/dark themes. Unovis only knows
+   `html.dark-theme` etc., so the project's plain `.dark` class is handled here. */
+:root {
+  --vis-font-family: 'Inter', system-ui, sans-serif;
+  --vis-axis-font-family: 'Inter', system-ui, sans-serif;
+  --vis-axis-tick-label-color: var(--muted-foreground);
+  --vis-axis-tick-label-font-size: 12px;
+  --vis-axis-label-color: var(--muted-foreground);
+  --vis-axis-grid-color: var(--border);
+  --vis-axis-grid-line-width: 1px;
+  --vis-axis-grid-opacity: 0.45;
+  --vis-axis-domain-color: var(--border);
+  --vis-axis-tick-line-width: 0;
+  --vis-crosshair-line-stroke-color: var(--muted-foreground);
+  --vis-crosshair-line-stroke-width: 1px;
+  --vis-crosshair-line-stroke-opacity: 0.6;
+  --vis-crosshair-circle-stroke-color: var(--card);
+  --vis-crosshair-circle-stroke-width: 2px;
+  --vis-tooltip-background-color: var(--card);
+  --vis-tooltip-border-color: var(--border);
+  --vis-tooltip-text-color: var(--card-foreground);
+  --vis-tooltip-padding: 0.75rem 0.875rem;
+  --vis-tooltip-border-radius: var(--radius);
+  --vis-tooltip-backdrop-filter: none;
+  --vis-tooltip-box-shadow: none;
+  --vis-tooltip-transition-duration: 0ms;
+  --vis-legend-label-color: var(--foreground);
 }

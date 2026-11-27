@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class ProblemDetailAdvice {
@@ -30,6 +31,11 @@ public class ProblemDetailAdvice {
         problemDetail.setTitle("VALIDATION_ERROR");
         problemDetail.setProperty("code", "VALIDATION_ERROR");
         return problemDetail;
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleOversizedMultipart() {
+        return handleDomainException(new DentistPhotoTooLargeException());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

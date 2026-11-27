@@ -1,5 +1,6 @@
 package co.edu.unipamplona.villadent.shared.security;
 
+import co.edu.unipamplona.villadent.shared.e2e.E2eManageLinkController;
 import co.edu.unipamplona.villadent.shared.error.ProblemDetailAccessDeniedHandler;
 import co.edu.unipamplona.villadent.shared.error.ProblemDetailAuthenticationEntryPoint;
 import jakarta.servlet.DispatcherType;
@@ -10,6 +11,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -86,7 +89,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             ProblemDetailAuthenticationEntryPoint authenticationEntryPoint,
-            ProblemDetailAccessDeniedHandler accessDeniedHandler) throws Exception {
+            ProblemDetailAccessDeniedHandler accessDeniedHandler,
+            Environment environment) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
@@ -96,24 +100,30 @@ public class SecurityConfig {
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .accessDeniedHandler(accessDeniedHandler))
-            .authorizeHttpRequests(auth -> auth
-                // The servlet container forwards 404s and unhandled exceptions to /error.
-                // Security re-checks that dispatch, so blocking it would turn every error
-                // on a public path into a 401. The original request was already authorized.
-                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                .requestMatchers("/api/v1/public/**", "/api/v1/auth/login", "/actuator/health").permitAll()
-                .requestMatchers("/api/v1/reports/**").hasRole("AUXILIAR")
-                .requestMatchers(HttpMethod.GET, CATALOGS, "/api/v1/dentists/**", "/api/v1/procedures/**",
-                        "/api/v1/patients/**").hasAnyRole("AUXILIAR", "ODONTOLOGO")
-                .requestMatchers(CATALOGS, "/api/v1/dentists/**", "/api/v1/procedures/**", "/api/v1/patients/**")
-                    .hasRole("AUXILIAR")
-                .requestMatchers(HttpMethod.GET, "/api/v1/appointments/**")
-                    .hasAnyRole("AUXILIAR", "ODONTOLOGO")
-                .requestMatchers(HttpMethod.POST, "/api/v1/appointments")
-                    .hasRole("AUXILIAR")
-                .requestMatchers(HttpMethod.PATCH, "/api/v1/appointments/**")
-                    .hasAnyRole("AUXILIAR", "ODONTOLOGO")
-                .anyRequest().authenticated())
+            .authorizeHttpRequests(auth -> {
+                if (environment.acceptsProfiles(Profiles.of("e2e"))) {
+                    auth.requestMatchers(HttpMethod.POST, E2eManageLinkController.PATH).permitAll();
+                }
+                auth
+                    // The servlet container forwards 404s and unhandled exceptions to /error.
+                    // Security re-checks that dispatch, so blocking it would turn every error
+                    // on a public path into a 401. The original request was already authorized.
+                    .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                    .requestMatchers("/api/v1/public/**", "/api/v1/auth/login", "/actuator/health").permitAll()
+                    .requestMatchers("/api/v1/reports/**").hasRole("AUXILIAR")
+                    .requestMatchers("/api/v1/dentists/me/profile", "/api/v1/dentists/me/photo").hasRole("ODONTOLOGO")
+                    .requestMatchers(HttpMethod.GET, CATALOGS, "/api/v1/dentists/**", "/api/v1/procedures/**",
+                            "/api/v1/patients/**").hasAnyRole("AUXILIAR", "ODONTOLOGO")
+                    .requestMatchers(CATALOGS, "/api/v1/dentists/**", "/api/v1/procedures/**", "/api/v1/patients/**")
+                        .hasRole("AUXILIAR")
+                    .requestMatchers(HttpMethod.GET, "/api/v1/appointments/**")
+                        .hasAnyRole("AUXILIAR", "ODONTOLOGO")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/appointments")
+                        .hasRole("AUXILIAR")
+                    .requestMatchers(HttpMethod.PATCH, "/api/v1/appointments/**")
+                        .hasAnyRole("AUXILIAR", "ODONTOLOGO")
+                    .anyRequest().authenticated();
+            })
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
                 .decoder(jwtDecoder())
                 .jwtAuthenticationConverter(jwtAuthenticationConverter())));

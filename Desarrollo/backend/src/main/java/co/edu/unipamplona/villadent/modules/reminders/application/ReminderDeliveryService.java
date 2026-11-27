@@ -1,12 +1,10 @@
 package co.edu.unipamplona.villadent.modules.reminders.application;
 
-import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.AttachManageTokenUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.GetReminderAppointmentUseCase;
 import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivers.ReminderAppointment;
 import co.edu.unipamplona.villadent.modules.reminders.domain.model.Reminder;
 import co.edu.unipamplona.villadent.modules.reminders.domain.model.ReminderMessage;
 import co.edu.unipamplona.villadent.modules.reminders.domain.model.ReminderStatus;
-import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivens.ManageTokenGenerator;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivens.ReminderRepository;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivens.ReminderSender;
 import java.time.Clock;
@@ -20,27 +18,21 @@ public class ReminderDeliveryService {
 
     private final ReminderRepository reminders;
     private final GetReminderAppointmentUseCase appointments;
-    private final AttachManageTokenUseCase attachManageToken;
-    private final ManageTokenGenerator tokenGenerator;
+    private final ManageLinkIssuer manageLinks;
     private final ReminderSender sender;
     private final Clock clock;
-    private final String manageLinkBase;
 
     public ReminderDeliveryService(
             ReminderRepository reminders,
             GetReminderAppointmentUseCase appointments,
-            AttachManageTokenUseCase attachManageToken,
-            ManageTokenGenerator tokenGenerator,
+            ManageLinkIssuer manageLinks,
             ReminderSender sender,
-            Clock clock,
-            String manageLinkBase) {
+            Clock clock) {
         this.reminders = reminders;
         this.appointments = appointments;
-        this.attachManageToken = attachManageToken;
-        this.tokenGenerator = tokenGenerator;
+        this.manageLinks = manageLinks;
         this.sender = sender;
         this.clock = clock;
-        this.manageLinkBase = manageLinkBase;
     }
 
     @Transactional
@@ -59,8 +51,7 @@ public class ReminderDeliveryService {
             return;
         }
         ReminderAppointment view = appointment.get();
-        String rawToken = tokenGenerator.generate();
-        attachManageToken.attach(view.id(), tokenGenerator.hash(rawToken));
+        var link = manageLinks.issue(view.id());
         try {
             sender.send(new ReminderMessage(
                     view.patientName(),
@@ -69,8 +60,8 @@ public class ReminderDeliveryService {
                     view.time(),
                     view.dentistName(),
                     view.procedureName(),
-                    manageLinkBase + rawToken,
-                    rawToken));
+                    link.url(),
+                    link.token()));
             reminders.save(reminder.sent(now));
         } catch (RuntimeException exception) {
             reminders.save(reminder.failed(errorMessage(exception), now, MAX_ATTEMPTS));

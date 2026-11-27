@@ -7,6 +7,7 @@ import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.ListDe
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.ListSchedulesUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.RegisterDentistUseCase;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.RegisterDentistUseCase.RegisterDentistCommand;
+import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.UpdateOwnDentistProfileUseCase.ProfileUpdate;
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivers.ScheduleResult;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.ListProceduresUseCase;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.ProcedureResult;
@@ -84,12 +85,12 @@ public class DemoDataSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         UserSummary auxiliar = ensureUser("Ana María Rueda", "ana@villadent.co", Role.AUXILIAR);
         UserSummary dentistUser = ensureUser(
-                "Dra. Laura Villamizar", "laura@villadent.co", Role.ODONTOLOGO);
+                "Laura Villamizar", "laura@villadent.co", Role.ODONTOLOGO);
 
         DentistResult laura = ensureDentist(
-                "Dra. Laura Villamizar", "Odontología general", dentistUser.id());
-        DentistResult andres = ensureDentist("Dr. Andrés Peña", "Ortodoncia", null);
-        DentistResult camila = ensureDentist("Dra. Camila Ortiz", "Cirugía oral", null);
+                "Laura", "Villamizar", "Odontología general", dentistUser.id());
+        DentistResult andres = ensureDentist("Andrés", "Peña", "Ortodoncia", null);
+        DentistResult camila = ensureDentist("Camila", "Ortiz", "Cirugía oral", null);
 
         ensureSchedules(laura);
         ensureSchedules(andres);
@@ -109,12 +110,15 @@ public class DemoDataSeeder implements ApplicationRunner {
                         new RegisterUserCommand(name, email, DEMO_PASSWORD, role)));
     }
 
-    private DentistResult ensureDentist(String name, String specialty, Long userId) {
+    private DentistResult ensureDentist(String firstName, String surname, String specialty, Long userId) {
+        String name = firstName + " " + surname;
         return listDentists.list().stream()
                 .filter(dentist -> dentist.name().equals(name))
                 .findFirst()
                 .orElseGet(() -> registerDentist.register(
-                        new RegisterDentistCommand(name, specialty, userId)));
+                        new RegisterDentistCommand(name, specialty, userId,
+                                new ProfileUpdate(firstName, null, surname, null,
+                                        List.of("Degree in Dentistry"), "Demo dentist profile."))));
     }
 
     private void ensureSchedules(DentistResult dentist) {

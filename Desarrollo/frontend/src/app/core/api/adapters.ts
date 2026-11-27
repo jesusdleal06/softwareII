@@ -3,6 +3,7 @@ import {
   AppointmentOrigin,
   AppointmentStatus,
   Dentist,
+  DentistProfile,
   Procedure,
   ReminderStatus,
   Role,
@@ -11,6 +12,7 @@ import {
   ApiOrigin,
   ApiStatus,
   DentistDto,
+  DentistProfileDto,
   ManagedAppointmentDto,
   ProcedureDto,
   PublicAppointmentDto,
@@ -40,8 +42,25 @@ export function mapDentist(dto: DentistDto): Dentist {
     id: String(dto.id),
     name: dto.name,
     specialty: dto.specialty,
-    description: dto.specialty,
+    description: dto.description ?? dto.specialty,
     initials: initials(dto.name),
+    photoUrl: dto.photoUrl ?? null,
+    academicTitles: dto.academicTitles ?? [],
+  };
+}
+
+export function mapDentistProfile(dto: DentistProfileDto): DentistProfile {
+  return {
+    id: String(dto.id),
+    firstName: dto.firstName,
+    secondName: dto.secondName,
+    firstSurname: dto.firstSurname,
+    secondSurname: dto.secondSurname,
+    fullName: dto.fullName,
+    specialty: dto.specialty,
+    photoUrl: dto.photoUrl,
+    academicTitles: dto.academicTitles ?? [],
+    description: dto.description,
   };
 }
 

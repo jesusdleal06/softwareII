@@ -40,15 +40,19 @@ class DemoDataSeederTest {
         assertThat(users.list()).extracting(user -> user.email())
                 .contains("ana@villadent.co", "laura@villadent.co");
         assertThat(dentists.list()).extracting(DentistResult::name)
-                .contains("Dra. Laura Villamizar", "Dr. Andrés Peña", "Dra. Camila Ortiz");
+                .contains("Laura Villamizar", "Andrés Peña", "Camila Ortiz");
         assertThat(procedures.list()).extracting(procedure -> procedure.name())
                 .contains("Limpieza", "Calza (resina)", "Valoración", "Exodoncia",
                         "Instalación de brackets");
 
         DentistResult laura = dentists.list().stream()
-                .filter(dentist -> dentist.name().equals("Dra. Laura Villamizar"))
+                .filter(dentist -> dentist.name().equals("Laura Villamizar"))
                 .findFirst()
                 .orElseThrow();
+        assertThat(laura.profile().firstName()).isEqualTo("Laura");
+        assertThat(laura.profile().firstSurname()).isEqualTo("Villamizar");
+        assertThat(laura.profile().academicTitles()).containsExactly("Degree in Dentistry");
+        assertThat(laura.profile().description()).isEqualTo("Demo dentist profile.");
         int schedulesBefore = schedules.listByDentist(laura.id()).size();
         assertThat(schedulesBefore).isGreaterThanOrEqualTo(12);
 
@@ -58,6 +62,6 @@ class DemoDataSeederTest {
                 .containsOnlyOnce("ana@villadent.co", "laura@villadent.co");
         assertThat(schedules.listByDentist(laura.id())).hasSize(schedulesBefore);
         assertThat(dentists.list()).extracting(DentistResult::name)
-                .containsOnlyOnce("Dra. Laura Villamizar", "Dr. Andrés Peña", "Dra. Camila Ortiz");
+                .containsOnlyOnce("Laura Villamizar", "Andrés Peña", "Camila Ortiz");
     }
 }

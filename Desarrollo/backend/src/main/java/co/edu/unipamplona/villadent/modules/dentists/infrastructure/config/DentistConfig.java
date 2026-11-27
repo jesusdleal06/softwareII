@@ -1,6 +1,8 @@
 package co.edu.unipamplona.villadent.modules.dentists.infrastructure.config;
 
 import co.edu.unipamplona.villadent.modules.dentists.application.AddScheduleService;
+import co.edu.unipamplona.villadent.modules.dentists.application.DentistProfileService;
+import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.ImageStorage;
 import co.edu.unipamplona.villadent.modules.dentists.application.FindDentistByUserIdService;
 import co.edu.unipamplona.villadent.modules.dentists.application.FindDentistService;
 import co.edu.unipamplona.villadent.modules.dentists.application.ListActiveDentistsService;
@@ -27,6 +29,11 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class DentistConfig {
+
+    @Bean
+    public DentistProfileService dentistProfileService(DentistRepository dentists, ImageStorage images) {
+        return new DentistProfileService(dentists, images);
+    }
 
     @Bean
     public RegisterDentistUseCase registerDentistUseCase(DentistRepository dentists) {

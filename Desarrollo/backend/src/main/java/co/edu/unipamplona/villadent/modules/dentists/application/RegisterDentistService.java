@@ -24,6 +24,11 @@ public class RegisterDentistService implements RegisterDentistUseCase {
                     "Ya existe un odontólogo vinculado a ese usuario.");
         }
         Dentist dentist = Dentist.create(command.name(), command.specialty(), command.userId());
+        var profile = command.initialProfile();
+        if (profile != null) {
+            dentist = dentist.updateProfile(profile.firstName(), profile.secondName(), profile.firstSurname(),
+                    profile.secondSurname(), profile.academicTitles(), profile.description());
+        }
         return toResult(dentists.save(dentist));
     }
 
@@ -33,6 +38,7 @@ public class RegisterDentistService implements RegisterDentistUseCase {
                 dentist.name(),
                 dentist.specialty(),
                 dentist.userId(),
-                dentist.isActive());
+                dentist.isActive(),
+                dentist.profile());
     }
 }

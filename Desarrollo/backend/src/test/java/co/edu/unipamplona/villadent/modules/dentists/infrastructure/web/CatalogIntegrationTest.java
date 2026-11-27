@@ -88,7 +88,7 @@ class CatalogIntegrationTest {
                                 {"name":"Dra. Laura Villamizar","specialty":"Odontología general"}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Dra. Laura Villamizar"))
+                .andExpect(jsonPath("$.name").value("Laura Villamizar"))
                 .andExpect(jsonPath("$.active").value(true))
                 .andReturn();
         Number dentistId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");

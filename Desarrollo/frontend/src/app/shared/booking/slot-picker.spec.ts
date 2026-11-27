@@ -227,6 +227,35 @@ describe('SlotPicker', () => {
     expect(text(el)).not.toMatch(/[–—]/);
   });
 
+  it('CP-RF11-09: shows the dentist photo and falls back to initials when absent', async () => {
+    const el = await render({ dentistId: '', procedureId: '', date: '', time: '' });
+    const andres = getByText<HTMLButtonElement>(el, '[aria-label="Odontólogo"] button', 'Dr. Andrés Peña');
+    const photo = andres.querySelector('img');
+    expect(photo?.getAttribute('src')).toBe('https://example.test/andres.jpg');
+    expect(photo?.getAttribute('alt')).toBe('');
+
+    const laura = getByText<HTMLButtonElement>(el, '[aria-label="Odontólogo"] button', 'Dra. Laura Villamizar');
+    expect(laura.querySelector('img')).toBeNull();
+    expect(text(laura)).toContain('LV');
+  });
+
+  it('CP-RF11-09: shows academic titles and description while keeping the radio role', async () => {
+    const el = await render({ dentistId: '', procedureId: '', date: '', time: '' });
+    const andres = getByText<HTMLButtonElement>(el, '[aria-label="Odontólogo"] button', 'Dr. Andrés Peña');
+    expect(andres.getAttribute('role')).toBe('radio');
+    expect(text(andres)).toContain('Ortodoncia');
+    expect(text(andres)).toContain('Especialista en ortodoncia con brackets y alineadores.');
+
+    const laura = getByText<HTMLButtonElement>(el, '[aria-label="Odontólogo"] button', 'Dra. Laura Villamizar');
+    expect(text(laura)).toContain('Ortodoncia · Estética dental');
+  });
+
+  it('CP-RF11-09: keeps the existing dentist selection behavior', async () => {
+    const el = await render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '10:00' });
+    getByText<HTMLButtonElement>(el, '[aria-label="Odontólogo"] button', 'Dra. Camila Ortiz').click();
+    expect(emitted).toEqual([{ dentistId: 'd3', procedureId: 'p1', date: THURSDAY, time: '' }]);
+  });
+
   it('shows focus with a full-opacity 2px ring on picker controls', async () => {
     const el = await render({ dentistId: 'd1', procedureId: 'p1', date: THURSDAY, time: '' });
     const controls = [

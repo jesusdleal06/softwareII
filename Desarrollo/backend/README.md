@@ -170,6 +170,9 @@ El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`Remin
 | `app.whatsapp.phone-number-id` (`WHATSAPP_PHONE_NUMBER_ID`) | Número emisor |
 | `app.whatsapp.template-name` (`WHATSAPP_TEMPLATE_NAME`) | Nombre de la plantilla aprobada (ver abajo) |
 | `app.whatsapp.api-url` (`WHATSAPP_API_URL`) | Base de la API; por defecto `https://graph.facebook.com/v21.0` |
+| `app.cloudinary.cloud-name` (`APP_CLOUDINARY_CLOUD_NAME`) | Cloudinary cloud name |
+| `app.cloudinary.api-key` (`APP_CLOUDINARY_API_KEY`) | Cloudinary API key |
+| `app.cloudinary.api-secret` (`APP_CLOUDINARY_API_SECRET`) | Server-side signing secret; never expose to the frontend |
 | `app.manage-link-base` (`MANAGE_LINK_BASE`) | Dirección pública de la página de la cita, terminada en `/cita/` (por defecto `http://localhost:4200/cita/`). Debe ser la misma que el prefijo del botón de la plantilla |
 | `app.reminders.scheduler.enabled` (`REMINDERS_SCHEDULER_ENABLED`) | `false` apaga el sondeo (las pruebas de integración lo apagan) |
 
@@ -190,3 +193,20 @@ El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`Remin
 - `daily`: una fila por cada día del rango, con el total y el conteo por estado. Los días sin citas aparecen en cero.
 
 Si `from` es posterior a `to`, la API responde `400` con código `INVALID_DATE_RANGE` y el mensaje «La fecha final debe ser igual o posterior a la inicial.». La misma consulta se descarga como CSV con `GET /api/v1/reports/export`; el archivo se llama `reporte-<desde>-<hasta>.csv`.
+
+
+For the same date range and optional dentist filter, add `format=pdf` to download an A4 PDF named `reporte-<from>-<to>.pdf`. Omitting `format` or specifying `format=csv` preserves the CSV response; other values return `400`.
+
+- `GET /api/v1/reports/history` lists up to 50 PDFs, newest first, with `id`, `from`, `to`, `dentistId`, `dentistName`, `generatedAt`, and `generatedBy`. An unfiltered export has a null dentist ID and name.
+- `GET /api/v1/reports/history/{id}/pdf` streams the stored PDF as an attachment. An unknown ID returns `404`. Both endpoints require `AUXILIAR`.
+
+PDFs are uploaded as authenticated raw assets in `villadent/reports` using the Cloudinary credentials above. The API never returns a Cloudinary URL. If Cloudinary is unavailable or not configured, the PDF still downloads but no history entry is written.
+
+### Dentist profiles
+
+- `GET /api/v1/dentists/me/profile` reads the signed-in dentist's profile.
+- `PUT /api/v1/dentists/me/profile` updates their names, academic titles, and description.
+- `PUT /api/v1/dentists/me/photo` accepts multipart field `photo`: JPEG, PNG, or WebP up to 5 MiB.
+- `GET /api/v1/public/dentists` includes the display name, photo URL, titles, and description without staff account data.
+
+The three `/me` operations require `ODONTOLOGO`. The API starts without Cloudinary credentials; photo uploads return 502 until configured. Configure all three Cloudinary variables in the backend environment. Uploads are signed and stored in `villadent/dentists`.

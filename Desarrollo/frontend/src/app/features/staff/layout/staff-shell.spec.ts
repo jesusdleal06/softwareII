@@ -56,9 +56,9 @@ describe('StaffShell', () => {
     );
   });
 
-  it('shows only "Mi agenda" to the dentist, with her initials', async () => {
+  it('shows "Mi agenda" and "Mi perfil" to the dentist, with her initials', async () => {
     const el = await open(DENTIST_SESSION, '/panel/mi-agenda');
-    expect(navLabels(el)).toEqual(['Mi agenda']);
+    expect(navLabels(el)).toEqual(['Mi agenda', 'Mi perfil']);
     expect(text(el.querySelector('header') as HTMLElement)).toContain('Dra. Laura Villamizar');
     expect(text(el.querySelector('header span.rounded-full') as HTMLElement)).toBe('LV');
     expect(el.querySelectorAll('nav')).toHaveLength(2);
