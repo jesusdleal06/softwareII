@@ -27,6 +27,18 @@ Decided (change-control version 1.3, 2026-10-22): the patient never signs in. On
 
 A change to the plan itself is a change of requirements: record it in the change-control table below.
 
+A change of business rules (for example the clinic's opening hours) is also a change of requirements: update the affected test cases in the plan and record it in the change-control table. If the plan has no case for the new behavior, stop and say so.
+
+## Git workflow
+
+Several people and agents work on this repository at once. These rules exist because stacked PRs once merged into already-merged branches, and two branches both created a Flyway `V5` and a change-control version `1.15`.
+
+- `main` is the only integration branch. Start every branch from an up-to-date `main`: `git fetch origin && git switch -c <type>/<name> origin/main`.
+- A PR always targets `main`, never another feature branch. If you must stack PRs, retarget the next one to `main` as soon as its parent merges, and check the base (`gh pr view <n> --json baseRefName`) before merging.
+- Before pushing to a branch, check its PR (`gh pr view --json state`). If it is already merged, do not push there: start a new branch from `main`.
+- Before opening or merging a PR, bring the branch up to date with `main` (`git fetch origin && git merge origin/main`) and run every suite: `./gradlew check` in `Desarrollo/backend`; `pnpm test --watch=false && pnpm build && pnpm verify:csp` in `Desarrollo/frontend`; `Desarrollo/e2e/run.sh` for the E2E cases.
+- Flyway migrations: right before committing one, take the next free version on the latest `origin/main` (`ls Desarrollo/backend/src/main/resources/db/migration`). Never edit or renumber a migration that may already be applied in any shared database.
+
 ## Change-control table
 
 The file `Documentacion/pruebas/Actividad módulo 2_Tabla Control de cambios y versiones.docx` is a graded deliverable. Its rule: every change of scope, requirements or schedule gets a new version row, and the person responsible for the change is the author of the row.
@@ -52,11 +64,12 @@ When unsure, skip it and say so in one line; the team can add it later.
 
 ### How to record
 
-1. Write the description in Spanish, in the style of the existing rows: one or two sentences saying what changed and why it matters, no commit hashes.
-2. Preview it, then write it:
+1. Merge the latest `origin/main` first, so the default version (last + 0.1) is the next free one on `main`. Git cannot merge the `.docx`: if it conflicts, keep `main`'s file (`git checkout --ours` while merging `main` in) and record your row again with the script.
+2. Write the description in Spanish, in the style of the existing rows: one or two sentences saying what changed and why it matters, no commit hashes.
+3. Preview it, then write it:
    ```bash
    python3 scripts/change-log/record_change.py --description "..." --author-email <commit author email> --dry-run
    python3 scripts/change-log/record_change.py --description "..." --author-email <commit author email>
    ```
    The script uses today's date and the last version + 0.1 by default (`--date`, `--version` override them). Use `--version 2.0` style jumps only when a deliverable is ready for final review, as the table's rules say.
-3. Commit the `.docx` alone: `docs: record version X.Y in the change-control table`.
+4. Commit the `.docx` alone: `docs: record version X.Y in the change-control table`.
