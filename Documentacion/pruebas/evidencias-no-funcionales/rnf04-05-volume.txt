@@ -1,0 +1,4 @@
+seed_rows=4000
+seed_agenda_rows=15
+appointments?date=2025-06-01 HTTP=200 seconds=0.076646 records=15
+reports?from=2025-01-01&to=2025-12-31 HTTP=200 seconds=0.065066 records=4000

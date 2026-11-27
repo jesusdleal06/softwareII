@@ -1,0 +1,9 @@
+requests: 452
+p95_ms: 25.38409654999999
+failed_rate: 0
+bookings_created: null
+duration: "3m"
+full_test: false
+window_p95_ms: [25.452862449999966]
+last_to_first_ratio: null
+latency_pass: null
