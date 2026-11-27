@@ -29,6 +29,7 @@
     "@angular/build": "^22.2.2",
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.0",
+    "@axe-core/playwright": "^4.14.1",
     "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "^4.1.12",
     "jsdom": "^30.0.0",

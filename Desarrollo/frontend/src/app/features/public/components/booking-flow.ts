@@ -3,6 +3,7 @@ import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementR
 import { RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideArrowRight, LucideCalendarX2, LucideCircleCheck, LucideMessageCircle } from '@lucide/angular';
 import { formatPhone, normalizePhone, PatientData, PatientErrors, reminderInfo, validatePatient } from '../../../core/domain';
+import { CLINIC } from '../../../core/config/clinic';
 import { Appointment } from '../../../core/models';
 import { AppStore } from '../../../core/services/app-store.service';
 import { AppointmentSummary } from '../../../shared/ui/appointment-summary';
@@ -171,7 +172,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                   </button>
                 </div>
                 <p class="text-center text-sm text-muted-foreground">
-                  ¿Necesitas ayuda? Escríbenos al WhatsApp +57 300 123 4567 o
+                  ¿Necesitas ayuda? Escríbenos al WhatsApp {{ clinic.whatsapp }} o
                   <a
                     routerLink="/"
                     class="rounded-md font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
@@ -193,6 +194,7 @@ export class BookingFlow implements OnInit {
   private readonly injector = inject(Injector);
 
   protected readonly steps = STEPS;
+  protected readonly clinic = CLINIC;
   protected readonly formatPhone = formatPhone;
   /** Fixed for the lifetime of the flow so the slot picker gets a stable input. */
   protected readonly now = this.store.now();

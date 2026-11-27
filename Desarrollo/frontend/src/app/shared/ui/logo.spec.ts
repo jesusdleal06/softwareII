@@ -22,7 +22,9 @@ describe('Logo', () => {
   it('keeps the accessible name, the href and the product name', () => {
     const el = render();
     const link = el.querySelector('a') as HTMLAnchorElement;
-    expect(link.getAttribute('aria-label')).toBe('Villadent, ir al inicio');
+    expect(link.getAttribute('aria-label')).toBe('Villadent AgendaPro, ir al inicio');
+    // The accessible name must contain the visible product name (axe label-content-name-mismatch).
+    expect(link.getAttribute('aria-label')).toContain('AgendaPro');
     expect(link.getAttribute('href')).toBe('/panel');
     expect(text(el)).toContain('AgendaPro');
   });

@@ -51,7 +51,7 @@ describe('StaffShell', () => {
     expect(navLabels(el)).toEqual(['Agenda', 'Reportes']);
     const active = el.querySelector('nav a[aria-current="page"]');
     expect(active?.getAttribute('href')).toBe('/panel/agenda');
-    expect(el.querySelector('header a[aria-label="Villadent, ir al inicio"]')?.getAttribute('href')).toBe(
+    expect(el.querySelector('header a[aria-label="Villadent AgendaPro, ir al inicio"]')?.getAttribute('href')).toBe(
       '/panel/agenda',
     );
   });
