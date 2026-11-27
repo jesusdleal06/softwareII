@@ -2,7 +2,14 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideCalendarCheck, LucideShieldCheck } from '@lucide/angular';
-import { addDays, formatTime, isWorkingDay, shortDayName, toDateKey } from '../../../core/domain';
+import {
+  addDays,
+  formatTimeFromMinutes,
+  isWorkingDay,
+  shortDayName,
+  toDateKey,
+} from '../../../core/domain';
+import { shiftsForDate } from '../../../core/config/clinic';
 import { AppStore } from '../../../core/services/app-store.service';
 import { BigButton } from '../../../shared/ui/big-button';
 import { PUBLIC_WHATSAPP_URL, PublicFooter, PublicHeader } from '../../../shared/ui/public-header';
@@ -15,7 +22,8 @@ interface HowItWorksStep {
 interface AvailabilityDay {
   key: string;
   label: string;
-  times: string[];
+  /** Opening windows of that day, already formatted: `8:00 AM - 12:00 PM`. */
+  windows: string[];
 }
 
 const HOW_IT_WORKS: readonly HowItWorksStep[] = [
@@ -30,11 +38,17 @@ const HOW_IT_WORKS: readonly HowItWorksStep[] = [
   },
 ];
 
-/** How many working days and how many times per day the hero panel advertises. */
+/** How many working days the hero panel advertises. */
 const PANEL_DAYS = 3;
-const PANEL_TIMES = 3;
 /** Longest look-ahead when the nearest days have no free time. */
 const PANEL_LOOKAHEAD_DAYS = 14;
+
+/** Opening windows of a date as display text, in the same form as the footer. */
+function openingWindows(dateKey: string): string[] {
+  return shiftsForDate(dateKey).map(
+    (shift) => `${formatTimeFromMinutes(shift.start)} - ${formatTimeFromMinutes(shift.end)}`,
+  );
+}
 
 @Component({
   selector: 'app-landing-page',
@@ -100,11 +114,11 @@ const PANEL_LOOKAHEAD_DAYS = 14;
                   <li class="flex flex-col gap-2">
                     <span class="text-xs font-medium text-muted-foreground">{{ day.label }}</span>
                     <div class="flex flex-wrap gap-2">
-                      @for (time of day.times; track time) {
+                      @for (window of day.windows; track window) {
                         <span
                           class="rounded-md border border-border bg-muted px-3 py-1 text-sm font-medium tabular-nums text-foreground"
                         >
-                          {{ formatTime(time) }}
+                          {{ window }}
                         </span>
                       }
                     </div>
@@ -214,7 +228,6 @@ export class LandingPage implements OnInit {
   protected readonly howItWorks = HOW_IT_WORKS;
   protected readonly dentists = this.store.dentists;
   protected readonly whatsappUrl = PUBLIC_WHATSAPP_URL;
-  protected readonly formatTime = formatTime;
   protected readonly availability = signal<AvailabilityDay[]>([]);
   protected readonly availabilityStatus = signal<'loading' | 'loaded' | 'error'>('loading');
 
@@ -222,7 +235,11 @@ export class LandingPage implements OnInit {
     void this.loadAvailability();
   }
 
-  /** Next free times from the API, so the hero never "invents" availability. */
+  /**
+   * Next working days with free time from the API, so the hero never "invents"
+   * availability; each day then advertises its real opening windows instead of
+   * a handful of single slots.
+   */
   private async loadAvailability(): Promise<void> {
     try {
       await this.store.ensureCatalogs();
@@ -245,11 +262,13 @@ export class LandingPage implements OnInit {
         );
         const successful = responses.filter((response) => response.status === 'fulfilled');
         receivedResponse ||= successful.length > 0;
-        const times = [...new Set(successful.flatMap((response) => response.value))]
-          .sort()
-          .slice(0, PANEL_TIMES);
-        if (times.length === 0) continue;
-        days.push({ key, label: key === today ? 'Hoy' : shortDayName(date), times });
+        const hasFreeTime = successful.some((response) => response.value.length > 0);
+        if (!hasFreeTime) continue;
+        days.push({
+          key,
+          label: key === today ? 'Hoy' : shortDayName(date),
+          windows: openingWindows(key),
+        });
       }
       this.availability.set(days);
       this.availabilityStatus.set(receivedResponse ? 'loaded' : 'error');
