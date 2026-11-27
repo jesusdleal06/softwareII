@@ -9,6 +9,7 @@ import co.edu.unipamplona.villadent.modules.appointments.domain.ports.drivens.Ap
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +42,7 @@ class DemoAppointmentSeederTest {
 
     private List<Appointment> seededWindow() {
         LocalDate monday = LocalDate.now(clock).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        return appointments.findForReport(monday.minusWeeks(1), monday.plusWeeks(1).plusDays(5), null);
+        return appointments.findForReport(monday.minusWeeks(1), monday.plusWeeks(1).plusDays(6), null);
     }
 
     @Test
@@ -50,7 +51,7 @@ class DemoAppointmentSeederTest {
         List<Appointment> seeded = seededWindow();
         LocalDate today = LocalDate.now(clock);
 
-        assertThat(seeded).hasSize(48);
+        assertThat(seeded).hasSize(51);
         // Past days are history: attended, no-show or cancelled, never still pending.
         assertThat(seeded).filteredOn(appointment -> appointment.date().isBefore(today))
                 .isNotEmpty()
@@ -66,6 +67,24 @@ class DemoAppointmentSeederTest {
         assertThat(seeded).filteredOn(appointment -> appointment.date().isAfter(today))
                 .extracting(Appointment::status)
                 .doesNotContain(AppointmentStatus.ATENDIDA, AppointmentStatus.NO_ASISTIO);
+    }
+
+    @Test
+    @DisplayName("The demo week is Monday to Sunday: no Saturday appointment, Sunday inside 08:00-13:00")
+    void respectsTheClinicWorkingHours() {
+        List<Appointment> seeded = seededWindow();
+
+        // Sábado cerrado: una cita sembrada ahí abriría la agenda en un día sin atención.
+        assertThat(seeded).noneMatch(appointment ->
+                appointment.date().getDayOfWeek() == DayOfWeek.SATURDAY);
+        assertThat(seeded).filteredOn(appointment ->
+                        appointment.date().getDayOfWeek() == DayOfWeek.SUNDAY)
+                .isNotEmpty()
+                .allSatisfy(appointment -> {
+                    assertThat(appointment.time()).isAfterOrEqualTo(LocalTime.of(8, 0));
+                    assertThat(appointment.time().plusMinutes(appointment.durationMinutes()))
+                            .isBeforeOrEqualTo(LocalTime.of(13, 0));
+                });
     }
 
     @Test
