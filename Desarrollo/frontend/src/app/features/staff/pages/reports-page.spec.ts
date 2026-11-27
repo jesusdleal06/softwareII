@@ -79,10 +79,10 @@ describe('ReportsPage', () => {
     return Array.from(el.querySelectorAll<HTMLElement>('[aria-label="Gráfico de barras"] [role="img"]'));
   }
 
-  it('starts with this week (Monday to Saturday)', () => {
+  it('starts with this week (Monday to Sunday)', () => {
     const [from, to] = reportRange('semana', NOW);
     expect(el.classList).toContain('gap-6');
-    expect(text(el)).toContain('Periodo del 12/10/2026 al 17/10/2026');
+    expect(text(el)).toContain('Periodo del 12/10/2026 al 18/10/2026');
     expect(getByText(el, 'button', 'Esta semana').getAttribute('aria-pressed')).toBe('true');
     expect(store.report).toHaveBeenCalledWith(from, to, undefined);
     expectMetrics({ attended: 10, cancelled: 2, noShow: 2, noShowRate: 17 });
@@ -173,7 +173,7 @@ describe('ReportsPage', () => {
     store.exportReport.mockResolvedValue({ blob: new Blob(['a,b']), filename: 'reporte.csv' });
     clickButton(el, 'Exportar');
     await refresh();
-    expect(store.exportReport).toHaveBeenCalledWith('2026-10-12', '2026-10-17', undefined);
+    expect(store.exportReport).toHaveBeenCalledWith('2026-10-12', '2026-10-18', undefined);
     expect(text(el)).toContain('Archivo CSV descargado.');
   });
 });

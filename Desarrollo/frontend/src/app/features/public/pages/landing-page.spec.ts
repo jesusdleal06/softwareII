@@ -9,6 +9,7 @@ import {
   provideFakeStore,
 } from '../../../shared/testing/fake-store';
 import { settle, text } from '../../../shared/testing/dom';
+import { PUBLIC_WHATSAPP_URL } from '../../../shared/ui/public-header';
 import { LandingPage } from './landing-page';
 
 // Wednesday 2026-10-14 09:10 (the project's fixture instant).
@@ -25,9 +26,10 @@ describe('LandingPage', () => {
       dentists?: Dentist[];
       catalogFailure?: boolean;
       availabilityFailure?: boolean;
+      now?: Date;
     } = {},
   ): Promise<void> {
-    store = createFakeStore({ now: NOW, session: null });
+    store = createFakeStore({ now: options.now ?? NOW, session: null });
     if (options.dentists) store.dentistsState.set(options.dentists);
     store.availability.mockResolvedValue(options.availability ?? ['09:00', '10:00', '11:00']);
     if (options.catalogFailure)
@@ -133,6 +135,15 @@ describe('LandingPage', () => {
     const panel = el.querySelector('aside') as HTMLElement;
     expect(text(panel)).toContain('No hay cupos en los próximos días');
   });
+
+  it('skips a closed Saturday in the lookahead and may advertise Sunday', async () => {
+    // Friday 2026-10-16: the next days are Sat 17 (closed), Sun 18 and Mon 19.
+    await render({ now: new Date(2026, 9, 16, 9, 10) });
+    const panel = hero().querySelector('aside') as HTMLElement;
+    const labels = Array.from(panel.querySelectorAll('li > span')).map((label) => text(label));
+    expect(labels).toEqual(['Hoy', 'Dom', 'Lun']);
+    expect(text(panel)).not.toContain('Sáb');
+  });
   it.each([{ catalogFailure: true }, { availabilityFailure: true }])(
     'shows a booking fallback instead of an empty agenda when loading fails: %j',
     async (failure) => {
@@ -150,7 +161,7 @@ describe('LandingPage', () => {
     async (options) => {
       await render(options);
       for (const selector of ['aside', 'footer']) {
-        const link = el.querySelector(`${selector} a[href="https://wa.me/573001234567"]`);
+        const link = el.querySelector(`${selector} a[href="${PUBLIC_WHATSAPP_URL}"]`);
         expect(link?.getAttribute('target')).toBe('_blank');
         expect(link?.getAttribute('rel')).toBe('noopener');
         if (selector === 'aside') expect(text(link!)).toBe('Escríbenos por WhatsApp');
