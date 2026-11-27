@@ -16,14 +16,12 @@ Comandos ejecutados desde la raíz del repositorio, con el stack ya iniciado.
 | CP-RNF04-03 | `Desarrollo/perf/run.sh ramp` | 20→200 usuarios en 5 min; p95 máximo por ventana de 10 s **87,01 ms**, sin cruce de 2 s ni errores. Al minuto de terminar la carga: **4,15 ms** (HTTP 200); 16.450 respuestas 201, 16.450 citas persistidas y 0 turnos duplicados. | **Sin degradación hasta 200 usuarios: el límite está por encima del rango del caso** (ver la rampa exploratoria) |
 | CP-RNF04-04 | `Desarrollo/perf/run.sh burst` | 1→45 usuarios en 10 s; p95 de la ráfaga **7,63 ms**, 0 fallos en 135 solicitudes medidas, 45 confirmaciones. La preparación no se incluye en el percentil. | **PASS** |
 | CP-RNF04-05 | `Desarrollo/perf/run.sh volume` | 4.000 citas ficticias en 2025, hasta 15 por fecha poblada. Agenda: HTTP 200, 15 registros, **76,59 ms**; informe anual: HTTP 200, 4.000 registros, **65,02 ms**. | **PASS** |
-| CP-RNF04-06 | `SOAK_DURATION=3m Desarrollo/perf/run.sh soak` | 5 usuarios, 3 min; p95 del intervalo parcial **25,45 ms**, 0 fallos en 452 solicitudes (incluidas dos de preparación). Memoria: 1.016, 1.017, 1.018 y 1.018 MiB. | **PASS de humo; prueba de 2 h pendiente** |
+| CP-RNF04-06 | `SOAK_DURATION=2h Desarrollo/perf/run.sh soak` | 5 usuarios, **2 h** (stack recién creado). p95 por intervalo de 10 min: 6,3 · 3,9 · 3,7 · 3,1 · 3,3 · 3,3 · 3,1 · 3,0 · 5,1 · 5,4 · 5,4 · 5,3 ms; último/primero = **0,83** (el máximo permitido es 1,20). **0 fallos en 17.967 solicitudes.** Memoria del contenedor de la API (incluye la compilación continua de Gradle del modo de desarrollo): 1,348 GiB al inicio, 1,363 GiB tras el calentamiento, un único escalón de +32 MiB entre los minutos 63 y 76 y estable en 1,399–1,401 GiB durante los 44 minutos finales; sin crecimiento sostenido. Prueba de humo previa de 3 min en `rnf04-06-soak-smoke-3m.*`. | **PASS** |
 
 Datos: [carga estable](rnf04-02-steady.json),
 [rampa](rnf04-03-ramp.json), [integridad](rnf04-03-ramp-integrity.txt),
 [ráfaga](rnf04-04-reminder-burst.json), [volumen](rnf04-05-volume.txt),
-[prueba de humo](rnf04-06-soak.json) y [memoria](rnf04-06-soak-memory.csv).
-Tres minutos no permiten comparar dos intervalos de 10 minutos ni evaluar
-crecimiento sostenido de memoria.
+[prueba de 2 h](rnf04-06-soak.json) y su [memoria por minuto](rnf04-06-soak-memory.csv).
 
 ### Rampa exploratoria (complemento de CP-RNF04-03)
 
