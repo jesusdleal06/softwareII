@@ -1,0 +1,7 @@
+requests: 227
+p95_ms: 14.593031299999996
+failed_rate: 0
+bookings_created: 45
+burst_p95_ms: 7.634790099999999
+burst_failed_rate: 0
+confirmations: 45

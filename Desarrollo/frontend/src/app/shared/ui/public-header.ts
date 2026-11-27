@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideLockKeyhole } from '@lucide/angular';
+import { CLINIC } from '../../core/config/clinic';
 import { Logo } from './logo';
 import { ThemeToggle } from './theme-toggle';
 
-export const PUBLIC_WHATSAPP_NUMBER = '+57 300 123 4567';
-export const PUBLIC_WHATSAPP_URL = 'https://wa.me/' + PUBLIC_WHATSAPP_NUMBER.replace(/\D/g, '');
+export const PUBLIC_WHATSAPP_NUMBER = CLINIC.whatsapp;
+export const PUBLIC_WHATSAPP_URL = 'https://wa.me/' + CLINIC.whatsapp.replace(/\D/g, '');
 
 @Component({
   selector: 'header[appPublicHeader]',
@@ -42,10 +43,10 @@ export class PublicHeader {}
   host: { class: 'mt-auto bg-muted' },
   template: `
     <div class="public-container flex flex-col gap-1 py-6 text-sm text-muted-foreground">
-      <p class="font-semibold text-foreground">Centro Odontológico Villadent</p>
-      <p>Calle 45 # 27-18, Bucaramanga</p>
+      <p class="font-semibold text-foreground">{{ clinic.name }}</p>
+      <p>{{ clinic.address }}</p>
       <p>
-        (607) 645 12 34 ·
+        {{ clinic.phone }} ·
         <a
           [href]="whatsappUrl"
           target="_blank"
@@ -60,6 +61,7 @@ export class PublicHeader {}
   `,
 })
 export class PublicFooter {
+  protected readonly clinic = CLINIC;
   protected readonly whatsappNumber = PUBLIC_WHATSAPP_NUMBER;
   protected readonly whatsappUrl = PUBLIC_WHATSAPP_URL;
 }

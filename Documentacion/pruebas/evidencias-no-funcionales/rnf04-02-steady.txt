@@ -1,0 +1,4 @@
+requests: 11922
+p95_ms: 19.94383509999999
+failed_rate: 0
+bookings_created: 5960

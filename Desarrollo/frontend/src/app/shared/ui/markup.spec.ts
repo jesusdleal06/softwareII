@@ -48,8 +48,8 @@ describe('shared ui markup', () => {
 
   it('renders the public header with logo and staff link', () => {
     const header = render().querySelector('header') as HTMLElement;
-    expect(header.querySelector('a[aria-label="Villadent, ir al inicio"]')?.getAttribute('href')).toBe('/');
-    expect(header.querySelector('a[aria-label="Villadent, ir al inicio"] img')?.getAttribute('src')).toBe('brand/villadent-logo.png');
+    expect(header.querySelector('a[aria-label="Villadent AgendaPro, ir al inicio"]')?.getAttribute('href')).toBe('/');
+    expect(header.querySelector('a[aria-label="Villadent AgendaPro, ir al inicio"] img')?.getAttribute('src')).toBe('brand/villadent-logo.png');
     expect(text(header)).toContain('AgendaPro');
     const staff = header.querySelector<HTMLAnchorElement>('a[href="/ingreso"]');
     expect(staff?.getAttribute('href')).toBe('/ingreso');
@@ -110,7 +110,7 @@ describe('shared ui markup', () => {
 
   it('renders the public footer contact data', () => {
     const footer = render().querySelector('footer') as HTMLElement;
-    expect(text(footer)).toContain('Calle 45 # 27-18, Bucaramanga');
+    expect(text(footer)).toContain('Cra. 10 #21-14, Villa del Rosario, Norte de Santander');
   });
 
   it('shows the staff link as a compact button on phones and as text from sm up', () => {
@@ -142,8 +142,8 @@ describe('shared ui markup', () => {
       expect((line.match(/·/g) ?? []).length).toBeLessThanOrEqual(1);
       expect(line).not.toMatch(/[–—]/);
     }
-    expect(text(footer)).toContain('Calle 45 # 27-18, Bucaramanga');
-    expect(text(footer)).toContain('WhatsApp +57 300 123 4567');
+    expect(text(footer)).toContain('Cra. 10 #21-14, Villa del Rosario, Norte de Santander');
+    expect(text(footer)).toContain('WhatsApp +57 314 422 3133');
   });
 
   it('gives the summary status badge a definition term', () => {
