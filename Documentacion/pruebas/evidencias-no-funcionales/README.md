@@ -139,8 +139,8 @@ Datos: [sondeo](monitor-smoke.csv) y [recuperación](monitor-recovery-smoke.csv)
 
 ## Análisis estático y de dependencias — CP-RNF03-04
 
-**Resultado: frontend y código, sin críticos ni altos; backend pendiente del
-análisis de Dependency-Check.** El resultado esperado es «No quedan hallazgos
+**Resultado: PASS.** No quedan hallazgos críticos ni altos sin corregir o
+justificar en el código ni en las dependencias del frontend y del backend. El resultado esperado es «No quedan hallazgos
 críticos ni altos sin corregir o justificar». Se ejecutó
 `Desarrollo/security/sast/run.sh` con Docker. Semgrep incluyó ambos árboles
 `src`, sin excluir las pruebas. Dependency-Check analiza los JAR resueltos
@@ -150,7 +150,7 @@ corresponde a pnpm audit.
 | Herramienta | Crítico | Alto | Medio | Bajo | Informativo |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Semgrep CE 1.186.0 (462 archivos, 347 reglas ejecutadas) | 0 | 0 | 2 | 0 | 0 |
-| OWASP Dependency-Check 12.2.2 (backend) | — | — | — | — | — |
+| OWASP Dependency-Check 12.2.2 (backend, 106 dependencias de 120 JAR) | 0 | 0 (2 justificadas) | 0 | 0 | 0 |
 | pnpm audit (producción), primera ejecución | 0 | 1 | 0 | 0 | 0 |
 | pnpm audit (todas), primera ejecución | 0 | 6 | 10 | 3 | 0 |
 | **pnpm audit (producción), tras la corrección** | **0** | **0** | **0** | **0** | **0** |
@@ -180,14 +180,26 @@ en el total general.
 | [GHSA-2m5v-pch6-74hx](https://github.com/advisories/GHSA-2m5v-pch6-74hx) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
 | [GHSA-qrxm-fqhp-jwvm](https://github.com/advisories/GHSA-qrxm-fqhp-jwvm) | `undici` 8.12.1 a través de `jsdom`. | **Corregido**: `undici` 8.13.1. Además solo llegaba por `jsdom`, en el entorno de pruebas. |
 
-Dependency-Check del backend queda **pendiente**: sin clave de la API de NVD,
-el servicio devolvió HTTP 429 después de descargar 60.000 de 433.047 registros
-(14 %), y analizar los JAR con una base incompleta daría un resultado falso.
-Para completarlo: `NVD_API_KEY=<clave> Desarrollo/security/sast/run.sh`.
+**Dependency-Check del backend.** Sin clave de la API de NVD, el servicio
+devolvía HTTP 429 al 14 % de la descarga. El análisis se completó tomando la
+base del NVD de la copia diaria que publica el propio proyecto Dependency-Check
+(`--nvdDatafeed https://dependency-check.github.io/DependencyCheck_Builder/nvd_cache/`,
+actualizada el 26/11/2026; descarga completa en 54 s), en un volumen de datos
+propio. El análisis de los JAR corre sin red (`--network none`, con el
+analizador de Maven Central desactivado). Resultado: 2 avisos altos, ambos el
+mismo y ambos **falsos positivos**:
+
+| Aviso alto | Dependencias | Disposición |
+| --- | --- | --- |
+| [CVE-2018-1258](https://nvd.nist.gov/vuln/detail/CVE-2018-1258) | `spring-security-core` 7.1.2 y `spring-security-oauth2-resource-server` 7.1.2 | **Justificado (falso positivo)**: afecta solo a Spring Framework 5.0.5 usado con Spring Security; el CPE del NVD marca cualquier versión de Spring Security. El backend usa Spring Framework 7.0.10. Queda registrado en `Desarrollo/security/sast/dependency-check-suppressions.xml`. |
+
+Con una clave de NVD el script usa la API en su lugar:
+`NVD_API_KEY=<clave> Desarrollo/security/sast/run.sh`.
 
 Informes del repositorio: Semgrep [JSON](rnf03-04-semgrep.json) y
 [texto](rnf03-04-semgrep.log); pnpm [producción](rnf03-04-pnpm-prod.json) y
 [todas las dependencias](rnf03-04-pnpm-all.json); Gradle
-[inventario de 120 JAR](rnf03-04-runtime-jars.txt); Dependency-Check
-[registro de actualización](rnf03-04-dc-update.log) y
+[inventario de 120 JAR](rnf03-04-runtime-jars.txt); Dependency-Check [informe JSON](rnf03-04-dependency-check.json),
+[registro de actualización](rnf03-04-dc-update.log),
+[registro del análisis](rnf03-04-dc-scan.log) y
 [estados de ejecución](rnf03-04-status.txt).

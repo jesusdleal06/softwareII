@@ -88,6 +88,11 @@ chmod 0777 "$scratch/dc-report"
 # 13.0.0 cannot update anonymously (Dependency-Check issue #8715).
 dc_image=owasp/dependency-check:12.2.2
 dc_data=(-v villadent-dc-data:/usr/share/dependency-check/data)
+# The data-feed mode keeps its own volume: a database first filled from the NVD
+# API makes Dependency-Check keep asking the API for increments (HTTP 429 again).
+if [[ -z "${NVD_API_KEY:-}" && -n "${DC_NVD_DATAFEED-https://dependency-check.github.io/DependencyCheck_Builder/nvd_cache/}" ]]; then
+    dc_data=(-v villadent-dc-feed:/usr/share/dependency-check/data)
+fi
 dc_cli=/usr/share/dependency-check/bin/dependency-check.sh
 dc_name="villadent-dc-${scratch##*.}"
 docker pull "$dc_image" >"$prefix-dc-pull.log" 2>&1 || { fail 'Dependency-Check image' "$?"; exit 1; }
@@ -101,6 +106,19 @@ if [[ -n "${NVD_API_KEY:-}" ]]; then
         unset NVD_API_KEY
         "$1" --updateonly --propertyfile "$props"
     ' dc "$dc_cli" >"$prefix-dc-update.log" 2>&1 || rc=$?
+elif [[ -n "${DC_NVD_DATAFEED-https://dependency-check.github.io/DependencyCheck_Builder/nvd_cache/}" ]]; then
+    # Without a key, read the NVD data from the nightly JSON cache that the
+    # Dependency-Check project publishes, instead of the rate-limited NVD API.
+    # Set DC_NVD_DATAFEED to another mirror, or to an empty string to force the API.
+    feed=${DC_NVD_DATAFEED-https://dependency-check.github.io/DependencyCheck_Builder/nvd_cache/}
+    printf 'No NVD_API_KEY: updating from the NVD data feed %s.\n' "$feed"
+    timeout --foreground 60m docker run --rm --name "$dc_name" "${dc_data[@]}" \
+        "$dc_image" --updateonly --nvdDatafeed "$feed" >"$prefix-dc-update.log" 2>&1 || rc=$?
+    if (( rc == 124 )); then
+        docker rm -f "$dc_name" >/dev/null 2>&1 || true
+        fail 'Dependency-Check NVD update' '124 (stopped after 60 minutes)'
+        exit 1
+    fi
 else
     printf 'No NVD_API_KEY: allowing up to 60 minutes for the NVD update.\n'
     timeout --foreground 60m docker run --rm --name "$dc_name" "${dc_data[@]}" \
@@ -118,10 +136,14 @@ fi
 record 'Dependency-Check NVD update' 0
 
 rc=0
+# --network none: the scan only reads the local database; Central lookups are
+# disabled because they need the network (identification uses each jar's metadata).
 docker run --rm --network none "${dc_data[@]}" \
-    -v "$scratch/runtime-jars:/src:ro" -v "$scratch/dc-report:/report" "$dc_image" \
+    -v "$scratch/runtime-jars:/src:ro" -v "$scratch/dc-report:/report" \
+    -v "$here/dependency-check-suppressions.xml:/suppressions.xml:ro" "$dc_image" \
     --project 'Villadent backend runtimeClasspath' --scan '/src/*.jar' --format JSON \
-    --out /report --noupdate --disableOssIndex >"$prefix-dc-scan.log" 2>&1 || rc=$?
+    --suppression /suppressions.xml \
+    --out /report --noupdate --disableOssIndex --disableCentral >"$prefix-dc-scan.log" 2>&1 || rc=$?
 if (( rc == 0 )) && [[ -s "$scratch/dc-report/dependency-check-report.json" ]]; then
     cp "$scratch/dc-report/dependency-check-report.json" "$prefix-dependency-check.json"
     record Dependency-Check 0

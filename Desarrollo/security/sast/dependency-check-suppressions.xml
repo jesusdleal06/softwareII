@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP Dependency-Check suppressions for CP-RNF03-04. Every entry is a verified
+  false positive with its reason; anything not listed here is still reported.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <suppress>
+    <notes><![CDATA[
+      CVE-2018-1258 affects only Spring Framework 5.0.5 used together with Spring
+      Security (method-security authorization bypass). The NVD entry matches any
+      spring-security version by CPE, so every Spring Security jar is flagged. This
+      project runs Spring Framework 7.0.10 (spring-core, spring-beans,
+      spring-context, spring-webmvc 7.0.10 in the backend runtime classpath).
+    ]]></notes>
+    <filePath regex="true">.*/spring-security-[a-z0-9-]+-[0-9.]+\.jar$</filePath>
+    <cve>CVE-2018-1258</cve>
+  </suppress>
+</suppressions>
