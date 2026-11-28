@@ -102,7 +102,7 @@ Reuse these from the prototype (`Desarrollo/frontend/src/app/core/domain/`):
 - Use the WhatsApp Cloud API (Meta). During the course, use only the test business number Meta creates for the app, and send only to the team's phone numbers registered as recipients.
 - A reminder is a business-initiated message, so it must use an approved message template, category `UTILITY`, with the patient's name, date, time and dentist, and one URL button. Approval can take up to 24 hours: request it early in cycle 3.
 - The URL button has a fixed prefix (the frontend manage page) and a variable suffix: the appointment's manage token. The patient confirms, cancels or reschedules on that page, so the backend does not need a webhook to receive WhatsApp replies.
-- The driven port (for example `ReminderSender`) hides the API. The adapter calls it with `RestClient` and reads `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_TEMPLATE_NAME` from the environment; none of them goes into the code or the repository.
+- The driven port (for example `ReminderSender`) hides the API. The adapter calls it with `RestClient` and reads `APP_WHATSAPP_TOKEN`, `APP_WHATSAPP_PHONE_NUMBER_ID` and `APP_WHATSAPP_TEMPLATE_NAME` from the environment; none of them goes into the code or the repository.
 
 ## 5. DTOs and mapping
 
