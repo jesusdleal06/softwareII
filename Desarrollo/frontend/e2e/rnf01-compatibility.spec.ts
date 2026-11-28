@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 
 import { findSlot, uniqueName, uniquePhone } from './support/api';
 import { expect, test } from './support/fixtures';
-import { loginAsAuxiliar, selectSlotInPicker } from './support/ui';
+import { loginAsAuxiliar, selectSlotInPicker, verifyPublicPhone } from './support/ui';
 
 /**
  * CP-RNF01-02 — cross-browser and cross-resolution compatibility.
@@ -63,12 +63,18 @@ test('CP-RNF01-02: el agendamiento y el ingreso del personal funcionan sin desbo
   await phoneField.fill(patient.phone);
   await page.getByRole('button', { name: 'Continuar' }).click();
 
-  // Paso 3: confirmar.
+  // Paso 3: pedir el código de WhatsApp y confirmar.
   await expect(page.getByRole('heading', { name: 'Confirma tu cita' })).toBeVisible();
+  const sendCode = page.getByRole('button', { name: 'Enviar código por WhatsApp' });
+  await expect(sendCode).toBeVisible();
+  await expect(sendCode).toBeEnabled();
+  await expectNoHorizontalOverflow(page, 'agendamiento paso 3');
+
+  await verifyPublicPhone(page, api, patient.phone);
   const confirm = page.getByRole('button', { name: 'Confirmar cita' });
   await expect(confirm).toBeVisible();
   await expect(confirm).toBeEnabled();
-  await expectNoHorizontalOverflow(page, 'agendamiento paso 3');
+  await expectNoHorizontalOverflow(page, 'agendamiento paso 3 con código');
   await confirm.click();
 
   await expect(page.getByRole('heading', { name: '¡Tu cita quedó agendada!' })).toBeVisible();

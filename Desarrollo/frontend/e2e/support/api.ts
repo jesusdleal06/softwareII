@@ -63,6 +63,14 @@ export interface ManageLinkDto {
   url: string;
 }
 
+export interface PhoneCodeDto {
+  code: string;
+}
+
+export interface PhoneVerificationDto {
+  verificationToken: string;
+}
+
 export interface ReportDto {
   from: string;
   to: string;
@@ -231,11 +239,46 @@ export async function findSharedSlot(
   throw new Error(`No shared ${time} slot found`);
 }
 
+/** Requests a WhatsApp verification code for the phone (S1). */
+export async function requestPhoneCode(api: APIRequestContext, phone: string): Promise<void> {
+  const response = await api.post('/api/v1/public/phone-verifications', { data: { phone } });
+  expect(response.status()).toBe(202);
+}
+
+/** Reads the code the e2e profile captured for the phone (S6, e2e-only endpoint). */
+export async function getPhoneCode(api: APIRequestContext, phone: string): Promise<string> {
+  const response = await api.get(
+    `/api/v1/e2e/phone-verifications/${encodeURIComponent(phone)}/code`,
+  );
+  expect(response.status()).toBe(200);
+  return ((await response.json()) as PhoneCodeDto).code;
+}
+
+/** Verifies the code and returns the token the public booking must carry (S3). */
+export async function verifyPhoneCode(
+  api: APIRequestContext,
+  phone: string,
+  code: string,
+): Promise<string> {
+  const response = await api.post('/api/v1/public/phone-verifications/verify', {
+    data: { phone, code },
+  });
+  expect(response.status()).toBe(200);
+  return ((await response.json()) as PhoneVerificationDto).verificationToken;
+}
+
+/** Requests the code and verifies it in one step, as an API-level booking does. */
+export async function verifyPhone(api: APIRequestContext, phone: string): Promise<string> {
+  await requestPhoneCode(api, phone);
+  return verifyPhoneCode(api, phone, await getPhoneCode(api, phone));
+}
+
 export async function bookPublic(
   api: APIRequestContext,
   target: SlotTarget,
   patient: Patient,
 ): Promise<PublicAppointmentDto> {
+  const verificationToken = await verifyPhone(api, patient.phone);
   const response = await api.post('/api/v1/public/appointments', {
     data: {
       patientName: patient.name,
@@ -244,6 +287,7 @@ export async function bookPublic(
       procedureId: target.procedure.id,
       date: target.date,
       time: target.time,
+      verificationToken,
     },
   });
   expect(response.status()).toBe(201);

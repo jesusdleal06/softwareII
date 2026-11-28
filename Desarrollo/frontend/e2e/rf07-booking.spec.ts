@@ -6,6 +6,7 @@ import {
   openAgendaAtDate,
   selectDentistFilter,
   selectSlotInPicker,
+  verifyPublicPhone,
 } from './support/ui';
 
 test('CP-RF07-01: books a public appointment in at most three steps and shows it in the agenda', async ({
@@ -26,6 +27,7 @@ test('CP-RF07-01: books a public appointment in at most three steps and shows it
   await page.getByRole('button', { name: 'Continuar' }).click();
 
   await expect(page.getByRole('heading', { name: 'Confirma tu cita' })).toBeVisible();
+  await verifyPublicPhone(page, api, patient.phone);
   await page.getByRole('button', { name: 'Confirmar cita' }).click();
 
   await expect(
@@ -55,6 +57,7 @@ test('CP-RF07-02: blocks a second active appointment for the same phone', async 
   await page.locator('#pac-nombre').fill(uniqueName('Paciente RF07 Segundo'));
   await page.locator('#pac-telefono').fill(patient.phone);
   await page.getByRole('button', { name: 'Continuar' }).click();
+  await verifyPublicPhone(page, api, patient.phone);
   await page.getByRole('button', { name: 'Confirmar cita' }).click();
 
   await expect(

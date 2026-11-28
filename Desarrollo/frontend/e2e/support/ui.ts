@@ -1,5 +1,5 @@
-import { expect, type Locator, type Page } from '@playwright/test';
-import type { DentistDto, ProcedureDto, SlotTarget } from './api';
+import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
+import { getPhoneCode, type DentistDto, type ProcedureDto, type SlotTarget } from './api';
 import {
   dayDiff,
   formatLongDate,
@@ -156,4 +156,20 @@ export function agendaAppointment(
 
 export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Requests the WhatsApp code from step 3, reads the code the e2e backend captured and
+ * types it into the verification field. Leaves the flow ready to press «Confirmar cita».
+ */
+export async function verifyPublicPhone(
+  page: Page,
+  api: APIRequestContext,
+  phone: string,
+): Promise<void> {
+  await page.getByRole('button', { name: 'Enviar código por WhatsApp' }).click();
+  const codeField = page.locator('#booking-code');
+  await expect(codeField).toBeVisible();
+  const code = await getPhoneCode(api, phone);
+  await codeField.fill(code);
 }
