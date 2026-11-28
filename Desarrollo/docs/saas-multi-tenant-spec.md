@@ -8,7 +8,7 @@ Tareas de implementación, divididas para dos desarrolladores:
 - [`saas-tareas-dev-a-backend.md`](saas-tareas-dev-a-backend.md): núcleo de backend (datos, aislamiento, seguridad, reglas de dominio).
 - [`saas-tareas-dev-b-frontend-integraciones.md`](saas-tareas-dev-b-frontend-integraciones.md): frontend, WhatsApp, reportes, infraestructura y E2E.
 
-> Esto es un cambio de alcance y de requisitos. Según el `CLAUDE.md` raíz, nada de esta especificación se implementa hasta que existan dos cosas: (a) casos de prueba nuevos en el plan de pruebas (`Documentacion/pruebas/Actividad módulo 2_Plan de pruebas.docx`) y (b) una fila en la tabla de control de cambios. Hoy el plan **no tiene ningún caso** de multi-tenencia. La sección 10 propone los casos; QA o el equipo debe agregarlos al plan.
+> Esto es un cambio de alcance y de requisitos. Según el `CLAUDE.md` raíz, nada de esta especificación se implementa hasta que existan dos cosas: (a) casos de prueba nuevos en el plan de pruebas (`Documentacion/pruebas/Actividad módulo 2_Plan de pruebas.docx`) y (b) una fila en la tabla de control de cambios. Ambas se cumplieron el 2026-11-28: el plan incluye RF14 con los casos CP-RF14-01 a CP-RF14-16 (§10). Queda pendiente la decisión D0.
 
 ---
 
@@ -390,26 +390,26 @@ Propiedades nuevas: `app.platform.domain`, `APP_CREDENTIALS_KEY`, `spring.dataso
 
 ## 10. Impacto en el plan de pruebas (propuesta; QA es dueño del plan)
 
-El plan no tiene ningún requisito de multi-tenencia. Se propone un requisito nuevo, **RF11 «Operación multi-clínica»**, más un RNF de aislamiento. Los casos de abajo son **propuestas con IDs provisionales**. Según el `CLAUDE.md`, el plan y la tabla de control de cambios se actualizan antes de implementar, y cada prueba lleva el ID definitivo en su nombre.
+Los casos ya están en el plan de pruebas como **RF14 «Operación multi-clínica (SaaS)»** (sección 12 y matriz de la sección 13), con los IDs CP-RF14-01 a CP-RF14-16. Los dos casos de aislamiento en la base de datos son CP-RF14-15 y CP-RF14-16 (no se usó un RNF nuevo para no chocar con la numeración de RNF03). Cada prueba lleva el ID del caso en su nombre.
 
-| ID provisional | Nivel | Caso | Resultado esperado |
+| ID | Nivel | Caso | Resultado esperado |
 |---|---|---|---|
-| CP-RF11-01 | I | `GET /api/v1/public/clinic` público en el host `villadent.<dominio>` | 200 con el nombre, el horario y la marca de Villadent; sin credenciales en el cuerpo |
-| CP-RF11-02 | I | Petición pública con un slug desconocido o inactivo | 404, `code=clinic_not_found` |
-| CP-RF11-03 | I | El auxiliar de la clínica A lista citas | Solo ve las citas de la clínica A |
-| CP-RF11-04 | I | El auxiliar de la clínica A pide el ID de una cita de la clínica B | 404 |
-| CP-RF11-05 | I | JWT de la clínica A enviado con el slug o host de la clínica B | 403 |
-| CP-RF11-06 | I | El mismo celular agenda en las clínicas A y B | Dos pacientes distintos; ambas citas se crean |
-| CP-RF11-07 | I | Insertar una cita que une un paciente de la clínica A con un odontólogo de la clínica B (por repositorio, saltando el servicio) | La rechaza la llave foránea compuesta |
-| CP-RF11-08 | U | `ClinicSchedule` con el sábado abierto | Se ofrecen franjas el sábado; los días cerrados se rechazan (espejo de los casos de horario actuales) |
-| CP-RF11-09 | U | Recordatorios de una clínica en `America/Mexico_City` con horas 19:00/09:00 (reloj inyectable) | Se programan a esas horas locales convertidas a UTC |
-| CP-RF11-10 | I | Envío de un recordatorio de la clínica B | Sale con el phone-number-id y la plantilla de la clínica B (el cliente falso de WhatsApp los registra) |
-| CP-RF11-11 | I | Webhook con un `phone_number_id` desconocido | 200, no se guarda nada |
-| CP-RF11-12 | I | El administrador de plataforma crea una clínica | Se crean la clínica, su configuración, su horario y su primer auxiliar, que puede iniciar sesión en el host nuevo |
-| CP-RF11-13 | I | Un auxiliar llama a `/api/v1/platform/clinics` | 403 |
-| CP-RF11-14 | E2E | Dos clínicas con nombres y colores distintos en dos hosts | Cada sitio muestra su propio nombre, logo y color; una cita agendada en una no aparece en la otra |
-| CP-RNF-ISO-01 | I | Revisión del catálogo | Toda tabla con `id_clinica` tiene RLS activada y forzada |
-| CP-RNF-ISO-02 | I | Consulta como `agendapro_app` sin `app.clinic_id` | Cero filas |
+| CP-RF14-01 | I | `GET /api/v1/public/clinic` público en el host `villadent.<dominio>` | 200 con el nombre, el horario y la marca de Villadent; sin credenciales en el cuerpo |
+| CP-RF14-02 | I | Petición pública con un slug desconocido o inactivo | 404, `code=clinic_not_found` |
+| CP-RF14-03 | I | El auxiliar de la clínica A lista citas | Solo ve las citas de la clínica A |
+| CP-RF14-04 | I | El auxiliar de la clínica A pide el ID de una cita de la clínica B | 404 |
+| CP-RF14-05 | I | JWT de la clínica A enviado con el slug o host de la clínica B | 403 |
+| CP-RF14-06 | I | El mismo celular agenda en las clínicas A y B | Dos pacientes distintos; ambas citas se crean |
+| CP-RF14-07 | I | Insertar una cita que une un paciente de la clínica A con un odontólogo de la clínica B (por repositorio, saltando el servicio) | La rechaza la llave foránea compuesta |
+| CP-RF14-08 | U | `ClinicSchedule` con el sábado abierto | Se ofrecen franjas el sábado; los días cerrados se rechazan (espejo de los casos de horario actuales) |
+| CP-RF14-09 | U | Recordatorios de una clínica en `America/Mexico_City` con horas 19:00/09:00 (reloj inyectable) | Se programan a esas horas locales convertidas a UTC |
+| CP-RF14-10 | I | Envío de un recordatorio de la clínica B | Sale con el phone-number-id y la plantilla de la clínica B (el cliente falso de WhatsApp los registra) |
+| CP-RF14-11 | I | Webhook con un `phone_number_id` desconocido | 200, no se guarda nada |
+| CP-RF14-12 | I | El administrador de plataforma crea una clínica | Se crean la clínica, su configuración, su horario y su primer auxiliar, que puede iniciar sesión en el host nuevo |
+| CP-RF14-13 | I | Un auxiliar llama a `/api/v1/platform/clinics` | 403 |
+| CP-RF14-14 | E2E | Dos clínicas con nombres y colores distintos en dos hosts | Cada sitio muestra su propio nombre, logo y color; una cita agendada en una no aparece en la otra |
+| CP-RF14-15 | I | Revisión del catálogo | Toda tabla con `id_clinica` tiene RLS activada y forzada |
+| CP-RF14-16 | I | Consulta como `agendapro_app` sin `app.clinic_id` | Cero filas |
 
 Infraestructura de pruebas:
 - Un `TenantTestSupport` que crea la clínica B, su personal y sus credenciales falsas de WhatsApp.
@@ -424,11 +424,11 @@ Infraestructura de pruebas:
 | Fase | Contenido | Termina cuando |
 |---|---|---|
 | 0 | D0 decidida; casos del §10 y fila de control de cambios agregados; divergencia de la rama local resuelta; contrato §6.0 acordado | Plan actualizado y decisión registrada |
-| 1 | Módulo `clinics`, `V10`, `GET /clinic` público; `ClinicConfigService` en el frontend reemplaza `CLINIC` (solo Villadent) | Villadent sin cambios; CP-RF11-01, 02 y 08 en verde |
-| 2 | `V11` con columnas de clínica y llaves compuestas, `@TenantId`, `TenantContext`, `CurrentUser`, `clinicId` en el JWT, login por clínica | CP-RF11-03…07 y 13 en verde; todos los casos existentes en verde |
-| 3 | `V12` con RLS y roles de base de datos; zona horaria, horas de recordatorio, código de cita y país del celular por clínica | CP-RNF-ISO-01/02 y CP-RF11-09 en verde |
-| 4 | Credenciales de WhatsApp por clínica, enrutamiento del webhook, marca en reportes, Embedded Signup | CP-RF11-10 y 11 en verde |
-| 5 | Pantallas del administrador de plataforma y de configuración de la clínica, dominios comodín y propios, marca neutra, actualización de la CSP | CP-RF11-12 y 14 en verde; `pnpm verify:csp` en verde |
+| 1 | Módulo `clinics`, `V10`, `GET /clinic` público; `ClinicConfigService` en el frontend reemplaza `CLINIC` (solo Villadent) | Villadent sin cambios; CP-RF14-01, 02 y 08 en verde |
+| 2 | `V11` con columnas de clínica y llaves compuestas, `@TenantId`, `TenantContext`, `CurrentUser`, `clinicId` en el JWT, login por clínica | CP-RF14-03…07 y 13 en verde; todos los casos existentes en verde |
+| 3 | `V12` con RLS y roles de base de datos; zona horaria, horas de recordatorio, código de cita y país del celular por clínica | CP-RF14-15 y 16 y CP-RF14-09 en verde |
+| 4 | Credenciales de WhatsApp por clínica, enrutamiento del webhook, marca en reportes, Embedded Signup | CP-RF14-10 y 11 en verde |
+| 5 | Pantallas del administrador de plataforma y de configuración de la clínica, dominios comodín y propios, marca neutra, actualización de la CSP | CP-RF14-12 y 14 en verde; `pnpm verify:csp` en verde |
 
 Las fases 1 a 3 son el núcleo mínimo multi-clínica; las fases 4 y 5 lo vuelven operable como producto. Cada fase cierra con su fila de control de cambios (una por hito terminado, según el `CLAUDE.md`). El reparto por desarrollador está en los dos archivos de tareas.
 

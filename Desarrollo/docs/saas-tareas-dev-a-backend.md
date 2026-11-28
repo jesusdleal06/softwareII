@@ -21,30 +21,30 @@ Contraparte: [`saas-tareas-dev-b-frontend-integraciones.md`](saas-tareas-dev-b-f
   - el webhook de WhatsApp, `modules/reports/**` (plantilla y renderer) y `vercel.json`
 - **Contrato primero:** el §6.0 se acuerda entre los dos antes de A1 y no cambia sin avisar al otro.
 - **Ramas:** cada tarea sale en su propia rama `feat/saas-<tarea>` desde `origin/main` actualizado, con un PR a `main` y todas las suites en verde (`./gradlew check`). Antes de cada migración, toma la versión libre en `origin/main`.
-- **TDD:** escribe la prueba con el ID del caso en `@DisplayName` antes del código (RED → GREEN). Los IDs del §10 son provisionales hasta que QA los agregue al plan.
+- **TDD:** escribe la prueba con el ID del caso en `@DisplayName` antes del código (RED → GREEN). Los casos CP-RF14-01 a CP-RF14-16 ya están en el plan de pruebas (sección 12, RF14).
 
 ## Tarea 0 (conjunta, bloqueante)
 
 - [ ] Decidir D0 (diseño de verificación) y resolver la rama local `feat/whatsapp-phone-verification` sin editar V9.
 - [ ] Acordar el contrato §6.0 con B.
-- [ ] QA agrega RF11 y los casos del §10 al plan, y se registra la fila de control de cambios.
+- [x] RF14 y los casos del §10 agregados al plan, y fila registrada en la tabla de control de cambios.
 
 ## Tareas
 
 | ID | Tarea | § | Casos | Depende de | Habilita a B |
 |---|---|---|---|---|---|
 | A1 | `V10__clinics.sql`: `clinicas`, `dominios_clinica`, `horarios_clinica`, `configuracion_clinica`, `credenciales_whatsapp`; carga de Villadent como clínica 1 con los valores actuales (horario, prefijo, `siguiente_cita`, logo) | 4.1 | — | T0 | B4, B5 |
-| A2 | Módulo `clinics`: dominio (`Clinic`, `ClinicSlug`, `ClinicSchedule`, `ClinicBranding`, `ReminderTimes`, `WhatsAppCredentials`), puertos, `ClinicConfig`, persistencia, `CredentialCipher` (AES-GCM con `APP_CREDENTIALS_KEY`) | 5.1, AD6 | CP-RF11-08 | A1 | — |
-| A3 | Endpoint público `GET /api/v1/public/clinic`, resuelto por `X-Clinic-Slug` o host; 404 `clinic_not_found`. **Fin de la fase 1 del backend** | 5.1, 6.0 | CP-RF11-01, 02 | A2 | B1 (deja de usar el mock) |
+| A2 | Módulo `clinics`: dominio (`Clinic`, `ClinicSlug`, `ClinicSchedule`, `ClinicBranding`, `ReminderTimes`, `WhatsAppCredentials`), puertos, `ClinicConfig`, persistencia, `CredentialCipher` (AES-GCM con `APP_CREDENTIALS_KEY`) | 5.1, AD6 | CP-RF14-08 | A1 | — |
+| A3 | Endpoint público `GET /api/v1/public/clinic`, resuelto por `X-Clinic-Slug` o host; 404 `clinic_not_found`. **Fin de la fase 1 del backend** | 5.1, 6.0 | CP-RF14-01, 02 | A2 | B1 (deja de usar el mock) |
 | A4 | Reemplazar `ClinicHours` por `ClinicSchedule` en `Schedule.validate`; dejar de usar la semántica de V7 | 5.4 | regresión de los casos de horario actuales | A2 | — |
-| A5 | `V11__tenant_columns.sql`: `id_clinica` en las 11 tablas, relleno con 1, unicidades e índices nuevos, llaves foráneas compuestas, rol `PLATAFORMA` | 4.2 | CP-RF11-06, 07 | A1 | — |
-| A6 | `shared/tenancy`: `TenantContext`, `TenantResolutionFilter`, `CurrentTenantIdentifierResolver`, `@TenantId` en todas las entidades, `set_config('app.clinic_id')` por transacción | 5.2 | CP-RF11-03, 04 | A5 | B6 |
-| A7 | Seguridad: claim `clinicId` y emisor `agendapro` en el JWT, `CurrentUser` en los 4 controladores, login por `(clínica, correo)`, `/api/v1/platform/**` → PLATAFORMA, CORS por patrones y dominios, administrador inicial de plataforma. **Fin de la fase 2** | 5.3 | CP-RF11-05, 13; regresión de los casos 401/403 | A6 | B2, B7 |
-| A8 | `V12__row_level_security.sql` + script de roles `agendapro_app` / `agendapro_platform` + segundo `DataSource` de plataforma; Testcontainers conecta como `agendapro_app` | 4.3, 7 | CP-RNF-ISO-01, 02 | A6 | — |
-| A9 | Reglas por clínica: zona horaria (`Clock` en UTC + zona de la clínica en los mappers de recordatorios), `ReminderTimes`, código de cita `{prefijo}-####` con bloqueo de fila, `NormalizePhoneUseCase` con `codigo_pais`, enlace de gestión con el host de la clínica. **Fin de la fase 3** | 5.4 | CP-RF11-09; regresión de CP-RF05 | A6 | B6 |
-| A10 | `ReminderScheduler` global con el `DataSource` de plataforma; fija `TenantContext` por recordatorio; aísla los fallos por clínica | 5.5 | parte de CP-RF11-10 (junto con B6) | A8, A9 | B6 |
+| A5 | `V11__tenant_columns.sql`: `id_clinica` en las 11 tablas, relleno con 1, unicidades e índices nuevos, llaves foráneas compuestas, rol `PLATAFORMA` | 4.2 | CP-RF14-06, 07 | A1 | — |
+| A6 | `shared/tenancy`: `TenantContext`, `TenantResolutionFilter`, `CurrentTenantIdentifierResolver`, `@TenantId` en todas las entidades, `set_config('app.clinic_id')` por transacción | 5.2 | CP-RF14-03, 04 | A5 | B6 |
+| A7 | Seguridad: claim `clinicId` y emisor `agendapro` en el JWT, `CurrentUser` en los 4 controladores, login por `(clínica, correo)`, `/api/v1/platform/**` → PLATAFORMA, CORS por patrones y dominios, administrador inicial de plataforma. **Fin de la fase 2** | 5.3 | CP-RF14-05, 13; regresión de los casos 401/403 | A6 | B2, B7 |
+| A8 | `V12__row_level_security.sql` + script de roles `agendapro_app` / `agendapro_platform` + segundo `DataSource` de plataforma; Testcontainers conecta como `agendapro_app` | 4.3, 7 | CP-RF14-15, 02 | A6 | — |
+| A9 | Reglas por clínica: zona horaria (`Clock` en UTC + zona de la clínica en los mappers de recordatorios), `ReminderTimes`, código de cita `{prefijo}-####` con bloqueo de fila, `NormalizePhoneUseCase` con `codigo_pais`, enlace de gestión con el host de la clínica. **Fin de la fase 3** | 5.4 | CP-RF14-09; regresión de CP-RF05 | A6 | B6 |
+| A10 | `ReminderScheduler` global con el `DataSource` de plataforma; fija `TenantContext` por recordatorio; aísla los fallos por clínica | 5.5 | parte de CP-RF14-10 (junto con B6) | A8, A9 | B6 |
 | A11 | Puerto `WhatsAppCredentialsProvider` + caso de uso `GetClinicWhatsAppCredentialsUseCase` + `LegacyWhatsAppCredentialsMigrator` (`app.whatsapp.*` → fila de la clínica 1) | 5.6 | — | A2 | B6, B8 |
-| A12 | API de plataforma y de configuración: `GET|PUT /api/v1/clinic/settings`, `/api/v1/platform/clinics` (crear con su primer auxiliar, activar/desactivar, dominio propio, `PUT /{id}/whatsapp` sin devolver el token) | 6.0, 6.3 | CP-RF11-12 | A7, A11 | B10, B11 |
+| A12 | API de plataforma y de configuración: `GET|PUT /api/v1/clinic/settings`, `/api/v1/platform/clinics` (crear con su primer auxiliar, activar/desactivar, dominio propio, `PUT /{id}/whatsapp` sin devolver el token) | 6.0, 6.3 | CP-RF14-12 | A7, A11 | B10, B11 |
 | A13 | Semilla `demo`: segunda clínica `demo` en `DemoDataSeeder`, con personal y credenciales falsas; `TenantTestSupport` para las pruebas | 10 | — | A7 | B12 |
 | A14 | Migración de limpieza: quitar la semántica de horario de clínica de `horarios_odontologo` y eliminar `citas_codigo_seq` | 4.4 | regresión completa | A4, A9 en producción | — |
 | A15 | Documentar en el README del backend los roles de base de datos, `APP_CREDENTIALS_KEY`, `app.platform.domain` y `spring.datasource.platform.*`; quitar las propiedades reemplazadas (§5.8) | 5.8, 7 | — | A8, A11 | — |
