@@ -19,6 +19,7 @@ import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivers.Resolv
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.FindProcedureUseCase;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.ProcedureResult;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivers.ScheduleReminderUseCase;
+import co.edu.unipamplona.villadent.modules.verification.domain.ports.drivers.ConsumeVerificationTokenUseCase;
 import co.edu.unipamplona.villadent.shared.error.NotFoundException;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -34,6 +35,7 @@ public class BookAppointmentService implements BookAppointmentUseCase {
     private final ResolvePatientUseCase patients;
     private final AppointmentRepository appointments;
     private final ScheduleReminderUseCase scheduleReminder;
+    private final ConsumeVerificationTokenUseCase verificationTokens;
     private final Clock clock;
 
     public BookAppointmentService(
@@ -43,6 +45,7 @@ public class BookAppointmentService implements BookAppointmentUseCase {
             ResolvePatientUseCase patients,
             AppointmentRepository appointments,
             ScheduleReminderUseCase scheduleReminder,
+            ConsumeVerificationTokenUseCase verificationTokens,
             Clock clock) {
         this.dentists = dentists;
         this.schedules = schedules;
@@ -50,6 +53,7 @@ public class BookAppointmentService implements BookAppointmentUseCase {
         this.patients = patients;
         this.appointments = appointments;
         this.scheduleReminder = scheduleReminder;
+        this.verificationTokens = verificationTokens;
         this.clock = clock;
     }
 
@@ -91,6 +95,9 @@ public class BookAppointmentService implements BookAppointmentUseCase {
                 procedure.durationMinutes(),
                 command.origin());
         appointment.ensureNoOverlap(booked);
+        if (command.origin() == AppointmentOrigin.WEB) {
+            verificationTokens.consume(command.verificationToken(), command.patientPhone());
+        }
         Appointment saved = appointments.save(appointment);
         scheduleReminder.schedule(saved.id());
         return toResult(saved, patient, dentist, procedure);

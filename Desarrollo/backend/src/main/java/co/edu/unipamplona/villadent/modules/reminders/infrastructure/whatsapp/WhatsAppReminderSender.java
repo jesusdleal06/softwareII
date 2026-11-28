@@ -3,6 +3,7 @@ package co.edu.unipamplona.villadent.modules.reminders.infrastructure.whatsapp;
 import co.edu.unipamplona.villadent.modules.reminders.domain.error.ReminderDeliveryException;
 import co.edu.unipamplona.villadent.modules.reminders.domain.model.ReminderMessage;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivens.ReminderSender;
+import co.edu.unipamplona.villadent.shared.whatsapp.InternationalPhoneFormatter;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -15,9 +16,6 @@ public class WhatsAppReminderSender implements ReminderSender {
     // Same formats as the in-app WhatsApp preview (frontend formatDate / formatTime): 26/10/2026, 2:30 PM.
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("h:mm a", Locale.US);
-
-    // Meta Cloud API expects the international format without "+"; the domain keeps the national number.
-    private static final String COUNTRY_CODE = "57";
 
     private final RestClient restClient;
     private final String token;
@@ -43,7 +41,7 @@ public class WhatsAppReminderSender implements ReminderSender {
         }
         Map<String, Object> payload = Map.of(
                 "messaging_product", "whatsapp",
-                "to", toInternational(message.phone()),
+                "to", InternationalPhoneFormatter.toInternational(message.phone()),
                 "type", "template",
                 "template", Map.of(
                         "name", templateName,
@@ -70,15 +68,5 @@ public class WhatsAppReminderSender implements ReminderSender {
 
     private static Map<String, String> text(String value) {
         return Map.of("type", "text", "text", value == null ? "" : value);
-    }
-
-    private static String toInternational(String phone) {
-        if (phone == null) {
-            return null;
-        }
-        if (phone.length() == COUNTRY_CODE.length() + 10 && phone.startsWith(COUNTRY_CODE)) {
-            return phone;
-        }
-        return COUNTRY_CODE + phone;
     }
 }

@@ -18,6 +18,9 @@ import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.Dentis
 import co.edu.unipamplona.villadent.modules.dentists.domain.ports.drivens.ScheduleRepository;
 import co.edu.unipamplona.villadent.modules.procedures.domain.model.Procedure;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivens.ProcedureRepository;
+import co.edu.unipamplona.villadent.support.CapturingVerificationSender;
+import co.edu.unipamplona.villadent.support.PublicBookingTestSupport;
+import co.edu.unipamplona.villadent.support.VerificationTestConfiguration;
 import com.jayway.jsonpath.JsonPath;
 import java.time.Clock;
 import java.time.DayOfWeek;
@@ -41,7 +44,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, VerificationTestConfiguration.class})
 @SpringBootTest(properties = "app.bootstrap-admin.enabled=false")
 @AutoConfigureMockMvc
 class AppointmentBookingIntegrationTest {
@@ -86,8 +89,25 @@ class AppointmentBookingIntegrationTest {
         return procedures.save(Procedure.create(name + " " + UUID.randomUUID(), durationMinutes));
     }
 
+    @Autowired
+    private CapturingVerificationSender verificationSender;
+
     private String uniquePhone() {
         return "3" + ThreadLocalRandom.current().nextInt(100_000_000, 1_000_000_000);
+    }
+
+    private String verificationToken(String phone) throws Exception {
+        return PublicBookingTestSupport.obtainToken(mockMvc, verificationSender, phone);
+    }
+
+    private String publicBookingJson(
+            String patientName,
+            String phone,
+            Dentist dentist,
+            Procedure procedure,
+            LocalDate date,
+            LocalTime time) throws Exception {
+        return bookingJson(patientName, phone, dentist, procedure, date, time, verificationToken(phone));
     }
 
     private String bookingJson(
@@ -96,7 +116,8 @@ class AppointmentBookingIntegrationTest {
             Dentist dentist,
             Procedure procedure,
             LocalDate date,
-            LocalTime time) {
+            LocalTime time,
+            String verificationToken) {
         return """
                 {
                   "patientName": "%s",
@@ -104,9 +125,10 @@ class AppointmentBookingIntegrationTest {
                   "dentistId": %d,
                   "procedureId": %d,
                   "date": "%s",
-                  "time": "%s"
+                  "time": "%s",
+                  "verificationToken": "%s"
                 }
-                """.formatted(patientName, phone, dentist.id(), procedure.id(), date, time);
+                """.formatted(patientName, phone, dentist.id(), procedure.id(), date, time, verificationToken);
     }
 
     private MvcResult book(
@@ -118,7 +140,7 @@ class AppointmentBookingIntegrationTest {
             String phone) throws Exception {
         return mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingJson(patientName, phone, dentist, procedure, date, time)))
+                        .content(publicBookingJson(patientName, phone, dentist, procedure, date, time)))
                 .andReturn();
     }
 
@@ -137,7 +159,7 @@ class AppointmentBookingIntegrationTest {
 
         mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingJson("Ana María Rueda", uniquePhone(), dentist, exodontia,
+                        .content(publicBookingJson("Ana María Rueda", uniquePhone(), dentist, exodontia,
                                 date, LocalTime.of(14, 0))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.durationMinutes").value(60))
@@ -184,7 +206,7 @@ class AppointmentBookingIntegrationTest {
 
         mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingJson("Carlos Pérez", uniquePhone(), dentist, exodontia,
+                        .content(publicBookingJson("Carlos Pérez", uniquePhone(), dentist, exodontia,
                                 date, LocalTime.of(9, 0))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("SLOT_TAKEN"))
@@ -238,7 +260,7 @@ class AppointmentBookingIntegrationTest {
 
         mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingJson("Ana María Rueda", phone, dentist, cleaning,
+                        .content(publicBookingJson("Ana María Rueda", phone, dentist, cleaning,
                                 date, LocalTime.of(10, 0))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("ACTIVE_APPOINTMENT_EXISTS"))
@@ -311,7 +333,7 @@ class AppointmentBookingIntegrationTest {
 
         mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingJson("Carlos Pérez", uniquePhone(), dentist, cleaning,
+                        .content(publicBookingJson("Carlos Pérez", uniquePhone(), dentist, cleaning,
                                 date, LocalTime.of(10, 15))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("SLOT_TAKEN"));

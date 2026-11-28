@@ -100,7 +100,8 @@ class ReminderIntegrationTest {
                 procedure.id(),
                 date,
                 time,
-                AppointmentOrigin.WEB));
+                AppointmentOrigin.MANUAL,
+                null));
         return appointments.findById(result.id()).orElseThrow();
     }
 

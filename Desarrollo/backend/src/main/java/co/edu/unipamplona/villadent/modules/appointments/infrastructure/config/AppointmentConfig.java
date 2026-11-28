@@ -29,6 +29,7 @@ import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivers.Cance
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivers.GetReminderStatusUseCase;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivers.ScheduleReminderUseCase;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivens.ManageTokenGenerator;
+import co.edu.unipamplona.villadent.modules.verification.domain.ports.drivers.ConsumeVerificationTokenUseCase;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,9 +55,11 @@ public class AppointmentConfig {
             ResolvePatientUseCase patients,
             AppointmentRepository appointments,
             ScheduleReminderUseCase scheduleReminder,
+            ConsumeVerificationTokenUseCase verificationTokens,
             Clock clock) {
         return new BookAppointmentService(
-                dentists, schedules, procedures, patients, appointments, scheduleReminder, clock);
+                dentists, schedules, procedures, patients, appointments, scheduleReminder,
+                verificationTokens, clock);
     }
 
     @Bean

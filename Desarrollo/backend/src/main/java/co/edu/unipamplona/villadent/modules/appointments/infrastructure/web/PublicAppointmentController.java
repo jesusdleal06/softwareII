@@ -26,8 +26,8 @@ public class PublicAppointmentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PublicAppointmentResponse book(@Valid @RequestBody BookAppointmentRequest request) {
+    public PublicAppointmentResponse book(@Valid @RequestBody PublicBookAppointmentRequest request) {
         return mapper.toPublicResponse(
-                bookAppointmentUseCase.book(mapper.toCommand(request, AppointmentOrigin.WEB)));
+                bookAppointmentUseCase.book(mapper.toPublicCommand(request, AppointmentOrigin.WEB)));
     }
 }

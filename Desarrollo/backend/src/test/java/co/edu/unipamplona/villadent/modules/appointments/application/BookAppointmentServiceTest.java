@@ -25,6 +25,7 @@ import co.edu.unipamplona.villadent.modules.patients.domain.ports.drivers.Resolv
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.FindProcedureUseCase;
 import co.edu.unipamplona.villadent.modules.procedures.domain.ports.drivers.ProcedureResult;
 import co.edu.unipamplona.villadent.modules.reminders.domain.ports.drivers.ScheduleReminderUseCase;
+import co.edu.unipamplona.villadent.modules.verification.domain.ports.drivers.ConsumeVerificationTokenUseCase;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -65,12 +66,15 @@ class BookAppointmentServiceTest {
     @Mock
     private ScheduleReminderUseCase scheduleReminder;
 
+    @Mock
+    private ConsumeVerificationTokenUseCase verificationTokens;
+
     private BookAppointmentService service;
 
     @BeforeEach
     void setUp() {
         service = new BookAppointmentService(
-                dentists, schedules, procedures, patients, appointments, scheduleReminder, CLOCK);
+                dentists, schedules, procedures, patients, appointments, scheduleReminder, verificationTokens, CLOCK);
     }
 
     private void activeDentistAndProcedure(int durationMinutes) {
@@ -84,8 +88,9 @@ class BookAppointmentServiceTest {
     }
 
     private BookAppointmentCommand command(LocalTime time, AppointmentOrigin origin) {
+        String verificationToken = origin == AppointmentOrigin.WEB ? "verification-token" : null;
         return new BookAppointmentCommand(
-                "Ana María Rueda", "3001234567", 1L, 2L, MONDAY, time, origin);
+                "Ana María Rueda", "3001234567", 1L, 2L, MONDAY, time, origin, verificationToken);
     }
 
     @Test
