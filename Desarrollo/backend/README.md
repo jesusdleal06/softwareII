@@ -166,15 +166,15 @@ El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`Remin
 
 | Variable | Uso |
 | --- | --- |
-| `app.whatsapp.token` (`WHATSAPP_TOKEN`) | Token de la API de WhatsApp; sin él los envíos quedan registrados como fallidos |
-| `app.whatsapp.phone-number-id` (`WHATSAPP_PHONE_NUMBER_ID`) | Número emisor |
-| `app.whatsapp.template-name` (`WHATSAPP_TEMPLATE_NAME`) | Nombre de la plantilla aprobada (ver abajo) |
-| `app.whatsapp.api-url` (`WHATSAPP_API_URL`) | Base de la API; por defecto `https://graph.facebook.com/v21.0` |
+| `app.whatsapp.token` (`APP_WHATSAPP_TOKEN`) | Token de la API de WhatsApp; sin él los envíos quedan registrados como fallidos |
+| `app.whatsapp.phone-number-id` (`APP_WHATSAPP_PHONE_NUMBER_ID`) | Número emisor |
+| `app.whatsapp.template-name` (`APP_WHATSAPP_TEMPLATE_NAME`) | Nombre de la plantilla aprobada (ver abajo) |
+| `app.whatsapp.api-url` (`APP_WHATSAPP_API_URL`) | Base de la API; por defecto `https://graph.facebook.com/v21.0` |
 | `app.cloudinary.cloud-name` (`APP_CLOUDINARY_CLOUD_NAME`) | Cloudinary cloud name |
 | `app.cloudinary.api-key` (`APP_CLOUDINARY_API_KEY`) | Cloudinary API key |
 | `app.cloudinary.api-secret` (`APP_CLOUDINARY_API_SECRET`) | Server-side signing secret; never expose to the frontend |
-| `app.manage-link-base` (`MANAGE_LINK_BASE`) | Dirección pública de la página de la cita, terminada en `/cita/` (por defecto `http://localhost:4200/cita/`). Debe ser la misma que el prefijo del botón de la plantilla |
-| `app.reminders.scheduler.enabled` (`REMINDERS_SCHEDULER_ENABLED`) | `false` apaga el sondeo (las pruebas de integración lo apagan) |
+| `app.manage-link-base` (`APP_MANAGE_LINK_BASE`) | Dirección pública de la página de la cita, terminada en `/cita/` (por defecto `http://localhost:4200/cita/`). Debe ser la misma que el prefijo del botón de la plantilla |
+| `app.reminders.scheduler.enabled` (`APP_REMINDERS_SCHEDULER_ENABLED`) | `false` apaga el sondeo (las pruebas de integración lo apagan) |
 
 **La plantilla de WhatsApp** se crea y se aprueba en Meta (categoría *utility*, idioma `es`). El backend le envía:
 

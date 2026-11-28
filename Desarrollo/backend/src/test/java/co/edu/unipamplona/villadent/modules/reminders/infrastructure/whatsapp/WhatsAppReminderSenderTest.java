@@ -132,6 +132,30 @@ class WhatsAppReminderSenderTest {
     }
 
     @Test
+    @DisplayName("CP-RF05-01: sends the patient phone in international format with the Colombian code")
+    void sendsThePhoneWithTheColombianCountryCode() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        var sender = new WhatsAppReminderSender(startServer(body), "token", "123", "reminder");
+
+        sender.send(message());
+
+        assertThat(body.get()).contains("\"to\":\"573001234567\"");
+    }
+
+    @Test
+    void keepsAPhoneThatIsAlreadyInInternationalFormat() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        var sender = new WhatsAppReminderSender(startServer(body), "token", "123", "reminder");
+
+        sender.send(new ReminderMessage(
+                "Ana María Rueda", "573001234567", LocalDate.of(2026, 10, 26),
+                LocalTime.of(10, 0), "Dra. Laura Villamizar", "Limpieza",
+                "https://villadent.example/cita/token-abc", "token-abc"));
+
+        assertThat(body.get()).contains("\"to\":\"573001234567\"");
+    }
+
+    @Test
     void nullNamesBecomeEmptyParameters() throws Exception {
         AtomicReference<String> body = new AtomicReference<>();
         String url = startServer(body);
