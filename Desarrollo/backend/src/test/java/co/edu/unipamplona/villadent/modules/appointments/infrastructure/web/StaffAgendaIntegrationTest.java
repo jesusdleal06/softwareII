@@ -22,6 +22,9 @@ import co.edu.unipamplona.villadent.modules.users.domain.model.Role;
 import co.edu.unipamplona.villadent.modules.users.domain.model.User;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.PasswordHasher;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.UserRepository;
+import co.edu.unipamplona.villadent.support.CapturingVerificationSender;
+import co.edu.unipamplona.villadent.support.PublicBookingTestSupport;
+import co.edu.unipamplona.villadent.support.VerificationTestConfiguration;
 import com.jayway.jsonpath.JsonPath;
 import java.time.Clock;
 import java.time.DayOfWeek;
@@ -46,7 +49,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, VerificationTestConfiguration.class})
 @SpringBootTest(properties = "app.bootstrap-admin.enabled=false")
 @AutoConfigureMockMvc
 class StaffAgendaIntegrationTest {
@@ -73,6 +76,9 @@ class StaffAgendaIntegrationTest {
 
     @Autowired
     private PasswordHasher passwordHasher;
+
+    @Autowired
+    private CapturingVerificationSender verificationSender;
 
     private String uniqueEmail(String prefix) {
         return prefix + "-" + UUID.randomUUID() + "@villadent.co";
@@ -153,6 +159,27 @@ class StaffAgendaIntegrationTest {
                 """.formatted(patientName, phone, dentist.id(), procedure.id(), date, time);
     }
 
+    private String publicBookingJson(
+            String patientName,
+            String phone,
+            Dentist dentist,
+            Procedure procedure,
+            LocalDate date,
+            LocalTime time) throws Exception {
+        String verificationToken = PublicBookingTestSupport.obtainToken(mockMvc, verificationSender, phone);
+        return """
+                {
+                  "patientName": "%s",
+                  "patientPhone": "%s",
+                  "dentistId": %d,
+                  "procedureId": %d,
+                  "date": "%s",
+                  "time": "%s",
+                  "verificationToken": "%s"
+                }
+                """.formatted(patientName, phone, dentist.id(), procedure.id(), date, time, verificationToken);
+    }
+
     private MvcResult bookManual(
             String token,
             Dentist dentist,
@@ -177,7 +204,7 @@ class StaffAgendaIntegrationTest {
             String phone) throws Exception {
         return mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingJson(patientName, phone, dentist, procedure, date, time)))
+                        .content(publicBookingJson(patientName, phone, dentist, procedure, date, time)))
                 .andReturn();
     }
 

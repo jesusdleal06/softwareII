@@ -24,6 +24,21 @@ describe('PatientForm', () => {
     expect(el.querySelector('#pac-telefono')?.getAttribute('aria-describedby')).toBe('pac-telefono-hint');
   });
 
+  it('shows the hint the caller passes instead of the default one', () => {
+    fixture = TestBed.createComponent(PatientForm);
+    fixture.componentRef.setInput('data', { name: '', phone: '' });
+    fixture.componentRef.setInput(
+      'phoneHint',
+      '10 dígitos. A este número enviaremos un código de verificación y el recordatorio por WhatsApp.',
+    );
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(text(el)).toContain(
+      '10 dígitos. A este número enviaremos un código de verificación y el recordatorio por WhatsApp.',
+    );
+    expect(text(el)).not.toContain('10 dígitos. A este número enviaremos el recordatorio por WhatsApp.');
+  });
+
   it('marks both required fields for assistive tech', () => {
     const el = render({ name: '', phone: '' }, false);
     for (const id of ['#pac-nombre', '#pac-telefono']) {

@@ -94,7 +94,8 @@ class ManagedAppointmentIntegrationTest {
                 procedure.id(),
                 MONDAY,
                 time,
-                AppointmentOrigin.WEB)).id();
+                AppointmentOrigin.MANUAL,
+                null)).id();
     }
 
     private String uniquePhone() {

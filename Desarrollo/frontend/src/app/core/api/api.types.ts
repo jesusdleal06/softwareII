@@ -94,6 +94,11 @@ export interface PublicAppointmentDto {
   status: ApiStatus;
 }
 
+/** POST /api/v1/public/phone-verifications/verify: opaque proof of phone ownership. */
+export interface PhoneVerificationTokenDto {
+  verificationToken: string;
+}
+
 export interface ManagedAppointmentDto {
   id: number;
   code: string;

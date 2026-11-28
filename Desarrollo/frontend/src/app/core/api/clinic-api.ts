@@ -9,6 +9,7 @@ import {
   DentistProfilePayload,
   LoginResponseDto,
   ManagedAppointmentDto,
+  PhoneVerificationTokenDto,
   ProcedureDto,
   StaffDentistDto,
   PublicAppointmentDto,
@@ -24,6 +25,8 @@ export interface BookAppointmentPayload {
   procedureId: number;
   date: string;
   time: string;
+  /** Opaque token from the phone verification; the backend requires it on public bookings. */
+  verificationToken?: string;
 }
 
 /** Staff catalog entry with the dentists who perform the procedure. */
@@ -146,6 +149,21 @@ export class ClinicApi {
       .set('procedureId', procedureId)
       .set('date', date);
     return this.request(this.http.get<AvailabilityDto>('/api/v1/public/availability', { params }));
+  }
+
+  /** Sends a WhatsApp code to the phone; the backend answers 202 with an empty body. */
+  async requestPhoneCode(phone: string): Promise<void> {
+    return this.request(this.http.post<void>('/api/v1/public/phone-verifications', { phone }));
+  }
+
+  /** Exchanges the received code for the token that proves phone ownership. */
+  async verifyPhoneCode(phone: string, code: string): Promise<PhoneVerificationTokenDto> {
+    return this.request(
+      this.http.post<PhoneVerificationTokenDto>('/api/v1/public/phone-verifications/verify', {
+        phone,
+        code,
+      }),
+    );
   }
 
   async bookPublic(payload: BookAppointmentPayload): Promise<PublicAppointmentDto> {

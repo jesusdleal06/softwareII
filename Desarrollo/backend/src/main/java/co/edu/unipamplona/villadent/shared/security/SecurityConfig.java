@@ -1,6 +1,7 @@
 package co.edu.unipamplona.villadent.shared.security;
 
 import co.edu.unipamplona.villadent.shared.e2e.E2eManageLinkController;
+import co.edu.unipamplona.villadent.shared.e2e.E2ePhoneVerificationController;
 import co.edu.unipamplona.villadent.shared.error.ProblemDetailAccessDeniedHandler;
 import co.edu.unipamplona.villadent.shared.error.ProblemDetailAuthenticationEntryPoint;
 import jakarta.servlet.DispatcherType;
@@ -103,6 +104,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> {
                 if (environment.acceptsProfiles(Profiles.of("e2e"))) {
                     auth.requestMatchers(HttpMethod.POST, E2eManageLinkController.PATH).permitAll();
+                    auth.requestMatchers(HttpMethod.GET, E2ePhoneVerificationController.PATH).permitAll();
                 }
                 auth
                     // The servlet container forwards 404s and unhandled exceptions to /error.

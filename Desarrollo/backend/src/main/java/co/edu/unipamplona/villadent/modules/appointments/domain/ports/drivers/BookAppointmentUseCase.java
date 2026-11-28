@@ -15,6 +15,7 @@ public interface BookAppointmentUseCase {
             Long procedureId,
             LocalDate date,
             LocalTime time,
-            AppointmentOrigin origin) {
+            AppointmentOrigin origin,
+            String verificationToken) {
     }
 }

@@ -86,6 +86,9 @@ describe('NewAppointmentPanel', () => {
     expect(text(el)).toContain('Para solicitudes recibidas por llamada o WhatsApp. Aplica las mismas reglas que la web.');
     expect(text(el)).toContain('Nombre completo del paciente');
     expect(text(el)).toContain('Celular del paciente');
+    // Staff keep booking without a verification code, so the hint stays the reminder-only one.
+    expect(text(el)).toContain('10 dígitos. A este número enviaremos el recordatorio por WhatsApp.');
+    expect(text(el)).not.toContain('código de verificación');
     expect(el.querySelector('[aria-label="Día"] [aria-checked="true"]')?.textContent).toContain('14');
   });
 

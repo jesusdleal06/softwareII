@@ -75,6 +75,59 @@ describe('ClinicApi', () => {
     await pending;
   });
 
+  it('requests a WhatsApp verification code for a phone number', async () => {
+    const pending = api.requestPhoneCode('3009998877');
+    const request = http.expectOne('/api/v1/public/phone-verifications');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ phone: '3009998877' });
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({}, { status: 202, statusText: 'Accepted' });
+    await pending;
+  });
+
+  it('verifies the WhatsApp code and returns its verification token', async () => {
+    const pending = api.verifyPhoneCode('3009998877', '123456');
+    const request = http.expectOne('/api/v1/public/phone-verifications/verify');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ phone: '3009998877', code: '123456' });
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({ verificationToken: 'vt-1' });
+    await expect(pending).resolves.toEqual({ verificationToken: 'vt-1' });
+  });
+
+  it('normalizes a rejected WhatsApp code into an ApiError with its code', async () => {
+    const pending = api.verifyPhoneCode('3009998877', '000000');
+    http
+      .expectOne('/api/v1/public/phone-verifications/verify')
+      .flush(
+        { code: 'INVALID_CODE', detail: 'El código no es correcto.' },
+        { status: 400, statusText: 'Bad Request' },
+      );
+    await expect(pending).rejects.toEqual(
+      new ApiError(400, 'INVALID_CODE', 'El código no es correcto.'),
+    );
+  });
+
+  it('sends the verification token in the public booking call', async () => {
+    const pending = api.bookPublic({ ...booking, verificationToken: 'vt-1' });
+    const request = http.expectOne('/api/v1/public/appointments');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ ...booking, verificationToken: 'vt-1' });
+    request.flush({
+      id: 1,
+      code: 'VD-1000',
+      dentistId: 1,
+      dentistName: 'Dra. Laura Villamizar',
+      procedureId: 1,
+      procedureName: 'Limpieza',
+      date: '2026-10-26',
+      time: '10:00',
+      durationMinutes: 30,
+      status: 'PENDIENTE',
+    });
+    await pending;
+  });
+
   it('requests the report export as a PDF when format is pdf', async () => {
     const pending = api.exportReport({ ...range, format: 'pdf' });
     const request = http.expectOne((r) => r.url === '/api/v1/reports/export');

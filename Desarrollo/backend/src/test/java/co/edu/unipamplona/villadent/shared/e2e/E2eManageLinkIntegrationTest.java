@@ -94,7 +94,8 @@ class E2eManageLinkIntegrationTest {
                 procedure.id(),
                 MONDAY,
                 time,
-                AppointmentOrigin.WEB)).id();
+                AppointmentOrigin.MANUAL,
+                null)).id();
     }
 
     private String uniquePhone() {

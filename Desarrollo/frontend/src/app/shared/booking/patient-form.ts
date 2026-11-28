@@ -30,7 +30,7 @@ export function sanitizePhoneInput(value: string): string {
     <app-text-field
       [fieldId]="idPrefix() + '-telefono'"
       [label]="labels()?.phone ?? 'Número de celular'"
-      hint="10 dígitos. A este número enviaremos el recordatorio por WhatsApp."
+      [hint]="phoneHint()"
       placeholder="Ej: 300 123 4567"
       inputMode="numeric"
       autocomplete="tel-national"
@@ -48,6 +48,10 @@ export class PatientForm {
   readonly errors = input<PatientErrors>({});
   readonly idPrefix = input('pac');
   readonly labels = input<{ name?: string; phone?: string }>();
+  /**
+   * Public booking asks for a WhatsApp code, so it overrides the hint; staff keep the default.
+   */
+  readonly phoneHint = input('10 dígitos. A este número enviaremos el recordatorio por WhatsApp.');
   readonly dataChange = output<PatientData>();
 
   protected readonly sanitizePhone = sanitizePhoneInput;

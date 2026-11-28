@@ -1,22 +1,39 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { ApiError } from '../../../core/api/api-error';
+import { ClinicApi } from '../../../core/api/clinic-api';
 import { makeAppointment } from '../../../core/testing/appointment.fixture';
-import { createFakeStore, FakeStore, provideFakeStore } from '../../../shared/testing/fake-store';
+import { createFakeStore, DENTISTS, FakeStore, PROCEDURES, provideFakeStore } from '../../../shared/testing/fake-store';
 import { clickButton, getByText, settle, text, typeInto } from '../../../shared/testing/dom';
 import { BookingFlow } from './booking-flow';
 
 // Wednesday 2026-10-14 09:10; Thursday 15 at 10:00 is free for Dra. Villamizar (d1).
 const NOW = new Date(2026, 9, 14, 9, 10);
 
+type FakeApi = {
+  requestPhoneCode: ReturnType<typeof vi.fn>;
+  verifyPhoneCode: ReturnType<typeof vi.fn>;
+};
+
 describe('BookingFlow', () => {
   let fixture: ComponentFixture<BookingFlow>;
   let el: HTMLElement;
   let store: FakeStore;
+  let api: FakeApi;
 
   beforeEach(() => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
     store = createFakeStore({ now: NOW });
-    TestBed.configureTestingModule({ providers: [provideRouter([]), provideFakeStore(store)] });
+    // The store converts the ids to numbers for the API, so the catalogs keep the numeric suffix.
+    store.dentistsState.set(DENTISTS.map((dentist) => ({ ...dentist, id: dentist.id.slice(1) })));
+    store.proceduresState.set(PROCEDURES.map((procedure) => ({ ...procedure, id: procedure.id.slice(1) })));
+    api = {
+      requestPhoneCode: vi.fn(async () => undefined),
+      verifyPhoneCode: vi.fn(async () => ({ verificationToken: 'vt-1' })),
+    };
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), provideFakeStore(store), { provide: ClinicApi, useValue: api }],
+    });
   });
 
   afterEach(() => vi.restoreAllMocks());
@@ -114,44 +131,49 @@ describe('BookingFlow', () => {
     expect(el.innerHTML).not.toContain('oklch');
   });
 
+  /** Requests the WhatsApp code, which reveals the code field, and types `code`. */
+  async function sendCode(code = '123456'): Promise<void> {
+    clickButton(el, 'Enviar código por WhatsApp');
+    await refresh();
+    typeInto(el.querySelector('#booking-code') as HTMLInputElement, code);
+    fixture.detectChanges();
+  }
+
   it('books an appointment through the three steps', async () => {
-    store.createAppointment.mockResolvedValue({
-      ok: true,
-      appointment: makeAppointment({
-        id: 'a9',
-        code: 'VD-3000',
-        date: '2026-10-15',
-        time: '10:00',
-        patientName: 'Ana Pérez',
-        patientPhone: '3009998877',
-      }),
-    });
     create();
     await pickSlot();
     clickButton(el, 'Continuar');
     await refresh();
     expect(el.querySelector('h1')?.textContent).toContain('Tus datos');
+    expect(text(el)).toContain(
+      '10 dígitos. A este número enviaremos un código de verificación y el recordatorio por WhatsApp.',
+    );
 
     await fillPatient('Ana Pérez', '300 999 8877');
     expect(el.querySelector('h1')?.textContent).toContain('Confirma tu cita');
     expect(text(el)).toContain('Revisa que todo esté correcto antes de confirmar.');
     expect(text(el)).toContain('el día anterior (14/10/2026) a las 6:00 PM');
+    expect(getByText<HTMLButtonElement>(el, 'button', 'Enviar código por WhatsApp')).toBeTruthy();
 
+    await sendCode();
     const confirmButton = getByText<HTMLButtonElement>(el, 'button', 'Confirmar cita');
     expect(confirmButton.className).toContain('flex-1');
     expect(confirmButton.className).toContain('min-h-16');
     confirmButton.click();
     await refresh();
 
+    expect(api.verifyPhoneCode).toHaveBeenCalledWith('3009998877', '123456');
+    // The store owns the public booking and the conflict mapping; the flow only adds the token.
     expect(store.createAppointment).toHaveBeenCalledWith(
       expect.objectContaining({
-        dentistId: 'd1',
-        procedureId: 'p1',
+        dentistId: '1',
+        procedureId: '1',
         date: '2026-10-15',
         time: '10:00',
-        origin: 'Web',
         patientPhone: '3009998877',
         patientName: 'Ana Pérez',
+        origin: 'Web',
+        verificationToken: 'vt-1',
       }),
     );
     expect(text(el)).toContain('¡Tu cita quedó agendada!');
@@ -176,6 +198,7 @@ describe('BookingFlow', () => {
     clickButton(el, 'Continuar');
     await refresh();
     await fillPatient('Rosa Elvira Jaimes', '313 555 6677');
+    await sendCode();
     clickButton(el, 'Confirmar cita');
     await refresh();
 
@@ -192,6 +215,7 @@ describe('BookingFlow', () => {
     await refresh();
     await fillPatient('Ana Pérez', '300 999 8877');
 
+    await sendCode();
     clickButton(el, 'Confirmar cita');
     await refresh();
 
@@ -262,20 +286,143 @@ describe('BookingFlow', () => {
   });
 
   it('keeps the dark success tint at the S2 ceiling after booking', async () => {
-    store.createAppointment.mockResolvedValue({
-      ok: true,
-      appointment: makeAppointment({ id: 'a9', code: 'VD-3000', date: '2026-10-15', time: '10:00' }),
-    });
     create();
     await pickSlot();
     clickButton(el, 'Continuar');
     await refresh();
     await fillPatient('Ana Pérez', '300 999 8877');
+    await sendCode();
     clickButton(el, 'Confirmar cita');
     await refresh();
 
     const tint = el.querySelector('[class*="dark:bg-success/"]');
     expect(tint?.className).toContain('dark:bg-success/20');
     expect(el.innerHTML).not.toContain('dark:bg-success/25');
+  });
+
+  it('CP-RF02-10: asks for the WhatsApp code on step 3 and allows a resend after 60 seconds', async () => {
+    create();
+    await pickSlot();
+    clickButton(el, 'Continuar');
+    await refresh();
+    await fillPatient('Ana Pérez', '300 999 8877');
+
+    expect(el.querySelectorAll('ol[aria-label="Progreso"] li')).toHaveLength(3);
+    expect(getByText<HTMLButtonElement>(el, 'button', 'Enviar código por WhatsApp').disabled).toBe(false);
+
+    vi.useFakeTimers();
+    getByText<HTMLButtonElement>(el, 'button', 'Enviar código por WhatsApp').click();
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+
+    expect(api.requestPhoneCode).toHaveBeenCalledWith('3009998877');
+    const input = el.querySelector('#booking-code') as HTMLInputElement;
+    expect(input.getAttribute('inputmode')).toBe('numeric');
+    expect(input.getAttribute('autocomplete')).toBe('one-time-code');
+    expect(el.querySelector('label[for="booking-code"]')?.textContent?.trim()).toBe('Código de verificación');
+    expect(el.querySelectorAll('ol[aria-label="Progreso"] li')).toHaveLength(3);
+    expect(text(el)).toContain('Podrás reenviar el código en 60 s.');
+
+    const resend = () => getByText<HTMLButtonElement>(el, 'button', 'Reenviar código');
+    expect(resend().disabled).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(59_000);
+    fixture.detectChanges();
+    expect(resend().disabled).toBe(true);
+    expect(text(el)).toContain('Podrás reenviar el código en 1 s.');
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    fixture.detectChanges();
+    expect(resend().disabled).toBe(false);
+    expect(text(el)).toContain('Ya puedes solicitar un nuevo código.');
+
+    vi.useRealTimers();
+  });
+
+  it('shows the WhatsApp code error inline when the backend rejects it', async () => {
+    api.verifyPhoneCode.mockRejectedValue(new ApiError(400, 'INVALID_CODE', 'El código no es correcto.'));
+    create();
+    await pickSlot();
+    clickButton(el, 'Continuar');
+    await refresh();
+    await fillPatient('Ana Pérez', '300 999 8877');
+    await sendCode('000000');
+    clickButton(el, 'Confirmar cita');
+    await refresh();
+
+    expect(el.querySelector('#booking-code-error')?.textContent).toContain('El código no es correcto.');
+    expect(store.createAppointment).not.toHaveBeenCalled();
+    expect(el.querySelector('h1')?.textContent).toContain('Confirma tu cita');
+  });
+
+  it('shows the phone-not-verified error inline and keeps the code step', async () => {
+    store.createAppointment.mockRejectedValue(
+      new ApiError(400, 'PHONE_NOT_VERIFIED', 'Verifica tu número de celular para confirmar la cita.'),
+    );
+    create();
+    await pickSlot();
+    clickButton(el, 'Continuar');
+    await refresh();
+    await fillPatient('Ana Pérez', '300 999 8877');
+    await sendCode();
+    clickButton(el, 'Confirmar cita');
+    await refresh();
+
+    expect(text(el)).toContain('Verifica tu número de celular para confirmar la cita.');
+    expect(el.querySelector('#booking-code')).toBeTruthy();
+    expect(el.querySelector('h1')?.textContent).toContain('Confirma tu cita');
+  });
+
+  it('shows the request-code error inline when the phone asked for too many codes', async () => {
+    api.requestPhoneCode.mockRejectedValue(
+      new ApiError(429, 'TOO_MANY_CODE_REQUESTS', 'Has solicitado demasiados códigos. Intenta de nuevo más tarde.'),
+    );
+    create();
+    await pickSlot();
+    clickButton(el, 'Continuar');
+    await refresh();
+    await fillPatient('Ana Pérez', '300 999 8877');
+    clickButton(el, 'Enviar código por WhatsApp');
+    await refresh();
+
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'Has solicitado demasiados códigos. Intenta de nuevo más tarde.',
+    );
+    expect(el.querySelector('#booking-code')).toBeNull();
+  });
+
+  it('shows the send failure inline when WhatsApp cannot deliver the code', async () => {
+    api.requestPhoneCode.mockRejectedValue(new ApiError(503, null, 'Service Unavailable'));
+    create();
+    await pickSlot();
+    clickButton(el, 'Continuar');
+    await refresh();
+    await fillPatient('Ana Pérez', '300 999 8877');
+    clickButton(el, 'Enviar código por WhatsApp');
+    await refresh();
+
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain(
+      'No pudimos enviar el código. Intenta de nuevo en unos minutos.',
+    );
+    expect(el.querySelector('#booking-code')).toBeNull();
+  });
+
+  it('discards the code and token when the patient goes back to change the phone', async () => {
+    create();
+    await pickSlot();
+    clickButton(el, 'Continuar');
+    await refresh();
+    await fillPatient('Ana Pérez', '300 999 8877');
+    await sendCode();
+    expect(el.querySelector('#booking-code')).toBeTruthy();
+
+    clickButton(el, 'Atrás');
+    await refresh();
+    expect(el.querySelector('h1')?.textContent).toContain('Tus datos');
+
+    clickButton(el, 'Continuar');
+    await refresh();
+    expect(el.querySelector('#booking-code')).toBeNull();
+    expect(getByText<HTMLButtonElement>(el, 'button', 'Enviar código por WhatsApp')).toBeTruthy();
   });
 });

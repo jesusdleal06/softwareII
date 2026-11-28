@@ -182,6 +182,48 @@ describe('AppStore', () => {
     });
   });
 
+  it('forwards the phone verification token on a public booking', async () => {
+    const { store, api } = setup();
+    await store.ensureCatalogs();
+    const command: NewAppointmentInput & { verificationToken?: string } = {
+      ...booking,
+      verificationToken: 'vt-1',
+    };
+
+    await store.createAppointment(command);
+
+    expect(api.bookPublic).toHaveBeenCalledWith({
+      patientName: 'Nuevo Paciente',
+      patientPhone: '3001112222',
+      dentistId: 1,
+      procedureId: 1,
+      date: THURSDAY,
+      time: '10:00',
+      verificationToken: 'vt-1',
+    });
+  });
+
+  it('never sends the verification token on a manual booking', async () => {
+    const { store, api } = setup();
+    await store.ensureCatalogs();
+    const command: NewAppointmentInput & { verificationToken?: string } = {
+      ...booking,
+      origin: 'Manual',
+      verificationToken: 'vt-1',
+    };
+
+    await store.createAppointment(command);
+
+    expect(api.bookStaff).toHaveBeenCalledWith({
+      patientName: 'Nuevo Paciente',
+      patientPhone: '3001112222',
+      dentistId: 1,
+      procedureId: 1,
+      date: THURSDAY,
+      time: '10:00',
+    });
+  });
+
   it('translates an active-appointment rejection', async () => {
     const { store, api } = setup();
     await store.ensureCatalogs();

@@ -144,7 +144,9 @@ export class AppStore {
     return response.slots;
   }
 
-  async createAppointment(input: NewAppointmentInput): Promise<CreateAppointmentResult> {
+  async createAppointment(
+    input: NewAppointmentInput & { verificationToken?: string },
+  ): Promise<CreateAppointmentResult> {
     // The backend is authoritative for dentist, procedure, duration and conflicts.
     const payload = {
       patientName: input.patientName,
@@ -156,12 +158,15 @@ export class AppStore {
     };
     try {
       if (input.origin === 'Manual') {
+        // Staff book by phone; the patient never verifies a code, so no token travels.
         const created = mapStaffAppointment(await this.api.bookStaff(payload));
         this.upsert(created);
         return { ok: true, appointment: created };
       }
       const created = mapPublicAppointment(
-        await this.api.bookPublic(payload),
+        await this.api.bookPublic(
+          input.verificationToken ? { ...payload, verificationToken: input.verificationToken } : payload,
+        ),
         input.patientName,
         input.patientPhone,
       );

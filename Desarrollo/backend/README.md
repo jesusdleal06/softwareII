@@ -127,7 +127,9 @@ Las pruebas de integración levantan su **propio** PostgreSQL con Testcontainers
 | `GET` | `/api/v1/public/dentists` | Público, solo activos |
 | `GET` | `/api/v1/public/procedures` | Público, solo activos |
 | `GET` | `/api/v1/public/availability?dentistId=&date=&procedureId=` | Público; devuelve solo franjas libres |
-| `POST` | `/api/v1/public/appointments` | Público; agenda una cita con la duración del procedimiento |
+| `POST` | `/api/v1/public/phone-verifications` | Público; envía un código de 6 dígitos por WhatsApp |
+| `POST` | `/api/v1/public/phone-verifications/verify` | Público; valida el código y entrega el token de verificación |
+| `POST` | `/api/v1/public/appointments` | Público; agenda una cita con la duración del procedimiento. Exige `verificationToken` |
 | `GET` | `/api/v1/public/appointments/manage/{token}` | Público; enlace personal del paciente, solo citas futuras y activas |
 | `POST` | `/api/v1/public/appointments/manage/{token}/confirm` | Público; confirma la cita |
 | `POST` | `/api/v1/public/appointments/manage/{token}/cancel` | Público; cancela y libera la franja |
@@ -169,6 +171,8 @@ El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`Remin
 | `app.whatsapp.token` (`APP_WHATSAPP_TOKEN`) | Token de la API de WhatsApp; sin él los envíos quedan registrados como fallidos |
 | `app.whatsapp.phone-number-id` (`APP_WHATSAPP_PHONE_NUMBER_ID`) | Número emisor |
 | `app.whatsapp.template-name` (`APP_WHATSAPP_TEMPLATE_NAME`) | Nombre de la plantilla aprobada (ver abajo) |
+| `app.whatsapp.verification-template-name` (`APP_WHATSAPP_VERIFICATION_TEMPLATE_NAME`) | Nombre de la plantilla de verificación aprobada (ver *Verificación del celular*) |
+| `app.verification.client-ip-header` (`APP_VERIFICATION_CLIENT_IP_HEADER`) | Cabecera con la IP real del cliente detrás de un proxy (por ejemplo `X-Forwarded-For`); vacía usa la dirección de la conexión |
 | `app.whatsapp.api-url` (`APP_WHATSAPP_API_URL`) | Base de la API; por defecto `https://graph.facebook.com/v21.0` |
 | `app.cloudinary.cloud-name` (`APP_CLOUDINARY_CLOUD_NAME`) | Cloudinary cloud name |
 | `app.cloudinary.api-key` (`APP_CLOUDINARY_API_KEY`) | Cloudinary API key |
@@ -180,6 +184,38 @@ El mensaje sale por WhatsApp mediante un cliente detrás de una interfaz (`Remin
 
 - **Cuerpo, 5 variables en este orden:** `{{1}}` nombre del paciente, `{{2}}` fecha (`26/10/2026`), `{{3}}` hora (`2:30 PM`), `{{4}}` odontólogo, `{{5}}` procedimiento. Son los mismos formatos de la vista previa del mensaje en la aplicación.
 - **Un botón de enlace dinámico:** en la plantilla se define la parte fija, por ejemplo `https://<dominio-del-frontend>/cita/{{1}}`, y el backend envía solo el código del enlace como `{{1}}`. El prefijo tiene que ser una dirección pública: con `localhost` el celular del paciente no puede abrir el enlace.
+
+### Verificación del celular por WhatsApp
+
+El paciente no tiene cuenta: antes de agendar desde el sitio público debe demostrar que el celular es suyo. El flujo tiene tres pasos.
+
+1. `POST /api/v1/public/phone-verifications` con `{"phone":"3143625362"}` valida el número con las mismas reglas del registro de pacientes y responde `202 Accepted` sin cuerpo. El backend genera un código de 6 dígitos, guarda **solo su hash SHA-256** con vencimiento de 5 minutos y lo envía por WhatsApp. Un código nuevo para el mismo celular invalida el anterior.
+2. `POST /api/v1/public/phone-verifications/verify` con `{"phone":"3143625362","code":"123456"}` responde `200` con `{"verificationToken":"<opaco>"}`. El token son 32 bytes aleatorios en base64url; en la base solo se guarda su hash SHA-256, vale 15 minutos, sirve una sola vez y queda atado al celular.
+3. `POST /api/v1/public/appointments` recibe el `verificationToken` como campo obligatorio y lo consume en la **misma transacción** de la cita mediante una actualización condicional (`where usado_en is null`), de modo que dos reservas simultáneas con el mismo token crean una sola cita. La agenda manual del personal (`POST /api/v1/appointments`, rol `AUXILIAR`) no pide token.
+
+Límites y errores:
+
+| Situación | Respuesta |
+| --- | --- |
+| Más de 3 códigos por celular en una hora, o más de 10 por IP en una hora | `429` `TOO_MANY_CODE_REQUESTS` «Has solicitado demasiados códigos. Intenta de nuevo más tarde.» |
+| Código incorrecto | `400` `INVALID_CODE` «El código no es correcto.» (suma un intento) |
+| Tercer intento incorrecto | `400` `TOO_MANY_ATTEMPTS` «Superaste los intentos permitidos. Solicita un código nuevo.»; el código queda invalidado |
+| Código vencido, usado o inexistente | `400` `CODE_EXPIRED` «El código venció. Solicita uno nuevo.» |
+| Fallo o falta de configuración de WhatsApp | `503` `VERIFICATION_DELIVERY_FAILED` «No pudimos enviar el código. Intenta de nuevo en unos minutos.»; el código no queda usable |
+| Token ausente, vencido, usado o de otro celular | `400` `PHONE_NOT_VERIFIED` «Verifica tu número de celular para confirmar la cita.»; no se crea la cita |
+
+La IP del cliente sale de `HttpServletRequest#getRemoteAddr()` por defecto. Cuando el backend corre detrás de un proxy (por ejemplo Vercel + Tailscale) esa dirección es la del proxy, así que se configura `APP_VERIFICATION_CLIENT_IP_HEADER=X-Forwarded-For`: el backend toma el primer valor de la lista separada por comas y, si la cabecera falta o viene vacía, vuelve a `getRemoteAddr()`. Como un cliente directo puede falsificar esa cabecera, el límite por IP es solo una defensa complementaria: **el límite duro es el de 3 códigos por celular**.
+
+Los dos límites salen de configuración: `app.verification.max-codes-per-phone-per-hour` (por defecto `3`) y `app.verification.max-codes-per-ip-per-hour` (por defecto `10`). El perfil `e2e` los sube a `1000` porque la suite agenda muchas veces desde una sola IP; en producción se dejan los valores por defecto.
+
+**La plantilla de verificación** se crea y se aprueba en Meta como plantilla de **autenticación** (categoría *Autenticación*), con idioma `es`, un botón de *copiar código* y una variable en el cuerpo. El backend le envía:
+
+- **Cuerpo:** `{{1}}` con el código de 6 dígitos.
+- **Botón de copiar código:** el mismo código como único parámetro del botón (`sub_type: "url"`, índice `0`).
+
+El nombre configurado en `APP_WHATSAPP_VERIFICATION_TEMPLATE_NAME` debe coincidir con la plantilla aprobada. **Sin la plantilla aprobada el envío falla y, como el token es obligatorio, el agendamiento público queda detenido**: la plantilla debe aprobarse antes de desplegar.
+
+Bajo el perfil `e2e` el envío no sale a WhatsApp: un remitente en memoria guarda el código y `GET /api/v1/e2e/phone-verifications/{phone}/code` lo devuelve para las pruebas de extremo a extremo.
 
 ### Reportes administrativos
 

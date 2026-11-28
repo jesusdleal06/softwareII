@@ -1,8 +1,21 @@
 import { ViewportScroller } from '@angular/common';
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, OnInit, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  Injector,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideArrowRight, LucideCalendarX2, LucideCircleCheck, LucideMessageCircle } from '@lucide/angular';
 import { formatPhone, normalizePhone, PatientData, PatientErrors, reminderInfo, validatePatient } from '../../../core/domain';
+import { ApiError } from '../../../core/api/api-error';
+import { ClinicApi } from '../../../core/api/clinic-api';
 import { CLINIC } from '../../../core/config/clinic';
 import { Appointment } from '../../../core/models';
 import { AppStore } from '../../../core/services/app-store.service';
@@ -10,6 +23,7 @@ import { AppointmentSummary } from '../../../shared/ui/appointment-summary';
 import { BigButton } from '../../../shared/ui/big-button';
 import { Stepper } from '../../../shared/ui/stepper';
 import { AlertMessage } from '../../../shared/ui/alert-message';
+import { TextField } from '../../../shared/ui/field';
 import { PatientForm } from '../../../shared/booking/patient-form';
 import { SlotPicker, SlotSelection } from '../../../shared/booking/slot-picker';
 import { PUBLIC_WHATSAPP_NUMBER } from '../../../shared/ui/public-header';
@@ -17,6 +31,20 @@ import { PUBLIC_WHATSAPP_NUMBER } from '../../../shared/ui/public-header';
 const STEPS = ['Elige tu horario', 'Tus datos', 'Confirma tu cita'] as const;
 const CONFLICT_MESSAGE = 'Este horario acaba de ser ocupado. Por favor elige otro.';
 const INCOMPLETE_MESSAGE = 'Selecciona el odontólogo, el procedimiento, el día y la hora para continuar.';
+const RESEND_SECONDS = 60;
+const SEND_ERROR_MESSAGE = 'No pudimos enviar el código. Intenta de nuevo en unos minutos.';
+const SAVE_ERROR_MESSAGE = 'No pudimos guardar tu cita. Revisa tu conexión e intenta de nuevo.';
+const CODE_FORMAT_MESSAGE = 'Ingresa el código de 6 dígitos que te enviamos.';
+const PHONE_HINT = '10 dígitos. A este número enviaremos un código de verificación y el recordatorio por WhatsApp.';
+const PHONE_NOT_VERIFIED_MESSAGE = 'Verifica tu número de celular para confirmar la cita.';
+const CODE_ERRORS: Record<string, string> = {
+  INVALID_CODE: 'El código no es correcto.',
+  CODE_EXPIRED: 'El código venció. Solicita uno nuevo.',
+  TOO_MANY_ATTEMPTS: 'Superaste los intentos permitidos. Solicita un código nuevo.',
+};
+const REQUEST_ERRORS: Record<string, string> = {
+  TOO_MANY_CODE_REQUESTS: 'Has solicitado demasiados códigos. Intenta de nuevo más tarde.',
+};
 
 type Step = 1 | 2 | 3;
 type View = Step | 'blocked' | 'success';
@@ -31,6 +59,7 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
     Stepper,
     SlotPicker,
     PatientForm,
+    TextField,
     AppointmentSummary,
     BigButton,
     AlertMessage,
@@ -101,9 +130,6 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
               @case (1) {
                 <p class="page-subtitle">Cada odontólogo tiene su propia agenda.</p>
               }
-              @case (2) {
-                <p class="page-subtitle">Solo necesitamos dos datos para reservar tu turno.</p>
-              }
               @case (3) {
                 <p class="page-subtitle">Revisa que todo esté correcto antes de confirmar.</p>
               }
@@ -148,7 +174,12 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
             }
             @case (2) {
               <form class="card flex flex-col gap-6" novalidate (submit)="$event.preventDefault(); goToStep3()">
-                <app-patient-form [data]="patient()" [errors]="errors()" (dataChange)="patient.set($event)" />
+                <app-patient-form
+                  [data]="patient()"
+                  [errors]="errors()"
+                  [phoneHint]="phoneHint"
+                  (dataChange)="patient.set($event)"
+                />
                 <div class="card-divider flex flex-col gap-3 sm:flex-row-reverse">
                   <button type="submit" appBigButton size="xl" class="flex-1">Continuar <svg lucideArrowRight aria-hidden="true"></svg></button>
                   <button type="button" appBigButton variant="secondary" size="xl" class="sm:w-auto" (click)="goTo(1)">
@@ -166,14 +197,62 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
                     Recibirás un recordatorio por WhatsApp <strong>{{ reminderText(selection()) }}</strong>.
                   </span>
                 </p>
-                <div class="flex flex-col gap-3 sm:flex-row-reverse">
-                  <button type="button" appBigButton size="xl" class="flex-1" [disabled]="saving()" (click)="confirm()">
-                    {{ saving() ? 'Guardando…' : 'Confirmar cita' }}
-                  </button>
-                  <button type="button" appBigButton variant="secondary" size="xl" class="sm:w-auto" (click)="goTo(2)">
-                    <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
-                  </button>
-                </div>
+                @if (requestError(); as error) {
+                  <p appAlertMessage>{{ error }}</p>
+                }
+                @if (!codeSent()) {
+                  <div class="flex flex-col gap-3 sm:flex-row-reverse">
+                    <button
+                      type="button"
+                      appBigButton
+                      size="xl"
+                      class="flex-1"
+                      [disabled]="sendingCode()"
+                      (click)="requestCode()"
+                    >
+                      {{ sendingCode() ? 'Enviando…' : 'Enviar código por WhatsApp' }}
+                    </button>
+                    <button type="button" appBigButton variant="secondary" size="xl" class="sm:w-auto" (click)="goTo(2)">
+                      <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
+                    </button>
+                  </div>
+                } @else {
+                  <form class="card flex flex-col gap-6" novalidate (submit)="$event.preventDefault(); confirm()">
+                    <app-text-field
+                      fieldId="booking-code"
+                      label="Código de verificación"
+                      hint="Ingresa el código de 6 dígitos que enviamos a tu WhatsApp."
+                      placeholder="123456"
+                      inputMode="numeric"
+                      autocomplete="one-time-code"
+                      [maxLength]="6"
+                      [required]="true"
+                      [sanitize]="sanitizeCode"
+                      [value]="code()"
+                      [error]="codeError() ?? undefined"
+                      (valueChange)="code.set($event)"
+                    />
+                    <p role="status" aria-live="polite" class="text-sm text-muted-foreground">{{ resendHint() }}</p>
+                    <div class="flex flex-col gap-3 sm:flex-row-reverse">
+                      <button type="submit" appBigButton size="xl" class="flex-1" [disabled]="saving()">
+                        {{ saving() ? 'Guardando…' : 'Confirmar cita' }}
+                      </button>
+                      <button type="button" appBigButton variant="secondary" size="xl" class="sm:w-auto" (click)="goTo(2)">
+                        <svg lucideArrowLeft aria-hidden="true"></svg> Atrás
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      appBigButton
+                      variant="ghost"
+                      size="md"
+                      [disabled]="!canResend() || sendingCode()"
+                      (click)="requestCode()"
+                    >
+                      {{ sendingCode() ? 'Enviando…' : 'Reenviar código' }}
+                    </button>
+                  </form>
+                }
                 <p class="text-center text-sm text-muted-foreground">
                   ¿Necesitas ayuda? Escríbenos al WhatsApp {{ whatsappNumber }} o
                   <a
@@ -190,8 +269,9 @@ const EMPTY_SELECTION: SlotSelection = { dentistId: '', procedureId: '', date: '
     }
   `,
 })
-export class BookingFlow implements OnInit {
+export class BookingFlow implements OnInit, OnDestroy {
   protected readonly store = inject(AppStore);
+  private readonly api = inject(ClinicApi);
   private readonly scroller = inject(ViewportScroller);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly injector = inject(Injector);
@@ -209,8 +289,27 @@ export class BookingFlow implements OnInit {
   protected readonly notice = signal<string | null>(null);
   protected readonly incompleteMessage = INCOMPLETE_MESSAGE;
   protected readonly whatsappNumber = PUBLIC_WHATSAPP_NUMBER;
+  protected readonly phoneHint = PHONE_HINT;
   protected readonly created = signal<Appointment | null>(null);
   protected readonly saving = signal(false);
+
+  // WhatsApp phone verification (S5): a code is requested on step 3 and exchanged for a token.
+  protected readonly codeSent = signal(false);
+  protected readonly code = signal('');
+  protected readonly codeError = signal<string | null>(null);
+  protected readonly requestError = signal<string | null>(null);
+  protected readonly sendingCode = signal(false);
+  protected readonly resendRemaining = signal(0);
+  protected readonly canResend = computed(() => this.resendRemaining() === 0);
+  protected readonly resendHint = computed(() =>
+    this.resendRemaining() > 0
+      ? `Podrás reenviar el código en ${this.resendRemaining()} s.`
+      : 'Ya puedes solicitar un nuevo código.',
+  );
+  protected readonly sanitizeCode = (value: string): string => value.replace(/\D/g, '').slice(0, 6);
+  private verificationToken: string | null = null;
+  private verifiedPhone: string | null = null;
+  private countdown: ReturnType<typeof setInterval> | null = null;
 
   protected readonly step = computed<Step>(() => {
     const view = this.view();
@@ -240,6 +339,10 @@ export class BookingFlow implements OnInit {
 
   ngOnInit(): void {
     void this.store.ensureCatalogs();
+  }
+
+  ngOnDestroy(): void {
+    this.clearCountdown();
   }
 
   protected reminderText(appointment: Pick<Appointment, 'date' | 'time'>): string {
@@ -273,6 +376,7 @@ export class BookingFlow implements OnInit {
 
   /** Moves to another step and re-anchors focus (used by every "Atrás" and "Volver"). */
   protected goTo(view: Step): void {
+    if (view < 3) this.resetVerification();
     this.view.set(view);
     this.scrollToTop();
   }
@@ -285,15 +389,53 @@ export class BookingFlow implements OnInit {
     }, { injector: this.injector });
   }
 
+  /** Sends (or resends) the WhatsApp code and starts the 60-second resend countdown. */
+  protected async requestCode(): Promise<void> {
+    if (this.sendingCode()) return;
+    this.requestError.set(null);
+    this.codeError.set(null);
+    this.sendingCode.set(true);
+    const phone = normalizePhone(this.patient().phone);
+    try {
+      await this.api.requestPhoneCode(phone);
+      this.verifiedPhone = phone;
+      this.verificationToken = null;
+      this.code.set('');
+      this.codeSent.set(true);
+      this.startCountdown();
+    } catch (error) {
+      this.requestError.set(this.errorMessage(error, REQUEST_ERRORS, SEND_ERROR_MESSAGE));
+    } finally {
+      this.sendingCode.set(false);
+    }
+  }
+
   protected async confirm(): Promise<void> {
     if (this.saving()) return;
+    const phone = normalizePhone(this.patient().phone);
+    if (this.verifiedPhone !== phone) {
+      this.resetVerification();
+      return;
+    }
+    const code = this.code().trim();
+    if (!/^\d{6}$/.test(code)) {
+      this.codeError.set(CODE_FORMAT_MESSAGE);
+      return;
+    }
     this.saving.set(true);
+    this.codeError.set(null);
     try {
+      const verificationToken = this.verificationToken ?? (await this.verify(phone, code));
+      // The store owns the booking call and the conflict mapping; the flow adds the token.
       const result = await this.store.createAppointment({
-        ...this.selection(),
         patientName: this.patient().name.trim(),
-        patientPhone: normalizePhone(this.patient().phone),
+        patientPhone: phone,
+        dentistId: this.selection().dentistId,
+        procedureId: this.selection().procedureId,
+        date: this.selection().date,
+        time: this.selection().time,
         origin: 'Web',
+        verificationToken,
       });
       if (result.ok) {
         this.created.set(result.appointment);
@@ -305,12 +447,69 @@ export class BookingFlow implements OnInit {
         this.selection.update((s) => ({ ...s, time: '' }));
         this.view.set(1);
       }
-    } catch {
-      this.notice.set('No pudimos guardar tu cita. Revisa tu conexión e intenta de nuevo.');
+    } catch (error) {
+      this.handleBookingError(error);
     } finally {
       this.saving.set(false);
     }
     this.scrollToTop();
+  }
+
+  private async verify(phone: string, code: string): Promise<string> {
+    const { verificationToken } = await this.api.verifyPhoneCode(phone, code);
+    this.verificationToken = verificationToken;
+    return verificationToken;
+  }
+
+  /** Keeps the phone-verification failures inline: the code field for S3/S4, the banner for sending. */
+  private handleBookingError(error: unknown): void {
+    if (error instanceof ApiError) {
+      const codeMessage = error.code ? CODE_ERRORS[error.code] : undefined;
+      if (codeMessage) {
+        this.verificationToken = null;
+        if (error.code !== 'INVALID_CODE') this.code.set('');
+        this.codeError.set(codeMessage);
+        return;
+      }
+      if (error.code === 'PHONE_NOT_VERIFIED') {
+        this.verificationToken = null;
+        this.code.set('');
+        this.codeError.set(PHONE_NOT_VERIFIED_MESSAGE);
+        return;
+      }
+    }
+    this.codeError.set(SAVE_ERROR_MESSAGE);
+  }
+
+  private errorMessage(error: unknown, messages: Record<string, string>, fallback: string): string {
+    return error instanceof ApiError && error.code && messages[error.code] ? messages[error.code] : fallback;
+  }
+
+  private startCountdown(): void {
+    this.clearCountdown();
+    this.resendRemaining.set(RESEND_SECONDS);
+    this.countdown = setInterval(() => {
+      const remaining = this.resendRemaining() - 1;
+      this.resendRemaining.set(remaining > 0 ? remaining : 0);
+      if (remaining <= 0) this.clearCountdown();
+    }, 1000);
+  }
+
+  private clearCountdown(): void {
+    if (this.countdown !== null) clearInterval(this.countdown);
+    this.countdown = null;
+  }
+
+  /** Going back to the phone discards the code and the verification token (S5). */
+  private resetVerification(): void {
+    this.clearCountdown();
+    this.resendRemaining.set(0);
+    this.codeSent.set(false);
+    this.code.set('');
+    this.codeError.set(null);
+    this.requestError.set(null);
+    this.verifiedPhone = null;
+    this.verificationToken = null;
   }
 
   private scrollToTop(): void {

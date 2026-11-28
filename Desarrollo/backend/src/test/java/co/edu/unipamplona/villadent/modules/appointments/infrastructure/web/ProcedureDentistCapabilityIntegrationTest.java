@@ -14,6 +14,9 @@ import co.edu.unipamplona.villadent.modules.users.domain.model.Role;
 import co.edu.unipamplona.villadent.modules.users.domain.model.User;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.PasswordHasher;
 import co.edu.unipamplona.villadent.modules.users.domain.ports.drivens.UserRepository;
+import co.edu.unipamplona.villadent.support.CapturingVerificationSender;
+import co.edu.unipamplona.villadent.support.PublicBookingTestSupport;
+import co.edu.unipamplona.villadent.support.VerificationTestConfiguration;
 import com.jayway.jsonpath.JsonPath;
 import java.time.Clock;
 import java.time.DayOfWeek;
@@ -33,7 +36,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, VerificationTestConfiguration.class})
 @SpringBootTest(properties = "app.bootstrap-admin.enabled=false")
 @AutoConfigureMockMvc
 class ProcedureDentistCapabilityIntegrationTest {
@@ -105,12 +108,36 @@ class ProcedureDentistCapabilityIntegrationTest {
                 .formatted(dentist.id(), date, procedureId);
     }
 
-    private String bookingBody(Dentist dentist, long procedureId, LocalDate date, LocalTime time) {
-        String phone = "3" + ThreadLocalRandom.current().nextInt(100_000_000, 1_000_000_000);
+    @Autowired
+    private CapturingVerificationSender verificationSender;
+
+    private String uniquePhone() {
+        return "3" + ThreadLocalRandom.current().nextInt(100_000_000, 1_000_000_000);
+    }
+
+    private String bookingBody(
+            String phone,
+            Dentist dentist,
+            long procedureId,
+            LocalDate date,
+            LocalTime time) {
         return """
                 {"patientName":"Paciente Ficticio","patientPhone":"%s","dentistId":%d,
                  "procedureId":%d,"date":"%s","time":"%s"}
                 """.formatted(phone, dentist.id(), procedureId, date, time);
+    }
+
+    private String publicBookingBody(
+            Dentist dentist,
+            long procedureId,
+            LocalDate date,
+            LocalTime time) throws Exception {
+        String phone = uniquePhone();
+        String verificationToken = PublicBookingTestSupport.obtainToken(mockMvc, verificationSender, phone);
+        return """
+                {"patientName":"Paciente Ficticio","patientPhone":"%s","dentistId":%d,
+                 "procedureId":%d,"date":"%s","time":"%s","verificationToken":"%s"}
+                """.formatted(phone, dentist.id(), procedureId, date, time, verificationToken);
     }
 
     @Test
@@ -146,7 +173,7 @@ class ProcedureDentistCapabilityIntegrationTest {
 
         mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingBody(other, procedureId, date, LocalTime.of(9, 0))))
+                        .content(publicBookingBody(other, procedureId, date, LocalTime.of(9, 0))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("DENTIST_DOES_NOT_PERFORM_PROCEDURE"))
                 .andExpect(jsonPath("$.detail").value("El odontólogo no realiza este procedimiento."));
@@ -154,7 +181,7 @@ class ProcedureDentistCapabilityIntegrationTest {
         mockMvc.perform(post("/api/v1/appointments")
                         .header("Authorization", "Bearer " + auxiliarToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingBody(other, procedureId, date, LocalTime.of(10, 0))))
+                        .content(bookingBody(uniquePhone(), other, procedureId, date, LocalTime.of(10, 0))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("DENTIST_DOES_NOT_PERFORM_PROCEDURE"))
                 .andExpect(jsonPath("$.detail").value("El odontólogo no realiza este procedimiento."));
@@ -171,7 +198,7 @@ class ProcedureDentistCapabilityIntegrationTest {
 
         mockMvc.perform(post("/api/v1/public/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(bookingBody(capable, procedureId, date, LocalTime.of(10, 0))))
+                        .content(publicBookingBody(capable, procedureId, date, LocalTime.of(10, 0))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.procedureId").value(procedureId))
                 .andExpect(jsonPath("$.dentistId").value(capable.id().intValue()));

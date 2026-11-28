@@ -21,5 +21,16 @@ public interface AppointmentWebMapper {
     @Mapping(target = "date", source = "request.date")
     @Mapping(target = "time", source = "request.time")
     @Mapping(target = "origin", source = "origin")
+    @Mapping(target = "verificationToken", ignore = true)
     BookAppointmentCommand toCommand(BookAppointmentRequest request, AppointmentOrigin origin);
+
+    @Mapping(target = "patientName", source = "request.patientName")
+    @Mapping(target = "patientPhone", source = "request.patientPhone")
+    @Mapping(target = "dentistId", source = "request.dentistId")
+    @Mapping(target = "procedureId", source = "request.procedureId")
+    @Mapping(target = "date", source = "request.date")
+    @Mapping(target = "time", source = "request.time")
+    @Mapping(target = "verificationToken", source = "request.verificationToken")
+    @Mapping(target = "origin", source = "origin")
+    BookAppointmentCommand toPublicCommand(PublicBookAppointmentRequest request, AppointmentOrigin origin);
 }
