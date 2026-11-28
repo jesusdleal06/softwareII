@@ -16,6 +16,9 @@ public class WhatsAppReminderSender implements ReminderSender {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("h:mm a", Locale.US);
 
+    // Meta Cloud API expects the international format without "+"; the domain keeps the national number.
+    private static final String COUNTRY_CODE = "57";
+
     private final RestClient restClient;
     private final String token;
     private final String phoneNumberId;
@@ -40,7 +43,7 @@ public class WhatsAppReminderSender implements ReminderSender {
         }
         Map<String, Object> payload = Map.of(
                 "messaging_product", "whatsapp",
-                "to", message.phone(),
+                "to", toInternational(message.phone()),
                 "type", "template",
                 "template", Map.of(
                         "name", templateName,
@@ -67,5 +70,15 @@ public class WhatsAppReminderSender implements ReminderSender {
 
     private static Map<String, String> text(String value) {
         return Map.of("type", "text", "text", value == null ? "" : value);
+    }
+
+    private static String toInternational(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        if (phone.length() == COUNTRY_CODE.length() + 10 && phone.startsWith(COUNTRY_CODE)) {
+            return phone;
+        }
+        return COUNTRY_CODE + phone;
     }
 }
